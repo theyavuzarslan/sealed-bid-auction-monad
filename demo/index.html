@@ -3,639 +3,278 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TOKEN</title>
+<title>Sniper Head-to-Head</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #f4efe6;
-    --muted: #b7ad9e;
-    --dim: #7c7468;
-    --bot: #ff3b1f;
-    --bot-wash: rgba(255, 59, 31, 0.1);
-    --sand: #e7d7c3;
-    --line: #ffb25a;
-    --acid: #e2ff4d;
-    --hash: #8d9a90;
-    --left: #14100c;
-    --right: #0c0f0e;
-    --hair: rgba(244, 239, 230, 0.14);
+    --bg: #0d0b09;
+    --bg-left: #15100b;
+    --bg-right: #0b0f0d;
+    --ink: #f6f1e8;
+    --muted: #b9ae9e;
+    --dim: #6f675c;
+    --hair: rgba(246, 241, 232, 0.14);
+    --bot: #ff4122;
+    --bot-wash: rgba(255, 65, 34, 0.14);
+    --crowd: #ffb453;
+    --crowd-wash: rgba(255, 180, 83, 0.22);
+    --price: #d9ff3d;
+    --price-wash: rgba(217, 255, 61, 0.12);
+    --display: Syne, "Avenir Next", Futura, "Helvetica Neue", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   }
-
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--left); color: var(--ink); }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
   body {
     overflow: hidden;
-    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+    font-family: var(--mono);
     font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
   }
 
-  #progress {
-    position: fixed;
-    z-index: 3;
-    left: 0; top: 0;
-    height: 3px; width: 100%;
-    transform-origin: left center;
-    transform: scaleX(0);
-    background: linear-gradient(90deg, var(--bot) 0 50%, var(--acid) 50% 100%);
-    pointer-events: none;
-  }
-
-  main {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    height: 100dvh;
-  }
-
-  section {
-    min-width: 0;
-    height: 100dvh;
-    display: grid;
-    grid-template-rows: auto minmax(148px, 32vh) minmax(0, 1fr) 44px;
-    padding: clamp(16px, 2.4vh, 28px) clamp(18px, 2vw, 36px) 14px;
-  }
-
-  #curve {
-    background:
-      radial-gradient(880px 460px at 18% 28%, rgba(255, 59, 31, 0.1), transparent 68%),
-      var(--left);
-  }
-  #auction {
-    border-left: 1px solid var(--hair);
-    background:
-      radial-gradient(760px 440px at 50% 36%, rgba(226, 255, 77, 0.04), transparent 70%),
-      var(--right);
-    transition: background 400ms linear;
-  }
-  #auction.show-price {
-    background:
-      radial-gradient(680px 380px at 50% 34%, rgba(226, 255, 77, 0.16), transparent 64%),
-      var(--right);
-  }
-
-  header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 16px;
-    align-items: end;
-    padding-bottom: 12px;
+  /* ── Frame ─────────────────────────────────────────────── */
+  .stage { height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+  .brief {
+    display: flex; align-items: center; justify-content: center; gap: 1.4vw;
+    padding: 1.3vh 2vw 1.1vh;
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(16px, 2.3vh, 30px); letter-spacing: 0.01em;
     border-bottom: 1px solid var(--hair);
+    position: relative;
   }
-  .kicker {
-    margin: 0;
-    font-family: Syne, "Avenir Next", Futura, sans-serif;
-    font-weight: 500;
-    font-size: 12px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--line);
+  .brief .sep { color: var(--dim); }
+  .brief .bot { color: var(--bot); }
+  #progress {
+    position: absolute; left: 0; bottom: -1px; height: 3px; width: 100%;
+    transform-origin: left center; transform: scaleX(0);
+    background: var(--ink); opacity: 0.5;
   }
-  #auction .kicker { color: #c9d2c6; }
-  .phase {
-    margin: 0;
-    font-size: 12px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-align: right;
+  main { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  .pane {
+    min-width: 0; min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    padding: 1.6vh 2vw 1.4vh;
+    overflow: hidden;
   }
-  h1 {
-    margin: 6px 0 0;
-    font-family: "Instrument Serif", "Iowan Old Style", Palatino, serif;
-    font-weight: 400;
-    font-size: clamp(36px, 4.6vh, 58px);
-    line-height: 0.9;
-    letter-spacing: -0.02em;
-  }
-  .supply {
-    margin: 0;
-    text-align: right;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .supply b {
-    display: block;
-    color: var(--ink);
-    font-weight: 500;
-    font-size: 14px;
+  #left { background: radial-gradient(900px 500px at 20% 30%, rgba(255, 65, 34, 0.08), transparent 70%), var(--bg-left); }
+  #right {
+    border-left: 1px solid var(--hair);
+    background: radial-gradient(900px 500px at 60% 30%, rgba(217, 255, 61, 0.05), transparent 70%), var(--bg-right);
   }
 
-  .chart {
-    position: relative;
-    min-height: 0;
-    margin-top: 8px;
+  /* ── Pane head ─────────────────────────────────────────── */
+  .head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 1vw; }
+  .head h2 { grid-column: 1 / -1; white-space: nowrap; }
+  .kicker {
+    margin: 0; font-size: clamp(11px, 1.45vh, 17px); letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
   }
-  .chart svg { width: 100%; height: 100%; display: block; }
-  .chart line, .chart path { fill: none; vector-effect: non-scaling-stroke; }
-  .baseline { stroke: rgba(244, 239, 230, 0.18); stroke-width: 1; }
-  .path-bot { stroke: var(--bot); stroke-width: 2.25; }
-  .path-rest { stroke: var(--line); stroke-width: 2; }
-  .dot {
-    position: absolute;
-    width: 8px; height: 8px;
-    background: var(--sand);
-    transform: translate(-50%, -50%);
+  h2 {
+    margin: 0.3vh 0 0; font-family: var(--display); font-weight: 800;
+    font-size: clamp(24px, 3.8vh, 50px); line-height: 1; letter-spacing: -0.01em;
+  }
+  .status {
+    font-family: var(--display); font-weight: 700; text-align: right;
+    font-size: clamp(14px, 2.2vh, 28px); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+    white-space: nowrap;
+  }
+  .status.hot { color: var(--bot); }
+  .status.price { color: var(--price); }
+
+  /* ── Charts ────────────────────────────────────────────── */
+  .chart { position: relative; min-height: 0; margin: 1.6vh 0 3.4vh 2.2vw; }
+  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .chart svg * { vector-effect: non-scaling-stroke; }
+  .axis { stroke: var(--hair); stroke-width: 1; fill: none; }
+  .ghost { stroke: rgba(246, 241, 232, 0.28); stroke-width: 1.5; stroke-dasharray: 5 6; fill: none; }
+  .area-bot { fill: var(--bot); opacity: 0.85; }
+  .area-crowd { fill: var(--crowd); opacity: 0.75; }
+  .edge { stroke: var(--bg-left); stroke-width: 1.5; fill: none; }
+  .supply-line { stroke: rgba(246, 241, 232, 0.5); stroke-width: 1.5; stroke-dasharray: 3 5; }
+  .bar-bid { stroke: var(--bg-right); stroke-width: 1.5; }
+  .bar-bid.bot { fill: var(--bot); }
+  .bar-bid.crowd { fill: var(--crowd); }
+  .bar-bid.settled { opacity: 0.18; }
+  .bar-paid.bot { fill: var(--bot); }
+  .bar-paid.crowd { fill: var(--crowd); }
+  .clear-line { stroke: var(--price); stroke-width: 3; }
+  .lbl {
+    position: absolute; font-size: clamp(11px, 1.55vh, 19px); color: var(--muted); white-space: nowrap;
     pointer-events: none;
   }
-  .dot.bot { background: var(--bot); }
-  .spot {
-    position: absolute;
-    top: 4px; right: 0;
-    font-size: clamp(16px, 2.4vh, 28px);
-    letter-spacing: -0.03em;
-    color: var(--muted);
+  .lbl.y { left: 0; transform: translateY(-50%); }
+  .lbl.big { font-family: var(--display); font-weight: 700; font-size: clamp(16px, 2.7vh, 34px); color: var(--ink); }
+  .lbl.bot { color: var(--bot); }
+  .lbl.price { color: var(--price); background: var(--bg-right); padding: 0 0.5vw; border-radius: 0.4vh; }
+  .lbl.inbar { color: var(--ink); white-space: pre; text-align: center; line-height: 1; }
+  .spot-dot {
+    position: absolute; width: 1.3vh; height: 1.3vh; border-radius: 50%;
+    background: var(--ink); box-shadow: 0 0 0 0.5vh rgba(246, 241, 232, 0.16);
+    transform: translate(-50%, -50%); pointer-events: none;
   }
-  .spot em {
-    font-style: normal;
-    margin-left: 6px;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    color: var(--dim);
+  .sealed {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1vh; transition: opacity 350ms ease;
   }
-  .spot.bot { color: var(--bot); }
-  .spot.hum { color: var(--sand); }
+  .sealed .count { font-family: var(--display); font-weight: 800; font-size: clamp(44px, 10vh, 120px); line-height: 0.9; }
+  .sealed .what { font-size: clamp(13px, 1.9vh, 24px); color: var(--muted); text-align: center; background: var(--bg-right); padding: 0 1vw; }
+  .locks { display: flex; gap: 0.6vh; min-height: 2.2vh; }
+  .locks i { width: 2.2vh; height: 2.2vh; border-radius: 0.4vh; background: var(--crowd); opacity: 0.9; }
+  .locks i.bot { background: var(--bot); }
 
-  .hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
+  /* ── Tables ────────────────────────────────────────────── */
+  .rows { list-style: none; margin: 0; padding: 0; }
+  .row, .cols {
+    display: grid; grid-template-columns: 8.5em minmax(0, 1fr) 6.5em 6.5em; gap: 0.8vw; align-items: baseline;
   }
-  .hero-row { display: flex; align-items: baseline; gap: 12px; }
-  #heroNum {
-    font-family: "Instrument Serif", "Iowan Old Style", Palatino, serif;
-    font-size: clamp(96px, 20vh, 212px);
-    line-height: 0.82;
-    letter-spacing: -0.04em;
-  }
-  #heroNum.is-price { color: var(--acid); font-style: italic; padding-right: 0.08em; }
-  #heroNum.land { animation: land 280ms ease-out; }
-  #heroUnit {
-    font-family: Syne, "Avenir Next", Futura, sans-serif;
-    font-size: 14px;
-    letter-spacing: 0.16em;
-    color: var(--acid);
-    opacity: 0.75;
-  }
-  #heroUnit[hidden] { display: none; }
-  #heroLabel {
-    margin-top: 10px;
-    font-family: Syne, "Avenir Next", Futura, sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  @keyframes land {
-    from { opacity: 0; transform: translateY(14px); }
-    to { opacity: 1; transform: none; }
-  }
-
-  section { overflow: hidden; }
-  ol { list-style: none; margin: 0; padding: 10px 0 0; overflow: hidden; }
-  .cols, .row {
-    display: grid;
-    align-items: baseline;
-    gap: 10px;
-  }
-  .tape .cols, .tape .row { grid-template-columns: 4.5ch minmax(0, 1fr) 9ch 8.5ch; }
-  .book .cols, .book .row { grid-template-columns: minmax(0, 1fr) 11ch 11ch; }
   .cols {
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--dim);
-    padding-bottom: 6px;
+    font-size: clamp(10px, 1.3vh, 15px); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim);
+    padding: 0 0.6vw 0.4vh;
   }
-  .tape .cols span:nth-child(3),
-  .tape .cols span:nth-child(4),
-  .book .cols span:nth-child(2),
-  .book .cols span:nth-child(3),
-  .num, .px, .mid, .end { text-align: right; }
-
+  .cols span:nth-child(n+3), .row span:nth-child(n+3) { text-align: right; }
   .row {
-    font-size: clamp(13px, 1.75vh, 16px);
-    line-height: 1.35;
-    padding: 3px 0 3px 8px;
-    border-left: 2px solid transparent;
-    color: var(--sand);
+    font-size: clamp(13px, 2.05vh, 26px); line-height: 1.34;
+    padding: 0 0.6vw; border-left: 0.35vw solid transparent;
+    opacity: 0; transform: translateY(0.6vh);
+    transition: opacity 220ms ease, transform 220ms ease, background 300ms ease;
   }
-  .row.bot {
-    color: var(--ink);
-    background: var(--bot-wash);
-    border-left-color: var(--bot);
-  }
-  .row.fresh { animation: rise 180ms ease-out; }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
-  }
-  .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .mark {
-    width: 7px; height: 7px;
-    background: var(--bot);
-    flex: none;
-  }
-  .row.bot .px { color: var(--bot); }
-  .row .px { color: var(--sand); }
-  .book .row .end.price { color: var(--acid); }
-  .book .row .end.refund, .book .row .mid.none { color: var(--dim); }
-  .blk { color: var(--dim); }
-  .row.bot .blk { color: var(--bot); }
-  .hash { color: var(--hash); }
-  .revealed { color: var(--muted); }
+  .row.on { opacity: 1; transform: none; }
+  .row .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row.bot { background: var(--bot-wash); border-left-color: var(--bot); }
+  .row.bot .name { color: var(--bot); }
+  .row .note { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .dimmed, .row.out .note { color: var(--dim); }
+  .row.out .name { color: var(--dim); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .row .px.price { color: var(--price); font-weight: 600; }
+  .row .px.hot { color: var(--bot); font-weight: 600; }
+  .row .px.warm { color: var(--crowd); }
+  .flash { animation: flash 600ms ease-out; }
+  @keyframes flash { from { background: rgba(246, 241, 232, 0.22); } }
 
-  .share { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
-  .track {
-    display: flex;
-    height: 8px;
-    background: rgba(244, 239, 230, 0.08);
+  /* ── Verdicts ──────────────────────────────────────────── */
+  .verdict {
+    margin-top: 1.2vh; padding-top: 1.1vh; border-top: 1px solid var(--hair);
+    opacity: 0; transform: translateY(1vh); transition: opacity 500ms ease, transform 500ms ease;
+    min-height: 12.5vh;
   }
-  #shareBot { background: var(--bot); width: 0; }
-  #shareHum { background: var(--sand); width: 0; }
-  .share-key {
-    min-height: 14px;
-    font-size: 12px;
-    color: var(--bot);
+  .verdict.on { opacity: 1; transform: none; }
+  .vs { display: grid; grid-template-columns: auto auto 1fr; column-gap: 3vw; align-items: end; }
+  .vs .who { font-family: var(--display); font-weight: 700; font-size: clamp(12px, 1.8vh, 22px); letter-spacing: 0.08em; text-transform: uppercase; }
+  .vs .val { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 5.8vh, 74px); line-height: 1; }
+  .vs .unit { font-size: clamp(11px, 1.6vh, 20px); color: var(--muted); padding-bottom: 0.6vh; }
+  .vs .bot { color: var(--bot); }
+  .vs .crowd { color: var(--crowd); }
+  .vs .same { color: var(--price); }
+  .punch { margin: 0.6vh 0 0; font-size: clamp(13px, 1.95vh, 24px); color: var(--ink); }
+  .punch b { color: var(--bot); font-weight: 600; }
+  .punch b.ok { color: var(--price); }
+
+  /* ── Takeaway ──────────────────────────────────────────── */
+  .takeaway {
+    border-top: 1px solid var(--hair);
+    padding: 1.4vh 2vw 1.6vh; text-align: center;
+    min-height: 8.5vh;
   }
+  .takeaway .line {
+    font-family: var(--display); font-weight: 800; font-size: clamp(20px, 3.5vh, 46px); line-height: 1.1;
+    opacity: 0; transform: translateY(1.2vh); transition: opacity 700ms ease, transform 700ms ease;
+  }
+  .takeaway .line em { font-style: normal; color: var(--price); }
+  .takeaway .proof {
+    margin-top: 0.8vh; font-size: clamp(11px, 1.5vh, 18px); color: var(--muted);
+    opacity: 0; transition: opacity 700ms ease 400ms;
+  }
+  body.end .takeaway .line { opacity: 1; transform: none; }
+  body.end .takeaway .proof { opacity: 1; }
 
   #replay {
-    position: fixed;
-    z-index: 4;
-    right: 28px;
-    bottom: 16px;
-    background: #0c0f0e;
-    color: var(--ink);
-    border: 1px solid var(--hair);
-    font-family: Syne, "Avenir Next", Futura, sans-serif;
-    font-size: 12px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    padding: 8px 16px;
-    cursor: pointer;
-    opacity: 0;
-    pointer-events: none;
+    position: fixed; right: 1.4vw; bottom: 1.4vh; z-index: 5;
+    font-family: var(--display); font-weight: 700; font-size: clamp(11px, 1.4vh, 16px);
+    letter-spacing: 0.18em; text-transform: uppercase;
+    background: transparent; color: var(--muted); border: 1px solid var(--hair);
+    padding: 0.7vh 1.1vw; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 400ms;
   }
   body.done #replay { opacity: 1; pointer-events: auto; }
+  #error {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 8vw;
+    background: var(--bg); font-size: clamp(16px, 2.6vh, 30px); line-height: 1.5; text-align: center; z-index: 10;
+  }
+  #error code { color: var(--price); }
+
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .stage { height: auto; }
+    main { grid-template-columns: 1fr; }
+    .pane { min-height: 100vh; }
+    #right { border-left: 0; border-top: 1px solid var(--hair); }
+    .brief { flex-wrap: wrap; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .row, .verdict, .takeaway .line, .takeaway .proof, .sealed { transition: none; }
+  }
 </style>
 </head>
 <body>
-  <div id="progress"></div>
+<div class="stage">
+  <div class="brief">
+    <span id="briefToken">Same token</span><span class="sep">·</span>
+    <span id="briefSupply">same supply</span><span class="sep">·</span>
+    <span id="briefCrowd">same buyers</span><span class="sep">·</span>
+    <span class="bot">one sniper bot that moves first</span>
+    <i id="progress"></i>
+  </div>
+
   <main>
-    <section id="curve">
-      <header>
-        <div>
-          <p class="kicker">Bonding curve</p>
-          <h1 id="tokenLeft"></h1>
-        </div>
-        <div>
-          <p class="phase" id="blockLabel">—</p>
-          <p class="supply"><b id="supplyLeft"></b>supply</p>
-        </div>
-      </header>
-      <div class="chart">
-        <svg id="chart" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-        <i class="dot" id="dot" hidden></i>
-        <div class="spot" id="spot"></div>
+    <section class="pane" id="left">
+      <div class="head">
+        <p class="kicker">Today · first come, first served</p>
+        <div class="status" id="leftStatus">Waiting for launch</div>
+        <h2>Bonding curve</h2>
       </div>
-      <ol class="tape" id="tape"></ol>
-      <div class="share">
-        <div class="track"><i id="shareBot"></i><i id="shareHum"></i></div>
-        <div class="share-key" id="shareKey"></div>
+      <div class="chart" id="leftChart">
+        <svg id="leftSvg" viewBox="0 0 1000 400" preserveAspectRatio="none"></svg>
       </div>
+      <div>
+        <div class="cols"><span>Buyer</span><span>Arrived</span><span>Tokens</span><span>Price</span></div>
+        <ol class="rows" id="leftRows"></ol>
+      </div>
+      <div class="verdict" id="leftVerdict"></div>
     </section>
-    <section id="auction">
-      <header>
-        <div>
-          <p class="kicker">Sealed-bid auction · Degen</p>
-          <h1 id="tokenRight"></h1>
-        </div>
-        <div>
-          <p class="phase" id="phaseLabel">Commit</p>
-          <p class="supply"><b id="supplyRight"></b>supply</p>
-        </div>
-      </header>
-      <div class="hero">
-        <div class="hero-row">
-          <div id="heroNum">00</div>
-          <span id="heroUnit" hidden>MON</span>
-        </div>
-        <div id="heroLabel">Commitments</div>
+
+    <section class="pane" id="right">
+      <div class="head">
+        <p class="kicker" id="rightKicker">AuctionEngine · Degen preset</p>
+        <div class="status" id="rightStatus">Commit window</div>
+        <h2>Sealed-bid auction</h2>
       </div>
-      <ol class="book" id="book"></ol>
-      <div></div>
+      <div class="chart" id="rightChart">
+        <svg id="rightSvg" viewBox="0 0 1000 400" preserveAspectRatio="none"></svg>
+        <div class="sealed" id="sealed">
+          <div class="count" id="sealedCount">0</div>
+          <div class="locks" id="locks"></div>
+          <div class="what">sealed bids · prices and amounts hidden until reveal</div>
+        </div>
+      </div>
+      <div>
+        <div class="cols"><span>Bidder</span><span id="rightCol2">Commitment</span><span>Tokens</span><span>Price</span></div>
+        <ol class="rows" id="rightRows"></ol>
+      </div>
+      <div class="verdict" id="rightVerdict"></div>
     </section>
   </main>
-  <button id="replay" type="button">Replay</button>
-  <script src="harness.js"></script>
-  <script>
-    var run = Harness.build();
-    var cfg = run.config;
-    var board = cfg.storyboard;
-    var supplyText = cfg.tokensForSale.toLocaleString("en-US");
-    document.getElementById("tokenLeft").textContent = cfg.tokenSymbol;
-    document.getElementById("tokenRight").textContent = cfg.tokenSymbol;
-    document.getElementById("supplyLeft").textContent = supplyText;
-    document.getElementById("supplyRight").textContent = supplyText;
-    document.title = cfg.tokenSymbol;
 
-    var progress = document.getElementById("progress");
-    var blockLabel = document.getElementById("blockLabel");
-    var phaseLabel = document.getElementById("phaseLabel");
-    var chart = document.getElementById("chart");
-    var dot = document.getElementById("dot");
-    var spot = document.getElementById("spot");
-    var tape = document.getElementById("tape");
-    var book = document.getElementById("book");
-    var heroNum = document.getElementById("heroNum");
-    var heroUnit = document.getElementById("heroUnit");
-    var heroLabel = document.getElementById("heroLabel");
-    var auction = document.getElementById("auction");
-    var shareBot = document.getElementById("shareBot");
-    var shareHum = document.getElementById("shareHum");
-    var shareKey = document.getElementById("shareKey");
-    var replay = document.getElementById("replay");
+  <div class="takeaway">
+    <div class="line"><em>Snipe-resistant:</em> submission timing no longer determines price.</div>
+    <div class="proof" id="proof"></div>
+  </div>
+</div>
+<button id="replay" type="button">Replay</button>
+<div id="error"></div>
 
-    var maxBlock = run.curve.fills[run.curve.fills.length - 1].block;
-    var yMax = 1;
-    run.curve.fills.forEach(function (f) {
-      var m = spotMultiple(f);
-      if (m > yMax) yMax = m;
-    });
-    yMax = yMax * 1.12;
-
-    function monRatio(num, den) {
-      var scaled = Math.round((num * 10000) / den);
-      var s = String(Math.abs(scaled)).padStart(5, "0");
-      return s.slice(0, -4) + "." + s.slice(-4);
-    }
-
-    function spotMultiple(fill) {
-      return (fill.paymentReserve * cfg.virtualTokenReserve) /
-        (fill.tokenReserve * cfg.virtualPaymentReserve);
-    }
-
-    function yOf(mult) {
-      var t = (mult - 1) / (yMax - 1);
-      if (t < 0) t = 0;
-      if (t > 1) t = 1;
-      return 92 - t * 80;
-    }
-
-    function xOf(block) {
-      return 3 + (block / maxBlock) * 94;
-    }
-
-    function phaseAt(t) {
-      if (t < board.revealAt) return "Commit";
-      if (t < board.clearAt) return "Reveal";
-      if (t < board.settleAt) return "Clearing";
-      return "Settled";
-    }
-
-    function visibleFills(t) {
-      return run.curve.fills.filter(function (f) { return f.t <= t; });
-    }
-
-    function el(tag, cls, text) {
-      var node = document.createElement(tag);
-      if (cls) node.className = cls;
-      if (text != null) node.textContent = text;
-      return node;
-    }
-
-    function paintChart(fills) {
-      var yOpen = yOf(1);
-      var pts = [{ x: 2, y: yOpen, bot: true }];
-      fills.forEach(function (f) {
-        pts.push({ x: xOf(f.block), y: yOf(spotMultiple(f)), bot: f.bot });
-      });
-      function dOf(slice) {
-        if (slice.length < 2) return "";
-        var d = "M " + slice[0].x.toFixed(2) + " " + slice[0].y.toFixed(2);
-        for (var i = 1; i < slice.length; i++) {
-          d += " L " + slice[i].x.toFixed(2) + " " + slice[i - 1].y.toFixed(2);
-          d += " L " + slice[i].x.toFixed(2) + " " + slice[i].y.toFixed(2);
-        }
-        return d;
-      }
-      var split = 1;
-      while (split < pts.length && pts[split].bot) split++;
-      var botPts = pts.slice(0, Math.max(split, 1));
-      var restPts = pts.slice(Math.max(split - 1, 0));
-      var base = yOpen.toFixed(2);
-      chart.innerHTML =
-        '<line class="baseline" x1="0" y1="' + base + '" x2="100" y2="' + base + '"/>' +
-        '<path class="path-bot" d="' + dOf(botPts) + '"/>' +
-        '<path class="path-rest" d="' + dOf(restPts) + '"/>';
-
-      if (fills.length === 0) {
-        dot.hidden = true;
-        spot.className = "spot";
-        spot.innerHTML = monRatio(cfg.virtualPaymentReserve, cfg.virtualTokenReserve) +
-          "<em>" + cfg.paymentSymbol + "</em>";
-        blockLabel.textContent = "\u2014";
-        return;
-      }
-      var last = fills[fills.length - 1];
-      var lastPt = pts[pts.length - 1];
-      dot.hidden = false;
-      dot.style.left = lastPt.x + "%";
-      dot.style.top = lastPt.y + "%";
-      dot.className = last.bot ? "dot bot" : "dot";
-      spot.className = last.bot ? "spot bot" : "spot hum";
-      spot.innerHTML = monRatio(last.pay, last.tokensOut) +
-        "<em>" + cfg.paymentSymbol + "</em>";
-      blockLabel.textContent = "Block " + String(last.block).padStart(2, "0");
-    }
-
-    function paintTape(fills, instant) {
-      var header = el("li", "cols");
-      ["Blk", "", "Tokens", "Price"].forEach(function (label) {
-        header.appendChild(el("span", null, label));
-      });
-      var rows = [header];
-      fills.forEach(function (f, i) {
-        var row = el("li", "row" + (f.bot ? " bot" : "") + (!instant && i === fills.length - 1 ? " fresh" : ""));
-        row.appendChild(el("span", "blk", String(f.block).padStart(2, "0")));
-        var who = el("span", "who");
-        if (f.bot) who.appendChild(el("i", "mark"));
-        who.appendChild(document.createTextNode(f.bot ? "SNIPER" : "0x" + f.id));
-        row.appendChild(who);
-        row.appendChild(el("span", "num", f.tokensOut.toLocaleString("en-US")));
-        row.appendChild(el("span", "px", monRatio(f.pay, f.tokensOut)));
-        rows.push(row);
-      });
-      tape.replaceChildren.apply(tape, rows);
-
-      var botTok = 0;
-      var humTok = 0;
-      fills.forEach(function (f) {
-        if (f.bot) botTok += f.tokensOut;
-        else humTok += f.tokensOut;
-      });
-      var sale = cfg.tokensForSale;
-      shareBot.style.width = (100 * botTok / sale) + "%";
-      shareHum.style.width = (100 * humTok / sale) + "%";
-      shareKey.textContent = botTok ? "SNIPER " + Math.round((100 * botTok) / sale) + "%" : "";
-    }
-
-    function paintBook(t, instant) {
-      var phase = phaseAt(t);
-      var showAlloc = t >= board.settleAt;
-      var header = el("li", "cols");
-      var heads = showAlloc ? ["", "Alloc", "Price"] : ["", "Time", phase === "Reveal" ? "Status" : "Hash"];
-      heads.forEach(function (label) { header.appendChild(el("span", null, label)); });
-      var rows = [header];
-      var shown = 0;
-      run.commits.forEach(function (c, i) {
-        if (c.t > t) return;
-        shown++;
-        var revealed = run.reveals[i].t <= t;
-        var row = el("li", "row" + (c.bot ? " bot" : ""));
-        if (!instant && c.t === lastCommitTime(t)) row.classList.add("fresh");
-        var who = el("span", "who");
-        if (c.bot) who.appendChild(el("i", "mark"));
-        who.appendChild(document.createTextNode(c.bot ? "SNIPER" : "0x" + c.id));
-        row.appendChild(who);
-        if (showAlloc) {
-          row.appendChild(el("span", "mid" + (c.filled ? "" : " none"), c.filled ? c.filled.toLocaleString("en-US") : "\u2014"));
-          row.appendChild(el("span", "end " + (c.filled ? "price" : "refund"), c.filled ? (run.clear.clearing / cfg.priceScale).toFixed(2) : "refund"));
-        } else if (revealed) {
-          row.appendChild(el("span", "mid", plusTime(c.t)));
-          row.appendChild(el("span", "end revealed", "revealed"));
-        } else {
-          row.appendChild(el("span", "mid", plusTime(c.t)));
-          row.appendChild(el("span", "end hash", c.hash));
-        }
-        rows.push(row);
-      });
-      book.replaceChildren.apply(book, rows);
-      return shown;
-    }
-
-    function lastCommitTime(t) {
-      var last = -1;
-      run.commits.forEach(function (c) { if (c.t <= t) last = c.t; });
-      return last;
-    }
-
-    function plusTime(ms) {
-      return "+" + (ms / 1000).toFixed(1) + "s";
-    }
-
-    var priceLanded = false;
-    var seen = { fills: -1, commits: -1, revealed: -1, phase: "", alloc: false };
-
-    function resetSeen() {
-      priceLanded = false;
-      seen = { fills: -1, commits: -1, revealed: -1, phase: "", alloc: false };
-    }
-
-    function paint(t, instant) {
-      var fills = visibleFills(t);
-      var commitsShown = 0;
-      var revealedN = 0;
-      run.commits.forEach(function (c, i) {
-        if (c.t <= t) commitsShown++;
-        if (run.reveals[i].t <= t) revealedN++;
-      });
-      var phase = phaseAt(t);
-      var alloc = t >= board.settleAt;
-      var changed = fills.length !== seen.fills || commitsShown !== seen.commits ||
-        revealedN !== seen.revealed || phase !== seen.phase || alloc !== seen.alloc;
-      if (changed) {
-        var fillsFresh = !instant && fills.length > seen.fills;
-        var commitsFresh = !instant && commitsShown > seen.commits;
-        seen.fills = fills.length;
-        seen.commits = commitsShown;
-        seen.revealed = revealedN;
-        seen.phase = phase;
-        seen.alloc = alloc;
-        paintChart(fills);
-        paintTape(fills, !fillsFresh);
-        paintBook(t, !commitsFresh);
-        phaseLabel.textContent = phase;
-        var showPrice = t >= board.clearAt;
-        auction.classList.toggle("show-price", showPrice);
-        if (showPrice) {
-          heroNum.textContent = (run.clear.clearing / cfg.priceScale).toFixed(2);
-          heroNum.classList.add("is-price");
-          heroUnit.hidden = false;
-          heroUnit.textContent = cfg.paymentSymbol;
-          heroLabel.textContent = "Clearing price";
-          if (!priceLanded && !instant) {
-            heroNum.classList.remove("land");
-            void heroNum.offsetWidth;
-            heroNum.classList.add("land");
-          }
-          priceLanded = true;
-        } else {
-          heroNum.textContent = String(commitsShown).padStart(2, "0");
-          heroNum.classList.remove("is-price", "land");
-          heroUnit.hidden = true;
-          heroLabel.textContent = "Commitments";
-          priceLanded = false;
-        }
-      }
-      progress.style.transform = "scaleX(" + Math.min(1, t / board.clipMs) + ")";
-    }
-
-    var elapsed = 0;
-    var lastNow = 0;
-    var playing = false;
-    var raf = 0;
-
-    function frame(now) {
-      if (!playing) return;
-      if (!lastNow) lastNow = now;
-      elapsed += now - lastNow;
-      lastNow = now;
-      if (elapsed >= board.clipMs) {
-        elapsed = board.clipMs;
-        paint(elapsed, false);
-        playing = false;
-        document.body.classList.add("done");
-        return;
-      }
-      paint(elapsed, false);
-      raf = requestAnimationFrame(frame);
-    }
-
-    function play() {
-      cancelAnimationFrame(raf);
-      document.body.classList.remove("done");
-      elapsed = 0;
-      lastNow = 0;
-      resetSeen();
-      playing = true;
-      paint(0, true);
-      raf = requestAnimationFrame(frame);
-    }
-
-    replay.addEventListener("click", play);
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "r" || event.key === "R") play();
-    });
-
-    var params = new URLSearchParams(location.search);
-    var at = params.get("at");
-    if (at != null) {
-      var t = Math.max(0, Math.min(board.clipMs, Number(at)));
-      document.body.classList.add("seek");
-      if (t >= board.clipMs) document.body.classList.add("done");
-      paint(t, true);
-    } else {
-      var start = function () { play(); };
-      var fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-      Promise.race([
-        fonts.catch(function () {}),
-        new Promise(function (resolve) { setTimeout(resolve, 700); })
-      ]).then(start);
-    }
-  </script>
+<!-- results.js is written by run.sh next to results.json, so the page also works from file:// -->
+<script src="results.js" onerror="void 0"></script>
+<script src="harness.js"></script>
 </body>
 </html>

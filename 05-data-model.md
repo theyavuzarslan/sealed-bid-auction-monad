@@ -4,7 +4,7 @@ Entities the engine stores onchain and what the indexer derives, with fields and
 
 Status: draft
 
-Fields below are the **target design** (decisions 22–29). The code on `agent/fork` still differs — see `06-api.md` for what exists today. Field names are proposals until code matches.
+Fields below match `AuctionEngine.Round`, `Bid`, `Vest` and the ledger structs in `contracts/src` (23 Sep); `getRound(roundId)` returns the whole round. Exit-Priority fields describe `ExitAuction`, which is in progress.
 
 ## Round (Auction)
 

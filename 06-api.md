@@ -8,30 +8,56 @@ Status: draft
 
 TODO: not found in source. No backend endpoints exist yet. If the indexer exposes an API, document it here as method / path / request / response / status codes.
 
-## Contract interface — implemented (22 Sep)
+## Contract interface — implemented (23 Sep)
 
-What exists in code, on `agent/fork` [src: sba-agents/fork/contracts/src/AuctionEngine.sol]. It differs from the proposal below in three places: `price` is really `buyAmount` (tokens wanted), `claim` pays only the MON leg, and there is no `seedLP`. Security status: see [AUDIT.md](AUDIT.md) — `ClearingCore` must not be deployed as-is.
+Source of truth: `contracts/src/AuctionEngine.sol` with `SealingLayer.sol`, `DepositLedger.sol` and `UniformClearing.sol` [src: contracts/src]. ABI: `contracts/abi/AuctionEngine.json`. All state-changing functions share one reentrancy lock. Revert strings play the role of status codes.
 
-| Function | Caller | Notes |
-| --- | --- | --- |
-| `openRound(preset, auctioningToken, biddingToken, sellAmount, minBidSize, depositAmount, commitEnd, revealEnd, allowlistRoot, autoLP)` | Anyone | Takes no token custody (AUDIT.md H1); `allowlistRoot` and `autoLP` stored but not enforced |
-| `commit(roundId, hash)` payable | Bidder | `msg.value` must equal the round's `depositAmount` |
-| `reveal(roundId, price, quantity, salt)` | Bidder | Places `order(buyAmount = price, sellAmount = quantity)` in the core |
-| `slashUnrevealed(roundId, bidders[])` | Anyone | After `revealEnd`; sends 100% of each deposit to `slashDestination` |
-| `precalculate(roundId, iterationSteps)` | Anyone | Multi-transaction settlement, after `revealEnd` |
-| `settle(roundId)` | Anyone | After `revealEnd`; emits `Cleared` |
-| `claim(roundId)` | Revealed bidder | Sends the filled MON to `fillDestination`, refunds the rest; records `fillEntitlement` only |
+### Lifecycle
 
-**Pending changes (decided or proposed 22 Sep, not implemented):**
-- `reveal(roundId, price, amount, salt)`. `price` = max MON wei per 1e18 token units, a multiple of `tickSize`; `amount` = tokens wanted. Preimage `keccak256(abi.encode(price, amount, salt, msg.sender))`.
-- Clearing becomes Zama-style inside the engine (decision 22, decided 22 Sep): winners pay the clearing price P, get their full amount (pro-rata at P) and are refunded the rest.
-- `openRound` gains `tickSize`, `reservePrice`, `lpShareBps`, `dexSplits`, and lock terms, and pulls `sellAmount + tokenReserve` tokens from the creator.
-- New `seedLP(roundId)` (anyone, after settle) and `withdrawProceeds(roundId)` (creator). `claim` reverts until seeded (decision 27).
-- `commit(roundId, hash, bytes32[] proof, bytes note)`: `proof` for allowlisted Raise rounds (empty otherwise); `note` is the encrypted bid backup, emitted and not stored (decisions 32–33).
-- `burnUnrevealed(roundId)` replaces `slashUnrevealed(roundId, bidders[])` (decision 30).
-- Raise: `claimVested(roundId)` (decision 32).
-- Exit-Priority: `openExitRound()`; `reveal` pulls the shares; `claim` redeems winners at the clearing discount and returns the rest (decision 31).
-- LP lock calls GoPlus `UniV3LPLocker.lock(INonfungiblePositionManager nftManager_, uint256 nftId_, address owner_, address collector_, uint256 endTime_, string feeName_) payable returns (uint256 lockId)` at `0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d` [src: https://docs.gopluslabs.io/page/goplus-safetoken-locker].
+| Function | Caller | When | Effect | Main reverts |
+| --- | --- | --- | --- | --- |
+| `openRound(OpenParams)` | Creator | — | Validates the preset, pulls `sellAmount + sellAmount × lpShareBps / 10000` tokens, opens the book | `degen needs LP`, `adapter not allowed`, `splits must sum to 100%`, `reserve off grid`, `fee-on-transfer token`, `bad windows` |
+| `commit(roundId, hash, proof, note)` payable | Bidder | before `commitEnd` | Stores the hash, locks exactly `depositAmount`, emits `note` without storing it | `wrong deposit`, `not on allowlist`, `already committed`, `note too long`, `commit window closed` |
+| `reveal(roundId, price, amount, salt)` / `revealWithHint(…, hint)` | Bidder | `commitEnd` to `revealEnd` | Checks the hash with `msg.sender`, validates the bid, adds it to the book | `hash mismatch`, `price off grid or below reserve`, `below minimum bid`, `bid exceeds deposit` |
+| `burnUnrevealed(roundId)` | Anyone | after `revealEnd` | Burns `(commits − reveals) × deposit` | `nothing to burn` |
+| `settle(roundId, maxSteps)` | Anyone | after `revealEnd` | Walks up to `maxSteps` price levels; returns `true` once the clearing price is fixed | `reveal window open`, `not settleable` |
+| `seedLP(roundId)` | Anyone | once settled | Seeds and locks the LP, disposes of unsold supply, opens claims | `not settled`, `already seeded`, adapter reverts |
+| `forceOpenClaims(roundId)` | Anyone | `lpGracePeriod` after settlement | Opens claims while seeding is blocked; `seedLP` stays callable and then seeds at the pool's own price | `grace period not over`, `claims already open` |
+| `claim(roundId)` | Revealed bidder | claims open | Tokens won (or the TGE share on a vesting Raise) plus refund of `deposit − paid` | `claims not open`, `not revealed`, `already settled` |
+| `claimVested(roundId)` | Raise winner | after claim | Releases tokens vested since the last call | `no vesting`, `nothing vested` |
+| `withdrawProceeds(roundId)` | Creator | after `seedLP` | Pays payments collected so far minus MON that went to the LP | `not creator`, `LP not seeded`, `nothing to withdraw` |
+| `sweepDust(roundId)` | Anyone | every revealed bidder has claimed | Disposes of pro-rata rounding dust like unsold supply | `claims outstanding` |
+
+### Views
+
+| Function | Returns |
+| --- | --- |
+| `getRound(roundId)` | The whole `Round` struct: terms, lifecycle flags, accounting |
+| `splitsOf(roundId)` | The DEX split |
+| `clearingOf(roundId)` | `settled, clearingPrice, sold, soldLowerBound, oversubscribed, totalQty, levelCount` |
+| `quote(roundId, bidder)` | `allocated, paid, refund` once settled |
+| `findHint(roundId, price)` | The existing price level just above `price`, to pass to `revealWithHint` |
+| `vestedOf(roundId, bidder)`, `creatorAvailable(roundId)`, `roundBalance(roundId)`, `ledgers(roundId)`, `accounts(roundId, bidder)`, `commitments(roundId, bidder)`, `bids(roundId, bidder)` | Accounting detail |
+
+### Events
+
+| Event | Fields |
+| --- | --- |
+| `RoundOpened` | roundId, creator, token, preset, allowlistURI |
+| `Committed` | roundId, bidder, hash, note |
+| `Revealed` | roundId, bidder, price, amount |
+| `UnrevealedBurned` | roundId, count, amount |
+| `Cleared` | roundId, clearingPrice, sold, oversubscribed |
+| `LPSeeded` | roundId, adapter, positionManager, nftId, tokenAmount, monAmount, lockId |
+| `ClaimsOpened` | roundId, lpSeeded |
+| `UnsoldDisposed` | roundId, to, amount |
+| `Claimed` | roundId, bidder, allocated, paid, refund |
+| `VestedClaimed` | roundId, bidder, amount |
+| `ProceedsWithdrawn` | roundId, amount |
+
+### Not yet implemented
+- The Uniswap v3 adapter and the fork tests against the real GoPlus locker (in progress).
+- `ExitAuction` for Exit-Priority (in progress; decision 34).
 
 ## Contract interface (original proposal, superseded)
 
@@ -76,18 +102,6 @@ Note bug #7: the first swap after seeding is sandwichable; mitigation TODO (see 
 | `openExitRound()` | Keeper every N blocks | — | Opens a Vault-preset round with the period's exit capacity [src: Monad Sealed-Bid Auction Engine.md] | previous round not settled |
 | `redeemFilled(roundId)` | Exiting holder | — | Redeems from vault at clearing discount | not settled |
 | `accrueToStayers(roundId)` | Inside settle | — | Credits discount to remaining holders [src: Monad Sealed-Bid Auction Engine.md] | — |
-
-## Events (proposed)
-
-| Event | Fields |
-| --- | --- |
-| `RoundOpened` | roundId, preset, sellAmount, commitEnd, revealEnd |
-| `Committed` | roundId, bidder, hash |
-| `Revealed` | roundId, bidder, price, amount |
-| `Cleared` | roundId, clearingPrice, filledVolume |
-| `Claimed` | roundId, bidder, filled, refunded |
-| `Slashed` | roundId, bidder, amount |
-| `LPSeeded` | roundId, pool, tokenAmount, proceedsAmount, lockedUntil |
 
 ## Hash preimage encoding
 
