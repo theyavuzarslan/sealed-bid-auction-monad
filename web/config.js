@@ -50,6 +50,7 @@ export default {
   creatorDefaults: {
     dexFee: 3000,
     lockFeeTier: "DEFAULT",
+    lockDays: "180", // Raise LP lock from seeding; the contract's minimum is 30 days
     lpSharePct: "20",
     tgePct: "25",
     cliffDays: "0",

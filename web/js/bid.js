@@ -53,6 +53,12 @@ export function maxSpend(price, amount) {
   return x === 0n ? 0n : (x - 1n) / PRICE_SCALE + 1n;
 }
 
+// ceil(reservePrice × amount / 1e18): what the bid is worth at the reserve price. The minimum bid
+// applies to this, not to the max spend (AUDIT.md second review, L3).
+export function reserveValue(round, amount) {
+  return maxSpend(round.reservePrice, amount);
+}
+
 // Every condition AuctionEngine._onReveal enforces, in the same order.
 // round: { tickSize, reservePrice, minBidSize, depositAmount } as BigInt.
 // Returns [] when the bid will pass reveal; otherwise [{code, message}].
@@ -66,14 +72,28 @@ export function bidProblems(round, price, amount) {
   if (price % BigInt(round.tickSize) !== 0n) add("OFF_TICK", "Price is not on the round's tick grid.");
   if (price < BigInt(round.reservePrice)) add("BELOW_RESERVE", "Price is below the reserve price.");
   if (amount === 0n) add("ZERO_AMOUNT", "Token amount must be above zero.");
-  const spend = maxSpend(price, amount);
-  if (amount !== 0n && spend < BigInt(round.minBidSize)) {
-    add("BELOW_MIN_BID", "Max spend is below the minimum bid size.");
-  }
-  if (spend >= BigInt(round.depositAmount)) {
+  if (maxSpend(price, amount) >= BigInt(round.depositAmount)) {
     add("AT_OR_ABOVE_DEPOSIT", "Max spend must be strictly below the deposit.");
   }
+  if (amount !== 0n && reserveValue(round, amount) < BigInt(round.minBidSize)) {
+    add("BELOW_MIN_BID", "Token amount is too small: at the reserve price it is worth less than the minimum bid.");
+  }
   return problems;
+}
+
+// Smallest amount with ceil(reserve × amount / 1e18) >= minBidSize.
+export function minAmount(round) {
+  const m = BigInt(round.minBidSize);
+  if (m === 0n) return 1n;
+  return ((m - 1n) * PRICE_SCALE) / BigInt(round.reservePrice) + 1n;
+}
+
+// Largest amount with ceil(price × amount / 1e18) < depositAmount.
+export function maxAmountAt(round, price) {
+  price = BigInt(price);
+  if (price === 0n) return UINT96_MAX;
+  const a = ((BigInt(round.depositAmount) - 1n) * PRICE_SCALE) / price;
+  return a > UINT96_MAX ? UINT96_MAX : a;
 }
 
 // keccak256(abi.encode(uint96 price, uint96 amount, bytes32 salt, address bidder)).

@@ -40,6 +40,10 @@ export function fmtTime(sec) {
   return new Date(Number(sec) * 1000).toLocaleString();
 }
 
+export function plural(n, word) {
+  return BigInt(n) === 1n ? word : `${word}s`;
+}
+
 export function fmtPct(bps) {
   return `${(Number(bps) / 100).toString()}%`;
 }

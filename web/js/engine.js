@@ -1,11 +1,9 @@
-// AuctionEngine client shared by the browser UI and the node e2e script.
+// AuctionEngine contract calls, shared by the browser UI and the node e2e script. No DOM.
 // `request(method, params)` is any JSON-RPC transport (injected wallet or plain fetch).
 // Transaction builders return {to, data, value}; the caller sends them.
 import ENGINE_ABI from "./abi/AuctionEngine.js";
 import { makeInterface, decodeRevert } from "./abicoder.js";
-import { toQuantity, sameAddress } from "./hex.js";
-import { commitHash } from "./bid.js";
-import { decryptNote, keyFromSignature, isEmptyNote } from "./note.js";
+import { toQuantity } from "./hex.js";
 
 export const engineIface = makeInterface(ENGINE_ABI);
 
@@ -20,6 +18,7 @@ export const erc20Iface = makeInterface(ERC20_ABI);
 
 export const NO_HINT = (1n << 256n) - 1n;
 export const PRESET = { Degen: 0n, Raise: 1n };
+export const ZERO32 = "0x" + "00".repeat(32);
 
 // Extracts a revert reason from a JSON-RPC error (anvil, MetaMask and most nodes put it in error.data).
 export function revertReason(err) {
@@ -61,14 +60,16 @@ export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }
 
   const word = (v) => "0x" + BigInt(v).toString(16).padStart(64, "0");
   const addrTopic = (a) => "0x" + a.slice(2).toLowerCase().padStart(64, "0");
-
   const tx = (name, args, value = 0n) => ({ to: address, data: iface.encodeFunction(name, args), value });
 
-  return {
+  const engine = {
     address,
     iface,
     call,
     getLogs,
+    decodeReceiptLogs: (rc) => (rc.logs || []).map((l) => {
+      try { return l.address.toLowerCase() === address.toLowerCase() ? iface.decodeLog(l) : null; } catch { return null; }
+    }).filter(Boolean),
 
     // ── reads ──
     roundCount: () => call("roundCount"),
@@ -76,15 +77,18 @@ export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }
     clearingOf: (id) => call("clearingOf", [id]),
     ledgers: (id) => call("ledgers", [id]),
     commitment: (id, who) => call("commitments", [id, who]),
-    account: (id, who) => call("accounts", [id, who]),
+    account: (id, who) => call("accounts", [id, who]), // refund settled?
+    tokensClaimed: (id, who) => call("tokensClaimed", [id, who]),
     bidOf: (id, who) => call("bids", [id, who]),
     quote: (id, who) => call("quote", [id, who]),
     vestedOf: (id, who) => call("vestedOf", [id, who]),
     creatorAvailable: (id) => call("creatorAvailable", [id]),
+    roundBalance: (id) => call("roundBalance", [id]),
     findHint: (id, price) => call("findHint", [id, price]),
     splitsOf: (id) => call("splitsOf", [id]),
     lpGracePeriod: () => call("lpGracePeriod"),
-    maxNoteLength: () => call("MAX_NOTE_LENGTH"),
+    minRaiseLock: () => call("MIN_RAISE_LOCK"),
+    isAdapter: (a) => call("isAdapter", [a]),
 
     async roundOpened(id) {
       const logs = await getLogs([iface.eventTopic("RoundOpened"), word(id)]);
@@ -117,46 +121,27 @@ export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }
     tx: {
       openRound: (p) => tx("openRound", [p]),
       commit: (id, hash, proof, note, deposit) => tx("commit", [id, hash, proof, note], BigInt(deposit)),
-      // A stale or invalid hint only costs gas (the contract falls back to walking the book).
-      reveal: (id, bid, hint) => (hint == null || BigInt(hint) === NO_HINT
-        ? tx("reveal", [id, bid.price, bid.amount, bid.salt])
-        : tx("revealWithHint", [id, bid.price, bid.amount, bid.salt, hint])),
+      // Always revealWithHint: a hint from findHint makes insertion O(1) instead of walking the book.
+      // A stale or NO_HINT value is safe: the contract falls back to walking.
+      revealWithHint: (id, bid, hint) => tx("revealWithHint", [id, bid.price, bid.amount, bid.salt, BigInt(hint)]),
       settle: (id, maxSteps) => tx("settle", [id, maxSteps]),
-      seedLP: (id) => tx("seedLP", [id]),
-      forceOpenClaims: (id) => tx("forceOpenClaims", [id]),
       burnUnrevealed: (id) => tx("burnUnrevealed", [id]),
+      seedLP: (id) => tx("seedLP", [id]),
+      abandonLP: (id) => tx("abandonLP", [id]),
+      disposeUnsold: (id) => tx("disposeUnsold", [id]),
       claim: (id) => tx("claim", [id]),
+      claimRefund: (id, bidder) => tx("claimRefund", [id, bidder]),
+      claimTokens: (id, bidder) => tx("claimTokens", [id, bidder]),
       claimVested: (id) => tx("claimVested", [id]),
       withdrawProceeds: (id) => tx("withdrawProceeds", [id]),
       sweepDust: (id) => tx("sweepDust", [id]),
     },
+
+    // findHint at the latest state, then revealWithHint.
+    async buildReveal(id, bid) {
+      const hint = await engine.findHint(id, bid.price);
+      return engine.tx.revealWithHint(id, bid, hint);
+    },
   };
-}
-
-// Before any reveal: the bid must hash to the stored commitment, or the reveal reverts and
-// the deposit is burned later. Returns {ok, onchain, local}.
-export async function checkBidAgainstCommitment(engine, roundId, bidder, bid) {
-  const c = await engine.commitment(roundId, bidder);
-  const local = commitHash(bid.price, bid.amount, bid.salt, bidder);
-  return { ok: c.hash.toLowerCase() === local.toLowerCase(), onchain: c.hash, local, revealed: c.revealed };
-}
-
-// Recovery path (decision 33): signature -> key -> decrypt this bidder's Committed note ->
-// recompute the hash -> compare with the stored commitment. Throws with a `code`.
-export async function recoverBidFromNote({ engine, chainId, roundId, bidder, signature }) {
-  const fail = (code, message) => Object.assign(new Error(message), { code });
-  const log = await engine.committedLog(roundId, bidder);
-  if (!log) throw fail("NO_COMMIT", "No commitment from this wallet in this round.");
-  if (!sameAddress(log.args.bidder, bidder)) throw fail("NO_COMMIT", "Commitment belongs to another address.");
-  if (isEmptyNote(log.args.note)) throw fail("NO_NOTE", "This commitment carries no recovery note. Use your backup file.");
-  const key = await keyFromSignature(signature);
-  let bid;
-  try {
-    bid = await decryptNote(key, log.args.note, { chainId, engine: engine.address, roundId, bidder });
-  } catch (e) {
-    throw fail("DECRYPT_FAILED", "The recovery note did not decrypt with this wallet's signature. Use your backup file.");
-  }
-  const check = await checkBidAgainstCommitment(engine, roundId, bidder, bid);
-  if (!check.ok) throw fail("HASH_MISMATCH", "The recovered bid does not match your commitment. Use your backup file.");
-  return { ...bid, hash: check.local, commitTx: log.transactionHash };
+  return engine;
 }

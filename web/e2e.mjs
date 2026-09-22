@@ -2,12 +2,16 @@
 // Needs Foundry (anvil, forge) on PATH or in ~/.foundry/bin. Uses port E2E_PORT (default 8546).
 //
 // Starts anvil, deploys with contracts/script/DeployLocal.s.sol, then drives rounds through the
-// same modules the browser UI uses (web/js/bid.js, note.js, merkle.js, engine.js):
-//   Degen: commit (with encrypted notes) → reveal (local bid, and one recovered from the on-chain
-//          note) with hints → burnUnrevealed → settle in single steps → seedLP → quote → claim →
-//          withdrawProceeds → sweepDust
-//   Raise: Merkle allowlist accepted on-chain (and rejected for outsiders) → reveal → settle →
-//          seedLP → claim with TGE share → claimVested after the vesting period
+// same modules the browser UI uses (bid.js, note.js, recovery.js, merkle.js, launch.js,
+// round-model.js, engine.js):
+//   Round 1, Degen: seal (wallet-signed note) → commit → reveal from the local copy and from the
+//     on-chain note, always with findHint → burnUnrevealed → settle one level per tx → refund by a
+//     third party before seeding → seedLP → claimTokens / claim → disposeUnsold → sweepDust →
+//     withdrawProceeds; bids the UI blocks are shown to revert at reveal.
+//   Round 2, Raise: launch.js params with allowlist + vesting + 30-day lock; Merkle proof accepted
+//     on-chain and rejected for outsiders; claim with TGE share; claimVested; openRound reverts that
+//     launch.js also flags.
+//   Round 3, Degen: seeding blocked → abandonLP after the grace period → tokens delivered.
 import { webDir } from "./node-env.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -17,13 +21,19 @@ import os from "node:os";
 const bid = await import("./js/bid.js");
 const note = await import("./js/note.js");
 const merkle = await import("./js/merkle.js");
-const { makeEngine, recoverBidFromNote, checkBidAgainstCommitment, revertReason, PRESET, NO_HINT } = await import("./js/engine.js");
+const recovery = await import("./js/recovery.js");
+const launch = await import("./js/launch.js");
+const rm = await import("./js/round-model.js");
+const { makeEngine, revertReason, PRESET, ZERO32 } = await import("./js/engine.js");
+const { makeInterface } = await import("./js/abicoder.js");
 const cfg = (await import("./config.js")).default;
 
 const PORT = Number(process.env.E2E_PORT || 8546);
 const RPC = `http://127.0.0.1:${PORT}`;
 const env = { ...process.env, PATH: `${path.join(os.homedir(), ".foundry/bin")}:${process.env.PATH}` };
 const contractsDir = path.join(webDir, "../contracts");
+const BURN = "0x000000000000000000000000000000000000dEaD";
+const E18 = 10n ** 18n;
 
 let pass = 0, fail = 0;
 function check(name, actual, expected) {
@@ -44,41 +54,35 @@ async function request(method, params = []) {
   if (j.error) throw Object.assign(new Error(j.error.message), { data: j.error.data, code: j.error.code });
   return j.result;
 }
-
+const txObj = (from, t) => ({ from, to: t.to, data: t.data, value: "0x" + BigInt(t.value ?? 0n).toString(16) });
 // Simulate first (to surface revert reasons), then send from an unlocked anvil account.
 async function send(from, t) {
-  const tx = { from, to: t.to, data: t.data, value: "0x" + BigInt(t.value ?? 0n).toString(16) };
-  await request("eth_call", [tx, "latest"]);
-  const hash = await request("eth_sendTransaction", [tx]);
-  let rc = null;
-  for (let i = 0; !rc; i++) {
-    rc = await request("eth_getTransactionReceipt", [hash]);
-    if (!rc) { if (i > 100) throw new Error(`no receipt for ${hash}`); await new Promise((r) => setTimeout(r, 20)); }
+  await request("eth_call", [txObj(from, t), "latest"]);
+  const hash = await request("eth_sendTransaction", [txObj(from, t)]);
+  for (let i = 0; ; i++) {
+    const rc = await request("eth_getTransactionReceipt", [hash]);
+    if (rc) { if (rc.status !== "0x1") throw new Error(`reverted: ${hash}`); return rc; }
+    if (i > 200) throw new Error(`no receipt for ${hash}`);
+    await new Promise((r) => setTimeout(r, 20));
   }
-  if (rc.status !== "0x1") throw new Error(`reverted: ${hash}`);
-  return rc;
 }
 async function expectRevert(name, from, t, reason) {
   try {
-    await request("eth_call", [{ from, to: t.to, data: t.data, value: "0x" + BigInt(t.value ?? 0n).toString(16) }, "latest"]);
+    await request("eth_call", [txObj(from, t), "latest"]);
     check(name, "no revert", reason);
   } catch (e) {
     check(name, revertReason(e), reason);
   }
 }
 const now = async () => BigInt((await request("eth_getBlockByNumber", ["latest", false])).timestamp);
-const warpTo = async (ts) => {
-  await request("evm_setNextBlockTimestamp", ["0x" + BigInt(ts).toString(16)]);
-  await request("evm_mine", []);
-};
+const warpTo = async (ts) => { await request("evm_setNextBlockTimestamp", ["0x" + BigInt(ts).toString(16)]); await request("evm_mine", []); };
 const balance = async (a) => BigInt(await request("eth_getBalance", [a, "latest"]));
-const signBackup = (who, chainId, engine, roundId) =>
-  request("eth_signTypedData_v4", [who, JSON.stringify(note.backupTypedData({ chainId, engine, roundId }))]);
-const E18 = 10n ** 18n;
+const signerFor = (who) => (typed) => request("eth_signTypedData_v4", [who, JSON.stringify(typed)]);
+const events = (engine, rc, name) => engine.decodeReceiptLogs(rc).filter((e) => e.event === name);
 
 let anvil;
 try {
-  // ── Chain + deploy ──
+  // ── chain + deploy ──
   anvil = spawn("anvil", ["--port", String(PORT), "--silent"], { env, stdio: "ignore" });
   for (let i = 0; ; i++) {
     try { await request("eth_chainId"); break; } catch { if (i > 50) throw new Error("anvil did not start"); await new Promise((r) => setTimeout(r, 100)); }
@@ -93,116 +97,101 @@ try {
   }
 
   const engine = makeEngine({ request, address: local.auctionEngine });
-  const [creator, alice, bob, carol, dave, eve, frank, gina] = await request("eth_accounts");
+  const [creator, alice, bob, carol, dave, eve, frank, gina, henry] = await request("eth_accounts");
   const token = local.token;
+  const tokenInfo = { address: token, decimals: Number(await engine.erc20.decimals(token)) };
+  const meta = { grace: await engine.lpGracePeriod() };
+  const baseForm = {
+    preset: "Degen", sell: "1000", deposit: "1", minBid: "0.01", tick: "0.0001", reserve: "0.0001", commitMinutes: "60",
+    revealMinutes: "60", lpOn: true, lpSharePct: "20", splits: [{ adapter: local.adapter, pct: "100", fee: "3000" }],
+    lockFeeTier: "DEFAULT", lockDays: "30", allowOn: false, tree: null, allowlistURI: "", vestOn: false, tgePct: "25", cliffDays: "0", vestDays: "90",
+  };
+  async function open(form) {
+    const { params, problems, need } = launch.buildOpenParams(form, tokenInfo, Number(await now()));
+    if (problems.length) throw new Error("launch.js rejected params: " + problems.join("; "));
+    await send(creator, engine.erc20.approveTx(token, engine.address, need));
+    const rc = await send(creator, engine.tx.openRound(params));
+    return { id: events(engine, rc, "RoundOpened")[0].args.roundId, params };
+  }
+  async function sealAndCommit(roundId, round, who, price, amount, proof = []) {
+    const ctx = { chainId, engine: engine.address, roundId, bidder: who };
+    const sealed = await recovery.sealBid({ price, amount, ctx, signTypedData: signerFor(who) });
+    await send(who, engine.tx.commit(roundId, sealed.hash, proof, sealed.note, round.depositAmount));
+    return sealed;
+  }
 
   // ═══ Round 1: Degen ═══════════════════════════════════════════════════════
-  const t0 = await now();
-  const degen = {
-    preset: PRESET.Degen, token, sellAmount: 1000n * E18, depositAmount: E18, minBidSize: E18 / 100n,
-    tickSize: 10n ** 14n, reservePrice: 10n ** 14n, commitEnd: t0 + 3600n, revealEnd: t0 + 7200n,
-    allowlistRoot: "0x" + "00".repeat(32), allowlistURI: "", lpShareBps: 2000n,
-    dexSplits: [{ adapter: local.adapter, bps: 10000n, fee: 3000n }],
-    lockEnd: 0n, lockFeeTier: "DEFAULT", tgeBps: 0n, cliff: 0n, vestDuration: 0n,
-  };
-  const need = degen.sellAmount + degen.sellAmount * degen.lpShareBps / 10000n;
-  await send(creator, engine.erc20.approveTx(token, engine.address, need));
-  check("allowance covers sell amount + LP reserve", await engine.erc20.allowance(token, creator, engine.address), need);
-  const openRc = await send(creator, engine.tx.openRound(degen));
-  const opened = openRc.logs.map((l) => engine.iface.decodeLog(l)).find((l) => l?.event === "RoundOpened");
-  const r1 = opened.args.roundId;
+  const { id: r1, params: p1 } = await open(baseForm);
   const round1 = await engine.getRound(r1);
-  check("getRound decodes creator/deposit/tick", `${round1.creator}/${round1.depositAmount}/${round1.tickSize}/${round1.lockFeeTier}`,
-    `${creator.toLowerCase()}/${E18}/${10n ** 14n}/DEFAULT`);
+  check("getRound decodes the new Round (lockDuration, lpAbandoned, unsoldOwed)",
+    `${round1.creator}/${round1.depositAmount}/${round1.lockDuration}/${round1.lpAbandoned}/${round1.unsoldOwed}/${round1.lockFeeTier}`,
+    `${creator.toLowerCase()}/${E18}/0/false/0/DEFAULT`);
   check("splitsOf decodes the default DEX split", JSON.stringify((await engine.splitsOf(r1)).map((s) => [s.adapter, String(s.bps), String(s.fee)])),
     JSON.stringify([[local.adapter.toLowerCase(), "10000", "3000"]]));
 
-  // Bids: A 600 @ 5e14, B 500 @ 4e14, C 300 @ 4e14, D 400 @ 3e14; E commits and never reveals;
-  // F seals a bid the UI would block (max spend ≥ deposit) to show the contract agrees.
+  // A 600 @ 5e14, B 500 @ 4e14, C 300 @ 4e14, D 400 @ 3e14; E commits and never reveals.
+  // F (max spend == deposit) and H (worth less than minBid at the reserve) are bids the UI blocks.
   const plan = [
     { who: alice, price: 5n * 10n ** 14n, amount: 600n * E18 },
     { who: bob, price: 4n * 10n ** 14n, amount: 500n * E18 },
     { who: carol, price: 4n * 10n ** 14n, amount: 300n * E18 },
     { who: dave, price: 3n * 10n ** 14n, amount: 400n * E18 },
     { who: eve, price: 3n * 10n ** 14n, amount: 100n * E18 },
-    { who: frank, price: 10n ** 15n, amount: 1000n * E18 },
+    { who: frank, price: 10n ** 15n, amount: 1000n * E18, blocked: "AT_OR_ABOVE_DEPOSIT", reason: "bid exceeds deposit" },
+    { who: henry, price: 10n ** 15n, amount: 50n * E18, blocked: "BELOW_MIN_BID", reason: "below minimum bid" },
   ];
-  for (const p of plan.slice(0, 5)) check(`bidProblems empty for ${p.who.slice(0, 8)}`, bid.bidProblems(round1, p.price, p.amount).length, 0);
-  check("bidProblems blocks frank (max spend == deposit)", bid.bidProblems(round1, plan[5].price, plan[5].amount).map((x) => x.code).join(), "AT_OR_ABOVE_DEPOSIT");
-
-  // Determinism check, as the UI does on first use per wallet: sign twice, compare.
-  const s1 = await signBackup(bob, chainId, engine.address, r1);
-  const s2 = await signBackup(bob, chainId, engine.address, r1);
-  check("anvil signer is deterministic (sign twice)", note.signaturesMatch(s1, s2), true);
-
-  const sealed = new Map();
   for (const p of plan) {
-    const salt = bid.generateSalt();
-    const b = { price: p.price, amount: p.amount, salt };
-    const hash = bid.commitHash(p.price, p.amount, salt, p.who);
-    const key = await note.keyFromSignature(await signBackup(p.who, chainId, engine.address, r1));
-    const n = await note.encryptNote(key, b, { chainId, engine: engine.address, roundId: r1, bidder: p.who });
-    await send(p.who, engine.tx.commit(r1, hash, [], n, round1.depositAmount));
-    sealed.set(p.who, { ...b, hash });
+    check(`bidProblems for ${p.who.slice(0, 8)}: ${p.blocked ?? "none"}`, bid.bidProblems(round1, p.price, p.amount).map((x) => x.code).join(), p.blocked ?? "");
   }
+  const sealed = new Map();
+  for (const p of plan) sealed.set(p.who, await sealAndCommit(r1, round1, p.who, p.price, p.amount));
+  check("anvil signer is deterministic: notes are on", [...sealed.values()].every((s) => s.determinism === recovery.DETERMINISTIC && s.note !== "0x"), true);
   await expectRevert("commit with the wrong deposit reverts", gina, engine.tx.commit(r1, "0x" + "11".repeat(32), [], "0x", E18 - 1n), "wrong deposit");
   await expectRevert("second commit from one address reverts", alice, engine.tx.commit(r1, "0x" + "11".repeat(32), [], "0x", E18), "already committed");
-  const led = await engine.ledgers(r1);
-  check("commitment count (public by design)", led.commits, 6n);
-  const cl = await engine.committedLogs(r1);
-  check("Committed logs carry fixed-length notes", cl.every((l) => (l.args.note.length - 2) / 2 === note.NOTE_LEN), true);
+  check("commitment count (public by design)", (await engine.ledgers(r1)).commits, 7n);
+  check("Committed logs carry fixed-length notes", (await engine.committedLogs(r1)).every((l) => (l.args.note.length - 2) / 2 === note.NOTE_LEN), true);
 
   // Reveal window.
-  await warpTo(degen.commitEnd);
-  // Alice: bid from "localStorage" (kept in memory here), checked against the commitment first.
+  await warpTo(p1.commitEnd);
   const aliceBid = sealed.get(alice);
-  check("local bid matches on-chain commitment", (await checkBidAgainstCommitment(engine, r1, alice, aliceBid)).ok, true);
-  await send(alice, engine.tx.reveal(r1, aliceBid, await engine.findHint(r1, aliceBid.price)));
-  // Bob: recovery from the wallet only — re-sign, fetch Committed, decrypt, compare hash, reveal.
-  const bobRecovered = await recoverBidFromNote({ engine, chainId, roundId: r1, bidder: bob, signature: await signBackup(bob, chainId, engine.address, r1) });
+  check("local bid matches on-chain commitment", (await recovery.checkBidAgainstCommitment(engine, r1, alice, aliceBid)).ok, true);
+  const revealTx = await engine.buildReveal(r1, aliceBid);
+  check("reveals always use revealWithHint", revealTx.data.slice(0, 10), engine.iface.encodeFunction("revealWithHint", [1n, 1n, 1n, ZERO32, 1n]).slice(0, 10));
+  await send(alice, revealTx);
+  // Bob: from the wallet only — re-sign, fetch Committed, decrypt, compare hash, reveal.
+  const bobSig = await signerFor(bob)(note.backupTypedData({ chainId, engine: engine.address, roundId: r1 }));
+  const bobRecovered = await recovery.recoverBidFromNote({ engine, chainId, roundId: r1, bidder: bob, signature: bobSig });
   check("recovered bid (Bob) == sealed bid", `${bobRecovered.price}/${bobRecovered.amount}/${bobRecovered.salt}`,
     `${sealed.get(bob).price}/${sealed.get(bob).amount}/${sealed.get(bob).salt}`);
   let wrongKey = null;
-  try { await recoverBidFromNote({ engine, chainId, roundId: r1, bidder: bob, signature: await signBackup(carol, chainId, engine.address, r1) }); } catch (e) { wrongKey = e.code; }
+  const carolSig = await signerFor(carol)(note.backupTypedData({ chainId, engine: engine.address, roundId: r1 }));
+  try { await recovery.recoverBidFromNote({ engine, chainId, roundId: r1, bidder: bob, signature: carolSig }); } catch (e) { wrongKey = e.code; }
   check("another wallet's signature cannot recover Bob's bid", wrongKey, "DECRYPT_FAILED");
-  const bobHint = await engine.findHint(r1, bobRecovered.price);
-  check("findHint returns the level above (5e14)", bobHint, 5n * 10n ** 14n);
-  await send(bob, engine.tx.reveal(r1, bobRecovered, bobHint));
-  const carolBid = sealed.get(carol);
-  await send(carol, engine.tx.reveal(r1, carolBid, await engine.findHint(r1, carolBid.price)));
-  const daveBid = sealed.get(dave);
-  const daveHint = await engine.findHint(r1, daveBid.price);
-  check("findHint for the lowest level is 4e14", daveHint, 4n * 10n ** 14n);
-  check("reveal with a hint uses revealWithHint", engine.tx.reveal(r1, daveBid, daveHint).data.slice(0, 10), engine.iface.encodeFunction("revealWithHint", [r1, 1n, 1n, "0x" + "00".repeat(32), 1n]).slice(0, 10));
-  await send(dave, engine.tx.reveal(r1, daveBid, daveHint));
-  await expectRevert("contract rejects the bid the UI blocks", frank, engine.tx.reveal(r1, sealed.get(frank), NO_HINT), "bid exceeds deposit");
+  check("findHint returns the level above (5e14)", await engine.findHint(r1, bobRecovered.price), 5n * 10n ** 14n);
+  await send(bob, await engine.buildReveal(r1, bobRecovered));
+  await send(carol, await engine.buildReveal(r1, sealed.get(carol)));
+  check("findHint for the lowest level is 4e14", await engine.findHint(r1, sealed.get(dave).price), 4n * 10n ** 14n);
+  await send(dave, await engine.buildReveal(r1, sealed.get(dave)));
+  for (const p of plan.filter((x) => x.blocked)) {
+    await expectRevert(`contract rejects the bid the UI blocks (${p.blocked})`, p.who, await engine.buildReveal(r1, sealed.get(p.who)), p.reason);
+  }
   await expectRevert("settle before the reveal window ends reverts", gina, engine.tx.settle(r1, 10n), "reveal window open");
 
-  // After reveal: burn the unrevealed (Eve, Frank), then settle one level per transaction.
-  await warpTo(degen.revealEnd);
-  const deadBefore = await balance("0x000000000000000000000000000000000000dEaD");
+  // After reveal: burn the unrevealed (E, F, H), settle one level per transaction.
+  await warpTo(p1.revealEnd);
+  let s1 = await rm.loadRoundState(engine, r1, null);
+  check("round model offers burn + settle", rm.publicActions(s1, meta, Number(await now())).map((a) => a.id).join(), "burn,settle");
+  const dead0 = await balance(BURN);
   await send(gina, engine.tx.burnUnrevealed(r1));
-  check("burnUnrevealed burns 2 deposits", (await balance("0x000000000000000000000000000000000000dEaD")) - deadBefore, 2n * E18);
+  check("burnUnrevealed burns 3 deposits", (await balance(BURN)) - dead0, 3n * E18);
   let steps = 0;
   while (!(await engine.clearingOf(r1)).settled) {
     await send(gina, engine.tx.settle(r1, 1n));
-    steps++;
-    if (steps > 10) throw new Error("settle did not finish");
+    if (++steps > 10) throw new Error("settle did not finish");
   }
   check("settle finished over multiple transactions", steps, 2);
   const clr = await engine.clearingOf(r1);
-  check("clearing price", clr.clearingPrice, 4n * 10n ** 14n);
-  check("oversubscribed", clr.oversubscribed, true);
-  await expectRevert("claim before seedLP reverts", alice, engine.tx.claim(r1), "claims not open");
-
-  const seedRc = await send(gina, engine.tx.seedLP(r1));
-  const seedEvents = seedRc.logs.map((l) => engine.iface.decodeLog(l)).filter(Boolean);
-  check("seedLP emits LPSeeded and ClaimsOpened", ["LPSeeded", "ClaimsOpened"].every((n) => seedEvents.some((e) => e.event === n)), true);
-  // LP is sized from the sold lower bound (sold − bids at P) at P (decision 25), rounded down.
-  const soldLB = clr.soldLowerBound;
-  const lpMon = (soldLB * clr.clearingPrice / E18) * degen.lpShareBps / 10000n;
-  check("LP MON = soldLowerBound × P × lpShare", seedEvents.find((e) => e.event === "LPSeeded").args.monAmount, lpMon);
-  check("claims open after seedLP", (await engine.getRound(r1)).claimsOpen, true);
+  check("clearing price 4e14, oversubscribed", `${clr.clearingPrice}/${clr.oversubscribed}`, `${4n * 10n ** 14n}/true`);
 
   const expected = {
     [alice]: [600n * E18, 24n * E18 / 100n],
@@ -213,67 +202,140 @@ try {
   for (const [who, [alloc, paid]] of Object.entries(expected)) {
     const q = await engine.quote(r1, who);
     check(`quote ${who.slice(0, 8)} alloc/paid/refund`, `${q.allocated}/${q.paid}/${q.refund}`, `${alloc}/${paid}/${E18 - paid}`);
-    const tokBefore = await engine.erc20.balanceOf(token, who);
-    const rc = await send(who, engine.tx.claim(r1));
-    const ev = rc.logs.map((l) => engine.iface.decodeLog(l)).find((e) => e?.event === "Claimed");
-    check(`claim ${who.slice(0, 8)} succeeded; Claimed matches quote`, `${ev.args.allocated}/${ev.args.paid}/${ev.args.refund}`, `${q.allocated}/${q.paid}/${q.refund}`);
-    check(`claim ${who.slice(0, 8)} delivered tokens`, (await engine.erc20.balanceOf(token, who)) - tokBefore, alloc);
   }
-  await expectRevert("second claim reverts", alice, engine.tx.claim(r1), "already settled");
+  // Refunds before seeding, triggered by a third party; the MON goes to the bidder.
+  s1 = await rm.loadRoundState(engine, r1, alice);
+  check("round model offers Alice a refund before seeding", rm.bidderActions(s1, alice).map((a) => a.id).join(), "refund");
+  const aliceMon0 = await balance(alice);
+  const refundRc = await send(gina, engine.tx.claimRefund(r1, alice));
+  check("claimRefund by a third party pays Alice exactly her refund", (await balance(alice)) - aliceMon0, E18 - expected[alice][1]);
+  check("Claimed is emitted at the refund step", events(engine, refundRc, "Claimed")[0]?.args.refund, E18 - expected[alice][1]);
+  await expectRevert("tokens wait for liquidity", gina, engine.tx.claimTokens(r1, alice), "claims not open");
+  await expectRevert("abandonLP before the grace period reverts", gina, engine.tx.abandonLP(r1), "grace period not over");
+
+  const seedRc = await send(gina, engine.tx.seedLP(r1));
+  const lpEv = events(engine, seedRc, "LPSeeded")[0];
+  const lpMon = (clr.soldLowerBound * clr.clearingPrice / E18) * p1.lpShareBps / 10000n;
+  check("LP MON = soldLowerBound × P × lpShare", lpEv?.args.monAmount, lpMon);
+  check("ClaimsOpened(lpSeeded=true)", events(engine, seedRc, "ClaimsOpened")[0]?.args.lpSeeded, true);
+
+  // Tokens: to Alice by herself, to Bob by a third party (refund first), Carol and Dave with claim().
+  const tokenOut = async (who, sender, t) => {
+    const before = await engine.erc20.balanceOf(token, who);
+    const rc = await send(sender, t);
+    return { got: (await engine.erc20.balanceOf(token, who)) - before, rc };
+  };
+  let r = await tokenOut(alice, alice, engine.tx.claimTokens(r1, alice));
+  check("claimTokens delivers Alice's allocation", r.got, 600n * E18);
+  check("TokensClaimed event", events(engine, r.rc, "TokensClaimed")[0]?.args.amount, 600n * E18);
+  const bobMon0 = await balance(bob);
+  r = await tokenOut(bob, gina, engine.tx.claimTokens(r1, bob));
+  check("claimTokens by a third party: tokens to Bob", r.got, 250n * E18);
+  check("…and his refund first", (await balance(bob)) - bobMon0, E18 - expected[bob][1]);
+  r = await tokenOut(carol, carol, engine.tx.claim(r1));
+  check("claim() does refund and tokens together (Carol)", `${r.got}/${events(engine, r.rc, "Claimed").length}`, `${150n * E18}/1`);
+  r = await tokenOut(dave, dave, engine.tx.claim(r1));
+  check("losing bid: full refund, no tokens (Dave)", `${r.got}/${events(engine, r.rc, "Claimed")[0]?.args.refund}`, `0/${E18}`);
+  await expectRevert("nothing left to claim", alice, engine.tx.claim(r1), "nothing to claim");
+
+  s1 = await rm.loadRoundState(engine, r1, null);
+  const acts = rm.publicActions(s1, meta, Number(await now())).map((a) => a.id).join();
+  check("round model offers dispose + sweep after seeding and refunds", acts, s1.round.unsoldOwed > 0n ? "dispose,sweep" : "sweep");
+  if (s1.round.unsoldOwed > 0n) {
+    const rc = await send(gina, engine.tx.disposeUnsold(r1));
+    check("disposeUnsold burns Degen leftovers", events(engine, rc, "UnsoldDisposed")[0]?.args.to, BURN.toLowerCase());
+  }
+  await send(gina, engine.tx.sweepDust(r1));
+  check("dust swept", (await engine.getRound(r1)).dustSwept, true);
   const avail = await engine.creatorAvailable(r1);
   check("creator proceeds = collected − LP MON", avail, 40n * E18 / 100n - lpMon);
   await expectRevert("only the creator can withdraw", alice, engine.tx.withdrawProceeds(r1), "not creator");
   await send(creator, engine.tx.withdrawProceeds(r1));
-  check("proceeds withdrawn", await engine.creatorAvailable(r1), 0n);
-  await send(gina, engine.tx.sweepDust(r1));
-  check("dust swept", (await engine.getRound(r1)).dustSwept, true);
-  check("round 1 MON balance fully accounted", BigInt(await engine.call("roundBalance", [r1])), 0n);
+  check("round 1 MON fully accounted (roundBalance 0)", await engine.roundBalance(r1), 0n);
 
-  // ═══ Round 2: Raise with allowlist + LP with unlock date + vesting ═══════
+  // ═══ Round 2: Raise — allowlist, vesting, LP locked 30 days ═════════════
   const members = [alice, bob, "0x" + "a1".repeat(20), "0x" + "b2".repeat(20), "0x" + "c3".repeat(20)];
   const tree = merkle.buildTree(merkle.parseAddressList(members.join("\n")).addresses);
-  const t1 = await now();
-  const raise = {
-    preset: PRESET.Raise, token, sellAmount: 1000n * E18, depositAmount: E18, minBidSize: E18 / 100n,
-    tickSize: 10n ** 14n, reservePrice: 10n ** 14n, commitEnd: t1 + 3600n, revealEnd: t1 + 7200n,
-    allowlistRoot: merkle.rootOf(tree), allowlistURI: "http://localhost/allowlist.json", lpShareBps: 1000n,
-    dexSplits: [{ adapter: local.adapter, bps: 10000n, fee: 3000n }],
-    lockEnd: t1 + 86400n * 30n, lockFeeTier: "DEFAULT", tgeBps: 2500n, cliff: 0n, vestDuration: 86400n * 90n,
-  };
-  await send(creator, engine.erc20.approveTx(token, engine.address, raise.sellAmount + raise.sellAmount / 10n));
-  const rc2 = await send(creator, engine.tx.openRound(raise));
-  const r2 = rc2.logs.map((l) => engine.iface.decodeLog(l)).find((l) => l?.event === "RoundOpened").args.roundId;
-  check("RoundOpened carries allowlistURI", (await engine.roundOpened(r2)).args.allowlistURI, raise.allowlistURI);
+  const raiseForm = { ...baseForm, preset: "Raise", lpSharePct: "10", lockDays: "30", allowOn: true, tree, allowlistURI: "http://localhost/allowlist.json", vestOn: true };
+  // openRound reverts that launch.js flags too.
+  const t2 = Number(await now());
+  const bad = [
+    [{ ...raiseForm, lockDays: "29" }, "lock too short", (lp) => ({ ...lp, lockDuration: 29n * 86400n })],
+    [{ ...raiseForm, splits: [{ ...baseForm.splits[0], fee: "100" }] }, "fee tier not supported", (lp) => ({ ...lp, dexSplits: [{ ...lp.dexSplits[0], fee: 100n }] })],
+    [{ ...raiseForm, deposit: "0.0000001", minBid: "0.00000009", reserve: "20000000000", tick: "10000000000" }, "no valid bid possible",
+      (lp) => ({ ...lp, depositAmount: 10n ** 11n, minBidSize: 9n * 10n ** 10n, reservePrice: 2n * 10n ** 28n, tickSize: 10n ** 28n })],
+  ];
+  const good = launch.buildOpenParams(raiseForm, tokenInfo, t2).params;
+  for (const [form, reason, mutate] of bad) {
+    check(`launch.js flags "${reason}"`, launch.buildOpenParams(form, tokenInfo, t2).problems.length > 0, true);
+    await expectRevert(`openRound reverts "${reason}"`, creator, engine.tx.openRound(mutate(good)), reason);
+  }
 
+  const { id: r2, params: p2 } = await open(raiseForm);
+  check("RoundOpened carries allowlistURI", (await engine.roundOpened(r2)).args.allowlistURI, raiseForm.allowlistURI);
+  check("Raise lockDuration stored", (await engine.getRound(r2)).lockDuration, 30n * 86400n);
+  const round2 = await engine.getRound(r2);
   const raiseBids = { [alice]: { price: 2n * 10n ** 14n, amount: 300n * E18 }, [bob]: { price: 10n ** 14n, amount: 200n * E18 } };
   for (const [who, b] of Object.entries(raiseBids)) {
-    b.salt = bid.generateSalt();
-    const proof = merkle.proofFor(tree, who);
-    check(`JS proof verifies for ${who.slice(0, 8)}`, merkle.verifyProof(proof, raise.allowlistRoot, who), true);
-    await send(who, engine.tx.commit(r2, bid.commitHash(b.price, b.amount, b.salt, who), proof, "0x", E18));
+    const proof = merkle.proofForRound(tree, round2.allowlistRoot, who);
+    check(`JS proof verifies for ${who.slice(0, 8)}`, merkle.verifyProof(proof, round2.allowlistRoot, who), true);
+    Object.assign(b, await sealAndCommit(r2, round2, who, b.price, b.amount, proof));
   }
   check("contract accepted both Merkle proofs", (await engine.ledgers(r2)).commits, 2n);
   check("outsider gets no proof from the tree", merkle.proofFor(tree, carol), null);
   await expectRevert("outsider with an empty proof cannot commit", carol, engine.tx.commit(r2, "0x" + "11".repeat(32), [], "0x", E18), "not on allowlist");
   await expectRevert("Alice's proof does not work for Carol", carol, engine.tx.commit(r2, "0x" + "11".repeat(32), merkle.proofFor(tree, alice), "0x", E18), "not on allowlist");
 
-  await warpTo(raise.commitEnd);
-  for (const [who, b] of Object.entries(raiseBids)) await send(who, engine.tx.reveal(r2, b, await engine.findHint(r2, b.price)));
-  await warpTo(raise.revealEnd);
+  await warpTo(p2.commitEnd);
+  for (const [who, b] of Object.entries(raiseBids)) await send(who, await engine.buildReveal(r2, b));
+  await warpTo(p2.revealEnd);
   await send(gina, engine.tx.settle(r2, 50n));
   const clr2 = await engine.clearingOf(r2);
   check("undersubscribed Raise clears at the lowest bid", `${clr2.settled}/${clr2.clearingPrice}/${clr2.sold}`, `true/${10n ** 14n}/${500n * E18}`);
-  const creatorTokBefore = await engine.erc20.balanceOf(token, creator);
   await send(gina, engine.tx.seedLP(r2));
-  check("Raise returns unsold supply to the creator", (await engine.erc20.balanceOf(token, creator)) - creatorTokBefore > 0n, true);
+  const creatorTok0 = await engine.erc20.balanceOf(token, creator);
+  await send(gina, engine.tx.disposeUnsold(r2));
+  check("Raise returns unsold supply to the creator", (await engine.erc20.balanceOf(token, creator)) - creatorTok0 > 400n * E18, true);
   const aliceTok0 = await engine.erc20.balanceOf(token, alice);
   await send(alice, engine.tx.claim(r2));
-  check("Raise claim pays the TGE share (25%)", (await engine.erc20.balanceOf(token, alice)) - aliceTok0, 75n * E18);
-  await warpTo((await engine.getRound(r2)).settledAt + raise.vestDuration + 1n);
+  check("Raise claim delivers the TGE share (25%)", (await engine.erc20.balanceOf(token, alice)) - aliceTok0, 75n * E18);
+  await warpTo((await engine.getRound(r2)).settledAt + p2.vestDuration + 1n);
   const v = await engine.vestedOf(r2, alice);
   check("vestedOf after the vesting period", `${v[0]}/${v[1]}`, `${300n * E18}/${75n * E18}`);
   await send(alice, engine.tx.claimVested(r2));
   check("claimVested releases the rest", (await engine.erc20.balanceOf(token, alice)) - aliceTok0, 300n * E18);
+
+  // ═══ Round 3: seeding blocked → abandonLP ════════════════════════════════
+  const adapterIface = makeInterface([{ type: "function", name: "setRevert", inputs: [{ name: "r", type: "bool" }], outputs: [], stateMutability: "nonpayable" }]);
+  const { id: r3, params: p3 } = await open(baseForm);
+  const round3 = await engine.getRound(r3);
+  const b3 = await sealAndCommit(r3, round3, alice, 2n * 10n ** 14n, 500n * E18);
+  await warpTo(p3.commitEnd);
+  await send(alice, await engine.buildReveal(r3, b3));
+  await warpTo(p3.revealEnd);
+  await send(gina, engine.tx.settle(r3, 50n));
+  await send(gina, { to: local.adapter, data: adapterIface.encodeFunction("setRevert", [true]), value: 0n });
+  await expectRevert("seedLP fails while the pool is blocked", gina, engine.tx.seedLP(r3), "pool price deviates");
+  const aliceMon3 = await balance(alice);
+  await send(gina, engine.tx.claimRefund(r3, alice));
+  check("refund does not wait for liquidity", (await balance(alice)) - aliceMon3, E18 - 10n ** 17n);
+  const settled3 = (await engine.getRound(r3)).settledAt;
+  await warpTo(settled3 + meta.grace);
+  let s3 = await rm.loadRoundState(engine, r3, null);
+  check("round model offers abandon after the grace period", rm.publicActions(s3, meta, Number(await now())).map((a) => a.id).join(), "seed,abandon");
+  const dead3 = await balance(BURN);
+  const abRc = await send(gina, engine.tx.abandonLP(r3));
+  const lpMon3 = (500n * E18 * 2n * 10n ** 14n / E18) * 2000n / 10000n;
+  check("LPAbandoned burns the LP's MON share", `${events(engine, abRc, "LPAbandoned")[0]?.args.monBurned}/${(await balance(BURN)) - dead3}`, `${lpMon3}/${lpMon3}`);
+  s3 = await rm.loadRoundState(engine, r3, alice);
+  check("after abandon: lpAbandoned, claims open, tokens offered", `${s3.round.lpAbandoned}/${s3.round.claimsOpen}/${rm.bidderActions(s3, alice).map((a) => a.id).join()}`, "true/true/tokens");
+  const at3 = await engine.erc20.balanceOf(token, alice);
+  await send(alice, engine.tx.claimTokens(r3, alice));
+  check("tokens delivered after abandon", (await engine.erc20.balanceOf(token, alice)) - at3, 500n * E18);
+  check("creator proceeds exclude the burned LP share", await engine.creatorAvailable(r3), 10n ** 17n - lpMon3);
+  await send(gina, engine.tx.disposeUnsold(r3));
+  check("unsold supply and the unused reserve disposed", (await engine.getRound(r3)).unsoldOwed, 0n);
+  await send(gina, { to: local.adapter, data: adapterIface.encodeFunction("setRevert", [false]), value: 0n });
 } catch (e) {
   fail++;
   console.log("FAIL  e2e aborted:", e.message, e.data ? `(${revertReason(e)})` : "");

@@ -77,8 +77,8 @@ export async function readRequest(method, params) {
     if (j.error) throw Object.assign(new Error(j.error.message), { data: j.error.data, code: j.error.code });
     return j.result;
   }
-  if (!window.ethereum) throw new Error("No read RPC configured for this network and no wallet connected");
-  return window.ethereum.request({ method, params });
+  if (!globalThis.ethereum) throw new Error("No read RPC configured for this network and no wallet connected");
+  return globalThis.ethereum.request({ method, params });
 }
 
 export function engine() {

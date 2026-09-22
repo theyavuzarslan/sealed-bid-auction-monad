@@ -88,3 +88,22 @@ export function verifyProof(proof, root, address) {
   for (const p of proof) h = hashPair(h, p);
   return h.toLowerCase() === root.toLowerCase();
 }
+
+// ── allowlist hosting (bidder side) ──
+
+export function resolveUri(uri, ipfsGateway) {
+  return uri.startsWith("ipfs://") ? ipfsGateway + uri.slice(7) : uri;
+}
+
+export async function fetchAllowlist(uri, { ipfsGateway = "https://ipfs.io/ipfs/", fetchImpl = globalThis.fetch } = {}) {
+  assert(uri, "the round has no allowlist URI");
+  const res = await fetchImpl(resolveUri(uri, ipfsGateway));
+  assert(res.ok, `allowlist fetch failed: HTTP ${res.status}`);
+  return res.json();
+}
+
+// Checks the tree against the round's root, then returns the proof for `account` (null if absent).
+export function proofForRound(dump, allowlistRoot, account) {
+  assert(rootOf(dump).toLowerCase() === allowlistRoot.toLowerCase(), "allowlist tree root does not match this round");
+  return proofFor(dump, account);
+}
