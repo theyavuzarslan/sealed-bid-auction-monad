@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Run, Twice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #f4efe6;
+    --muted: #b7ad9e;
+    --dim: #7c7468;
+    --run: #ff3b1f;
+    --run-wash: rgba(255, 59, 31, 0.12);
+    --sand: #e7d7c3;
+    --line: #ffb25a;
+    --acid: #e2ff4d;
+    --acid-wash: rgba(226, 255, 77, 0.14);
+    --left: #14100c;
+    --right: #0c0f0e;
+    --hair: rgba(244, 239, 230, 0.14);
+    --well: rgba(244, 239, 230, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--left); color: var(--ink); }
+  body {
+    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #progress {
+    position: fixed; z-index: 3; left: 0; top: 0;
+    height: 3px; width: 100%;
+    transform-origin: left center; transform: scaleX(0);
+    background: linear-gradient(90deg, var(--run) 0 50%, var(--acid) 50% 100%);
+    pointer-events: none;
+  }
+
+  main { display: grid; grid-template-columns: 1fr 1fr; min-height: 100dvh; }
+  section {
+    min-width: 0;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) 120px auto;
+    gap: 14px;
+    padding: clamp(16px, 2.4vh, 28px) clamp(16px, 2vw, 36px) 64px;
+  }
+  #fifo {
+    background: radial-gradient(880px 460px at 18% 28%, rgba(255, 59, 31, 0.1), transparent 68%), var(--left);
+  }
+  #auction {
+    border-left: 1px solid var(--hair);
+    background: radial-gradient(760px 440px at 50% 36%, rgba(226, 255, 77, 0.05), transparent 70%), var(--right);
+  }
+
+  header {
+    display: grid; grid-template-columns: 1fr auto; column-gap: 16px; align-items: end;
+    padding-bottom: 12px; border-bottom: 1px solid var(--hair);
+  }
+  .kicker {
+    margin: 0;
+    font-family: Syne, "Avenir Next", Futura, sans-serif; font-weight: 500;
+    font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--line);
+  }
+  #auction .kicker { color: #c9d2c6; }
+  h1 {
+    margin: 6px 0 0;
+    font-family: "Instrument Serif", "Iowan Old Style", Palatino, serif; font-weight: 400;
+    font-size: clamp(32px, 4.4vh, 54px); line-height: 0.95; letter-spacing: -0.02em;
+  }
+  .source { margin: 8px 0 0; font-size: 11px; color: var(--dim); line-height: 1.4; }
+  .phase {
+    margin: 0; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); text-align: right; white-space: nowrap;
+  }
+  .phase b { display: block; color: var(--ink); font-weight: 500; font-size: 14px; letter-spacing: 0.06em; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .stat { min-width: 0; padding: 10px 12px; background: var(--well); }
+  .stat span {
+    display: block; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stat b {
+    display: block; margin-top: 4px;
+    font-family: "Instrument Serif", "Iowan Old Style", Palatino, serif; font-weight: 400;
+    font-size: clamp(24px, 3.4vh, 38px); line-height: 1; letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .stat small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .stat.hot b { color: var(--run); }
+  .stat.good b { color: var(--acid); }
+
+  .pane { position: relative; min-height: 0; overflow: hidden; }
+  .pane-label {
+    margin: 0 0 8px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim);
+  }
+
+  /* FIFO queue */
+  .queue { display: flex; flex-direction: column; gap: 5px; }
+  .qrow {
+    display: grid; grid-template-columns: 3.5ch minmax(0, 1fr) 11ch; gap: 10px; align-items: center;
+    font-size: clamp(12px, 1.6vh, 14px); color: var(--sand);
+    transition: opacity 300ms linear;
+  }
+  .qrow.joined { color: var(--ink); }
+  .qrow.joined .qlabel { color: var(--run); }
+  .qrow.fresh { animation: rise 260ms ease-out; }
+  .qbar { position: relative; height: 12px; background: rgba(244, 239, 230, 0.08); }
+  .qbar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--sand); }
+  .qrow.joined .qbar { outline: 1px solid rgba(255, 59, 31, 0.5); }
+  .qnum { text-align: right; color: var(--muted); }
+  .qrow.stuck .qnum { color: var(--run); }
+  .qrow.out { opacity: 0.38; }
+
+  /* Auction book */
+  .book { display: flex; flex-direction: column; gap: 5px; position: relative; }
+  .brow {
+    display: grid; grid-template-columns: 3.5ch 7ch minmax(0, 1fr) 13ch; gap: 10px; align-items: center;
+    font-size: clamp(12px, 1.6vh, 14px); color: var(--sand);
+  }
+  .brow.fresh { animation: rise 220ms ease-out; }
+  .bdisc { text-align: right; color: var(--muted); }
+  .bbar { position: relative; height: 12px; }
+  .bbar .seg { position: absolute; top: 0; bottom: 0; background: rgba(244, 239, 230, 0.16); transition: width 380ms ease-out, left 380ms ease-out; }
+  .bbar .fill { position: absolute; top: 0; bottom: 0; background: var(--acid); width: 0; transition: width 420ms ease-out; }
+  .bnum { text-align: right; color: var(--dim); }
+  .brow.win .bnum { color: var(--acid); }
+  .brow.sealed .bdisc, .brow.sealed .bnum { color: var(--dim); }
+  .sealed-chip { display: inline-block; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  #capLine {
+    position: absolute; top: 0; height: 0; width: 0;
+    border-left: 1px dashed var(--acid); opacity: 0; transition: opacity 250ms linear;
+    pointer-events: none;
+  }
+  #capLine span {
+    position: absolute; bottom: -18px; left: 6px; white-space: nowrap;
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acid);
+  }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .spark { position: relative; min-height: 0; }
+  .spark { display: flex; flex-direction: column; }
+  .spark svg { width: 100%; flex: 1; min-height: 0; display: block; overflow: visible; }
+  .spark path, .spark line { fill: none; vector-effect: non-scaling-stroke; }
+  .spark .base { stroke: rgba(244, 239, 230, 0.18); stroke-width: 1; }
+  .spark .run { stroke: var(--run); stroke-width: 2.25; }
+  .spark .acid { stroke: var(--acid); stroke-width: 2.25; }
+  .spark .tag { position: absolute; top: 0; right: 0; font-size: 11px; color: var(--muted); }
+
+  footer { font-size: 12px; color: var(--muted); line-height: 1.45; min-height: 3.2em; }
+  footer b { color: var(--ink); font-weight: 500; }
+  #fifo footer b.hot { color: var(--run); }
+  #auction footer b.good { color: var(--acid); }
+
+  #controls { position: fixed; z-index: 4; right: 24px; bottom: 14px; display: flex; gap: 8px; }
+  button {
+    background: #0c0f0e; color: var(--ink); border: 1px solid var(--hair);
+    font-family: Syne, "Avenir Next", Futura, sans-serif; font-size: 12px;
+    letter-spacing: 0.18em; text-transform: uppercase; padding: 8px 16px; cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  #missing {
+    position: fixed; inset: 0; display: none; place-items: center; padding: 24px;
+    background: var(--left); color: var(--muted); text-align: center; line-height: 1.6;
+  }
+  #missing code { color: var(--ink); }
+  body.no-data #missing { display: grid; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    section { min-height: 100dvh; }
+    #auction { border-left: 0; border-top: 1px solid var(--hair); }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #controls { right: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qrow.fresh, .brow.fresh { animation: none; }
+    .bbar .seg, .bbar .fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div id="progress"></div>
+  <main>
+    <section id="fifo" aria-label="FIFO redemption queue, modelled">
+      <header>
+        <div>
+          <p class="kicker">FIFO redemption queue · model</p>
+          <h1>First come, first paid</h1>
+          <p class="source">Model, not on-chain: same vault, same buffer refills, paid at par in arrival order.
+            Queue price = 1 / 1.01<sup>wait in rounds</sup>. A stayer joins the queue once that discount passes their threshold.</p>
+        </div>
+        <p class="phase">Round<b id="fifoRound">—</b></p>
+      </header>
+      <div class="stats">
+        <div class="stat"><span>In queue</span><b id="fQueue">—</b><small id="fQueueAssets">&nbsp;</small></div>
+        <div class="stat hot"><span>Peg deviation</span><b id="fDepeg">—</b><small>queued claim vs par</small></div>
+        <div class="stat hot"><span>Cascade</span><b id="fCascade">0</b><small>stayers who ran</small></div>
+        <div class="stat hot"><span>Latecomers paid</span><b id="fLate">—</b><small id="fLateSub">&nbsp;</small></div>
+      </div>
+      <div class="pane">
+        <p class="pane-label">Queue, front first · paid so far</p>
+        <div class="queue" id="queue"></div>
+      </div>
+      <div class="spark">
+        <p class="pane-label">Peg deviation by round</p>
+        <svg id="fSpark" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      </div>
+      <footer id="fifoNote">&nbsp;</footer>
+    </section>
+
+    <section id="auction" aria-label="Exit-Priority auction on anvil">
+      <header>
+        <div>
+          <p class="kicker">Exit-Priority auction · on anvil</p>
+          <h1>Highest discount exits first</h1>
+          <p class="source" id="aSource">&nbsp;</p>
+        </div>
+        <p class="phase"><span id="aPhase">Round</span><b id="aRound">—</b></p>
+      </header>
+      <div class="stats">
+        <div class="stat"><span>Exit capacity</span><b id="aCap">—</b><small>WMON of idle buffer</small></div>
+        <div class="stat"><span>Clearing discount</span><b id="aP">—</b><small>paid by every exit</small></div>
+        <div class="stat good"><span>Accrued to stayers</span><b id="aAccrued">+0</b><small>WMON, S1–S4</small></div>
+        <div class="stat good"><span>Share price</span><b id="aPps">1.0000</b><small>WMON per share</small></div>
+      </div>
+      <div class="pane">
+        <p class="pane-label">Sealed bids, highest discount first · filled share of the bid</p>
+        <div class="book" id="book"></div>
+        <div id="capLine"><span>capacity</span></div>
+      </div>
+      <div class="spark">
+        <p class="pane-label">Share price by round</p>
+        <svg id="aSpark" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      </div>
+      <footer id="auctionNote">&nbsp;</footer>
+    </section>
+  </main>
+  <div id="controls"><button id="replay" type="button">Replay</button></div>
+  <div id="missing"><p>No results yet. Run <code>demo/exit/run.sh</code> to play the bank run on anvil,<br>then reload this page.</p></div>
+
+<script src="results.js" onerror="void 0"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ─── Timing: about twenty seconds end to end ───────────────────────────
+  var INTRO_MS = 900, OUTRO_MS = 2200, TOTAL_MS = 20000;
+  var QUEUE_RATE = 0.01; // model: queued claims lose 1% per round of expected wait
+  var THRESHOLDS = [0.04, 0.055, 0.07, 0.085]; // model: when S1..S4 give up and join the queue
+
+  function wmon(x) { return Number(BigInt(x)) / 1e18; }
+  function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function pct(bps) { return (bps / 100).toFixed(2) + "%"; }
+  function $(id) { return document.getElementById(id); }
+  function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function ease(x) { x = clamp01(x); return x * x * (3 - 2 * x); }
+
+  function load() {
+    if (window.EXIT_RESULTS) return Promise.resolve(window.EXIT_RESULTS);
+    return fetch("results.json").then(function (r) { if (!r.ok) throw new Error("missing"); return r.json(); });
+  }
+
+  load().then(start).catch(function () { document.body.classList.add("no-data"); });
+
+  function start(data) {
+    var rounds = data.rounds.map(function (r) {
+      var bids = r.clear.bids.map(function (b) {
+        return {
+          holder: b.holder,
+          discount: b.discountBps,
+          shares: Number(BigInt(b.shares)) / 1e21,
+          allocated: Number(BigInt(b.allocated)) / 1e21,
+          payout: wmon(b.payout)
+        };
+      }).sort(function (a, b) { return b.discount - a.discount || b.shares - a.shares; });
+      return {
+        k: r.open.round,
+        idle: wmon(r.open.idle),
+        capAssets: wmon(r.open.capacityAssets),
+        capShares: Number(BigInt(r.open.capacityShares)) / 1e21,
+        P: r.clear.clearingDiscountBps,
+        over: r.clear.oversubscribed,
+        bids: bids,
+        pps: wmon(r.after.sharePrice),
+        stayersValue: wmon(r.after.stayersValue),
+        paidOut: wmon(r.after.paidOut),
+        exitersLeft: wmon(r.after.exitersValueLeft)
+      };
+    });
+    var stayerDeposits = data.meta.holders.filter(function (h) { return h.role === "stay"; })
+      .reduce(function (s, h) { return s + wmon(h.deposit); }, 0);
+    var exiters = data.meta.holders.filter(function (h) { return h.role === "exit"; });
+    var stayers = data.meta.holders.filter(function (h) { return h.role === "stay"; });
+    var refill = wmon(data.meta.refillPerRound);
+    var R = rounds.length;
+    var ROUND_MS = (TOTAL_MS - INTRO_MS - OUTRO_MS) / R;
+
+    $("aSource").textContent = "ExitAuction + DemoVault, " + R + " rounds on anvil (chain " + data.meta.chainId +
+      "), numbers read from chain. Privacy via commit-reveal; post-clear transparency is intentional.";
+
+    // First round each exiter leaves the auction completely.
+    var auctionExitRound = {};
+    rounds.forEach(function (r) {
+      r.bids.forEach(function (b) { if (b.allocated >= b.shares - 1e-9 && !auctionExitRound[b.holder]) auctionExitRound[b.holder] = r.k; });
+    });
+
+    // ─── FIFO model, precomputed per round ──────────────────────────────
+    // Arrival order is who clicked first (H1..H8), not who needs out most.
+    var fifo = (function () {
+      var queue = exiters.map(function (h) { return { label: h.label, amount: wmon(h.deposit), paid: 0, joined: false }; });
+      var waiting = stayers.map(function (h, i) { return { label: h.label, amount: wmon(h.deposit), paid: 0, joined: true, th: THRESHOLDS[i] }; });
+      var buffer = rounds[0].idle;
+      var states = [];
+      var exitRound = {};
+      function owed() { return queue.reduce(function (s, e) { return s + e.amount - e.paid; }, 0); }
+      function depeg() { return 1 - 1 / Math.pow(1 + QUEUE_RATE, owed() / refill); }
+      for (var k = 1; k <= R; k++) {
+        if (k > 1) buffer += refill;
+        var before = depeg();
+        var joined = null;
+        for (var j = 0; j < waiting.length; j++) {
+          if (!waiting[j].inQueue && before >= waiting[j].th) { waiting[j].inQueue = true; queue.push(waiting[j]); joined = waiting[j].label; break; }
+        }
+        var start = queue.map(function (e) { return e.paid; });
+        for (var i = 0; i < queue.length && buffer > 1e-9; i++) {
+          var x = Math.min(queue[i].amount - queue[i].paid, buffer);
+          queue[i].paid += x; buffer -= x;
+          if (queue[i].paid >= queue[i].amount - 1e-9 && !exitRound[queue[i].label]) exitRound[queue[i].label] = k;
+        }
+        states.push({
+          k: k,
+          joined: joined,
+          depegStart: before,
+          depeg: depeg(),
+          entries: queue.map(function (e, i) { return { label: e.label, amount: e.amount, from: start[i] || 0, to: e.paid, joined: e.joined }; }),
+          owed: owed(),
+          cascade: waiting.filter(function (w) { return w.inQueue; }).length
+        });
+      }
+      var last = states[states.length - 1];
+      var late = last.entries.filter(function (e) { return e.to === 0; });
+      return { states: states, exitRound: exitRound, late: late };
+    })();
+
+    // ─── Static scaffolding ──────────────────────────────────────────────
+    var maxDepeg = Math.max.apply(null, fifo.states.map(function (s) { return Math.max(s.depeg, s.depegStart); }));
+    var ppsMax = rounds[R - 1].pps;
+
+    function sparkPath(values, lo, hi, upto) {
+      var n = values.length;
+      function y(v) { return 100 - ((v - lo) / (hi - lo || 1)) * 92 - 4; }
+      var fi = Math.min(Math.floor(upto), n - 1);
+      var frac = upto - fi;
+      var pts = [];
+      for (var i = 0; i <= fi; i++) pts.push([(i / (n - 1)) * 100, y(values[i])]);
+      if (frac > 0 && fi + 1 < n) {
+        var v2 = values[fi] + (values[fi + 1] - values[fi]) * frac;
+        pts.push([((fi + frac) / (n - 1)) * 100, y(v2)]);
+      }
+      return pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2); }).join(" ");
+    }
+    var fValues = [0].concat(fifo.states.map(function (s) { return s.depeg; }));
+    var aValues = [1].concat(rounds.map(function (r) { return r.pps; }));
+    function drawSparks(progress) {
+      $("fSpark").innerHTML = '<line class="base" x1="0" y1="96" x2="100" y2="96"/><path class="run" d="' +
+        sparkPath(fValues, 0, maxDepeg * 1.05, progress) + '"/>';
+      $("aSpark").innerHTML = '<line class="base" x1="0" y1="96" x2="100" y2="96"/><path class="acid" d="' +
+        sparkPath(aValues, 1, ppsMax, progress) + '"/>';
+    }
+
+    // ─── Rendering per frame ────────────────────────────────────────────
+    var lastRoundDrawn = -1;
+
+    function renderQueue(state, f) {
+      var q = $("queue");
+      var pay = ease((f - 0.3) / 0.6);
+      var rows = state.entries.map(function (e) {
+        var paid = e.from + (e.to - e.from) * pay;
+        var done = paid >= e.amount - 1e-6;
+        var cls = "qrow" + (e.joined ? " joined" : "") + (done ? " out" : "") + (paid === 0 ? " stuck" : "") +
+          (state.joined === e.label && f < 0.4 ? " fresh" : "");
+        return '<div class="' + cls + '"><span class="qlabel">' + e.label + '</span>' +
+          '<span class="qbar"><i style="width:' + (100 * paid / e.amount).toFixed(1) + '%"></i></span>' +
+          '<span class="qnum">' + (done ? "paid" : fmt(paid) + " / " + fmt(e.amount / 1000) + "k") + '</span></div>';
+      });
+      q.innerHTML = rows.join("");
+    }
+
+    function renderBook(r, f) {
+      var book = $("book");
+      var total = r.bids.reduce(function (s, b) { return s + b.shares; }, 0);
+      var scale = Math.max(total, r.capShares) * 1.02;
+      var revealed = f >= 0.22;
+      var cleared = f >= 0.5;
+      var claimed = ease((f - 0.62) / 0.3);
+      var cum = 0;
+      var rows = r.bids.map(function (b, i) {
+        var left = 100 * cum / scale, width = 100 * b.shares / scale;
+        cum += b.shares;
+        var win = b.allocated > 0;
+        var cls = "brow" + (revealed ? "" : " sealed") + (cleared && win ? " win" : "");
+        var disc = revealed ? pct(b.discount) : "·····";
+        var num;
+        if (!revealed) num = "sealed";
+        else if (!cleared) num = fmt(b.shares) + " sh";
+        else if (!win) num = "shares back";
+        else num = fmt(b.payout * claimed) + " W";
+        var bar = revealed
+          ? '<i class="seg" style="left:' + left.toFixed(2) + '%;width:' + width.toFixed(2) + '%"></i>' +
+            '<i class="fill" style="left:' + left.toFixed(2) + '%;width:' + (cleared ? (width * b.allocated / b.shares * Math.max(claimed, 0.001)) : 0).toFixed(2) + '%"></i>'
+          : '<span class="sealed-chip">commitment</span>';
+        return '<div class="' + cls + '"><span>' + b.holder + '</span><span class="bdisc">' + disc + '</span>' +
+          '<span class="bbar">' + bar + '</span><span class="bnum">' + num + '</span></div>';
+      });
+      book.innerHTML = rows.join("");
+      var cap = $("capLine");
+      var firstBar = book.querySelector(".bbar");
+      if (cleared && firstBar) {
+        var paneBox = book.parentNode.getBoundingClientRect();
+        var barBox = firstBar.getBoundingClientRect();
+        var lastBar = book.lastElementChild.getBoundingClientRect();
+        cap.style.left = (barBox.left - paneBox.left + barBox.width * Math.min(r.capShares, scale) / scale) + "px";
+        cap.style.top = (barBox.top - paneBox.top - 4) + "px";
+        cap.style.height = (lastBar.bottom - barBox.top + 8) + "px";
+        cap.style.opacity = r.over ? 1 : 0.5;
+        cap.querySelector("span").textContent = r.over ? "capacity · P " + pct(r.P) : "capacity · undersubscribed";
+      } else {
+        cap.style.opacity = 0;
+      }
+    }
+
+    function frame(t) {
+      var p = clamp01(t / TOTAL_MS);
+      $("progress").style.transform = "scaleX(" + p + ")";
+      var rt = t - INTRO_MS;
+      var idx = Math.floor(rt / ROUND_MS);
+      if (rt < 0) {
+        $("fifoRound").textContent = "0 / " + R;
+        $("aRound").textContent = "0 / " + R;
+        $("aPhase").textContent = "Round";
+        $("fQueue").textContent = exiters.length;
+        $("fQueueAssets").textContent = fmt(exiters.length * wmon(exiters[0].deposit)) + " WMON waiting";
+        $("fDepeg").textContent = "—";
+        $("fLate").textContent = "—";
+        $("aCap").textContent = "—";
+        $("aP").textContent = "—";
+        $("queue").innerHTML = "";
+        $("book").innerHTML = "";
+        $("fifoNote").innerHTML = "Eight holders want out. The idle buffer holds <b>" + fmt(rounds[0].idle) + " WMON</b>; the rest is in an illiquid strategy that unwinds <b>" + fmt(refill) + "</b> per round.";
+        $("auctionNote").innerHTML = "Same eight holders, same buffer. Each round they commit sealed bids: a discount they will accept, and shares.";
+        drawSparks(0);
+        return;
+      }
+      if (idx >= R) idx = R - 1;
+      var f = Math.min(1, (rt - idx * ROUND_MS) / ROUND_MS);
+      if (t >= TOTAL_MS - OUTRO_MS) f = 1;
+      var r = rounds[idx], s = fifo.states[idx];
+      var prevR = idx ? rounds[idx - 1] : null;
+
+      // FIFO pane
+      $("fifoRound").textContent = r.k + " / " + R;
+      var liveOwed = s.owed;
+      var depegNow = s.depegStart + (s.depeg - s.depegStart) * ease((f - 0.3) / 0.6);
+      var inQueue = s.entries.filter(function (e) { return e.to < e.amount - 1e-6; }).length;
+      $("fQueue").textContent = inQueue + (s.joined ? " ↑" : "");
+      $("fQueueAssets").textContent = fmt(liveOwed) + " WMON waiting";
+      $("fDepeg").textContent = "−" + (depegNow * 100).toFixed(1) + "%";
+      $("fCascade").textContent = s.cascade;
+      var isLast = idx === R - 1 && f >= 1;
+      $("fLate").textContent = isLast ? "0" : "…";
+      $("fLateSub").textContent = isLast ? fifo.late.length + " holders, " + fmt(fifo.late.reduce(function (a, e) { return a + e.amount; }, 0)) + " WMON" : "waiting";
+      renderQueue(s, f);
+      var note = s.joined
+        ? "The queue trades at <b class=\"hot\">−" + (s.depegStart * 100).toFixed(1) + "%</b>. <b class=\"hot\">" + s.joined + "</b> stops staying and joins the back of the line."
+        : "The buffer pays the front of the line at par. Position is arrival time, not need.";
+      if (isLast) note = "After " + R + " rounds: <b class=\"hot\">" + fifo.late.length + " latecomers got nothing</b>. H8, the most urgent, waited until round " + (fifo.exitRound.H8 || "—") + ".";
+      $("fifoNote").innerHTML = note;
+
+      // Auction pane
+      $("aRound").textContent = r.k + " / " + R;
+      $("aPhase").textContent = f < 0.22 ? "Commit window" : f < 0.5 ? "Reveal window" : f < 0.62 ? "Clearing" : "Claims";
+      $("aCap").textContent = fmt(r.capAssets);
+      $("aP").textContent = f >= 0.5 ? pct(r.P) : (prevR ? pct(prevR.P) : "—");
+      var claimed = ease((f - 0.62) / 0.3);
+      var accPrev = prevR ? prevR.stayersValue - stayerDeposits : 0;
+      var accNow = r.stayersValue - stayerDeposits;
+      $("aAccrued").textContent = "+" + fmt(accPrev + (accNow - accPrev) * claimed);
+      var ppsPrev = prevR ? prevR.pps : 1;
+      $("aPps").textContent = (ppsPrev + (r.pps - ppsPrev) * claimed).toFixed(4);
+      renderBook(r, f);
+      var winners = r.bids.filter(function (b) { return b.allocated > 0; });
+      var aNote = f < 0.5
+        ? r.bids.length + " sealed bids. Submission timing does not set the price; the clearing discount does."
+        : winners.length + " holder" + (winners.length === 1 ? "" : "s") + " exit at <b class=\"good\">" + pct(r.P) + "</b> off. The discount stays in the vault; unfilled shares go back.";
+      if (isLast) aNote = "Every exiter is out after " + R + " rounds; H8 left in round " + (auctionExitRound.H8 || "—") + ". S1–S4 stayed and are <b class=\"good\">+" + fmt(accNow) + " WMON</b>: the discounts the exiters paid.";
+      $("auctionNote").innerHTML = aNote;
+
+      drawSparks(idx + (f < 0.3 ? 0 : ease((f - 0.3) / 0.6)));
+      if (idx !== lastRoundDrawn) lastRoundDrawn = idx;
+    }
+
+    var t0 = null, raf = null;
+    var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function tick(now) {
+      if (t0 === null) t0 = now;
+      var t = now - t0;
+      frame(t);
+      if (t < TOTAL_MS) raf = requestAnimationFrame(tick);
+      else document.body.classList.add("done");
+    }
+    function play() {
+      if (raf) cancelAnimationFrame(raf);
+      document.body.classList.remove("done");
+      lastRoundDrawn = -1;
+      t0 = null;
+      if (reduced) { frame(TOTAL_MS); return; }
+      raf = requestAnimationFrame(tick);
+    }
+    $("replay").addEventListener("click", play);
+    window.addEventListener("resize", function () { if (document.body.classList.contains("done") || reduced) frame(TOTAL_MS); });
+    play();
+  }
+})();
+</script>
+</body>
+</html>
