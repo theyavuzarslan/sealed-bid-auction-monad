@@ -4,6 +4,29 @@ What the agent crew built, what is merged, and what is wrong with the money path
 
 Status: draft
 
+## Status after the rewrite (23 Sep)
+
+The contracts were rewritten on `master` (commit `6ddfb1c`): Zama-style clearing inside the engine, a burn model for unrevealed deposits, allowlists, LP seeding and vesting. Status of every finding below:
+
+| Finding | Status | How |
+| --- | --- | --- |
+| C1 settle during commit window | **Resolved** | Clearing is an internal contract; `settle` requires `revealEnd`. Test `test_Security_NoSettleBeforeRevealEnd` |
+| C2 lock someone's deposit via the core | **Resolved** | No external clearing entry points; `claim` is per-sender. Test `test_Security_NobodyClaimsForSomeoneElse` |
+| C3 unfunded bids | **Resolved** | The only way into the book is `reveal` of your own funded commitment. Test `test_Security_NoBidWithoutCommitAndDeposit` |
+| H1 winners get no tokens | **Resolved** | `openRound` pulls the supply and LP reserve; `claim` transfers tokens |
+| H2 meaning of `price` | **Resolved** | `price` = max MON per 1e18 token units, `amount` = tokens (decision 22) |
+| H3 unused `biddingToken` | **Resolved** | Removed: bids are native MON |
+| M1 test harness in `src/` | **Resolved** | Tests live in `test/` |
+| M2 tests of mock contracts | **Resolved** | `agent/settle` not merged; new tests exercise the real contracts, including a differential fuzz against a brute-force reference and a lifecycle conservation fuzz (both pass at 10,000 runs) |
+| M3 demo auction is JavaScript | In progress | Demo being rebuilt on the real engine |
+| M4 engine-wide reserve price | **Resolved** | `reservePrice` is per round |
+| M5 no domain separation in the hash | Open (low) | Only the committing address can reveal, so not exploitable; changing the preimage is a spec change |
+| M6 ties go to earlier revealers | **Resolved** | Allocation depends only on price and amount; ties at the clearing price share pro-rata |
+| New: cheap pool-griefing could lock claims forever | **Mitigated** | Anyone can call `forceOpenClaims` after `lpGracePeriod`; seeding then retries at the pool's price and burns unused LP MON. Test `test_LP_Blocked_GraceEscape_ThenRelaxedSeedBurnsUnused` |
+
+An independent adversarial review of the new contracts is running; its findings will be added here.
+
+
 ## Where the repo stands
 
 | Branch / worktree | Agent (actual model) | State | Tests |
