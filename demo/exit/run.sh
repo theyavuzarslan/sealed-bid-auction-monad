@@ -24,9 +24,13 @@ done
 cd "$CONTRACTS"
 rm -rf deployments/exit-demo
 
+LOG="$(mktemp)"
 phase() {
   echo "  $*"
-  forge script script/ExitDemo.s.sol:ExitDemo --rpc-url "$RPC" --broadcast --slow --sig "$@" >/dev/null
+  if ! forge script script/ExitDemo.s.sol:ExitDemo --rpc-url "$RPC" --broadcast --slow --sig "$@" >"$LOG" 2>&1; then
+    cat "$LOG"
+    exit 1
+  fi
 }
 
 advance() {
