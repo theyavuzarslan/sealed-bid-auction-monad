@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sealed-Bid Auction Engine</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- vendor keccak must load as a classic script first: it attaches keccak256 to window.
+       Module scripts are deferred and run after it. (MIT, see vendor/js-sha3/LICENSE.txt) -->
+  <script src="vendor/js-sha3/sha3.js"></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">Sealed-Bid Auction Engine</a>
+    <nav class="topnav">
+      <a href="#/creator">Open a launch</a>
+    </nav>
+    <div id="wallet-area"></div>
+  </header>
+  <main id="view"></main>
+  <footer class="foot">
+    <span>Privacy via commit-reveal</span>
+    <span>Snipe-resistant: submission timing no longer determines price</span>
+  </footer>
+</body>
+</html>
