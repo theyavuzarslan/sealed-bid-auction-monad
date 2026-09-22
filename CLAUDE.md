@@ -4,22 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository state
 
-Hackathon build for Monad Metropolis (submission 13 Oct 2026). The PRD is `Monad Sealed-Bid Auction Engine.md`; the 13 numbered docs plus `README.md` are the synthesized spec. `AUDIT.md` holds the current security findings — read it before touching `contracts/`. The parent `/Users/0xatakan/CLAUDE.md` is an open-slide guide and does not apply here.
+Hackathon build for Monad Metropolis (submission 13 Oct 2026). The PRD is `Monad Sealed-Bid Auction Engine.md`; the 13 numbered docs plus `README.md` are the synthesized spec, `AUDIT.md` the security findings and their status. The parent `/Users/0xatakan/CLAUDE.md` is an open-slide guide and does not apply here.
 
-Work is split across git worktrees, one per agent, under `/Users/0xatakan/Claude Code/sba-agents/<name>` on branches `agent/<name>` (core, fork, settle, ui, scripts, demo). `setup.sh` creates them; `run.sh` launches the herdr panes. `agent/fork` has the integrated `AuctionEngine.sol`; `master` does not yet.
+Everything is built on `master` in this directory. The herdr multi-agent setup (`run.sh`, `setup.sh`, the `sba-agents/` worktrees, `agent/*` branches) is retired; the branches are kept only as history. `archive/master-stray` holds stray files found untracked on master.
+
+Layout: `contracts/` (Foundry: engine, clearing, sealing, adapters, tests, scripts), `web/` (static ES-module frontend, no build step), `indexer/` (Node), `demo/` (separate Foundry project + static page), `tasks/` (implementation briefs).
 
 ## Commands
 
-Foundry lives in `~/.foundry/bin`; add it to `PATH` if `forge` is missing.
+Foundry lives in `~/.foundry/bin`; add it to `PATH` if `forge` is missing. Run contract commands from `contracts/`.
 
 ```bash
-cd contracts && forge build
-cd contracts && forge test
-cd contracts && forge test --match-test test_PartialFillAtMarginal -vvv
-cd contracts && forge test --match-contract AuctionEngineTest
+forge build
+forge test
+forge test --match-test test_Degen_OversubscribedLifecycle -vvv
+FOUNDRY_PROFILE=deep forge test --match-test testFuzz
+forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
 ```
 
-The demo is a separate Foundry project: `cd demo && forge test` (inside the `demo` worktree). The frontend is static ES modules in `web/`; the indexer is Node in `indexer/`.
+`DeployLocal` needs a running `anvil`; it deploys the engine with mocks and writes `contracts/deployments/local.json`. The demo is a separate Foundry project: `cd demo && forge test`.
+
+## Code map
+
+- `contracts/src/UniformClearing.sol` — generic clearing: a descending linked list of price levels; pro-rata at the clearing price; settlement resumable across transactions. Knows nothing about MON.
+- `contracts/src/SealingLayer.sol` + `DepositLedger.sol` — commit/reveal, allowlist proof, note event, uniform deposits, O(1) burn of unrevealed deposits, per-round `roundBalance`.
+- `contracts/src/AuctionEngine.sol` — the launch product: presets, payments and refunds, LP seeding through allow-listed adapters, GoPlus lock, unsold disposal, vesting, the grace escape.
+- `contracts/test/mocks/Mocks.sol` — token, position manager, adapter and locker mocks, also used by `DeployLocal`.
 
 ## What is being built
 

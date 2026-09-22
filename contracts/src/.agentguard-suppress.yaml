@@ -1,0 +1,11 @@
+# AgentGuard suppressions for contracts/src — reviewed 23 Sep 2026.
+# Scope each entry as narrowly as possible so new code is still scanned.
+suppress:
+  - rule: HIDDEN_TRANSFER
+    paths:
+      - "lib/SafeTransferLib.sol"
+    reason: >-
+      SafeTransferLib.sendValue is the single audited native-MON send used by the money path
+      (bidder refunds in claim, burns in burnUnrevealed/_seed, creator proceeds in withdrawProceeds).
+      Every caller is an explicit, named money-path function guarded by the reentrancy lock and
+      per-round roundBalance accounting. It is not reachable from any configuration or admin function.

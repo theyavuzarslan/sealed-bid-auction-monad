@@ -7,25 +7,30 @@ import {SafeTransferLib} from "./lib/SafeTransferLib.sol";
 import {IDexAdapter, IUniV3LPLocker, IERC721Minimal, IERC20Minimal} from "./interfaces/ILiquidity.sol";
 
 /// @title AuctionEngine — sealed-bid fair launch (Degen and Raise presets)
-/// @notice Round lifecycle: openRound → commit → reveal → settle → seedLP → claim.
+/// @notice Round lifecycle: openRound → commit → reveal → settle → seedLP (or abandonLP) → claim.
 ///         A bid is a max price per token plus a token amount (10-decisions.md #22). Winners pay the
 ///         uniform clearing price; the overpayment is refunded from their uniform deposit.
 /// @dev Money flows, all per round and all checked by `roundBalance` / `tokensOut`:
 ///      - MON in: one uniform deposit per commit.
-///      - MON out: refunds at claim; unrevealed deposits burned (#30); the LP share (#25); creator proceeds.
+///      - MON out: refunds (available as soon as the round is settled, independent of the token);
+///        unrevealed deposits burned (#30); the LP share (#25), or burned if the LP is abandoned;
+///        creator proceeds.
 ///      - Tokens in: `sellAmount` for the auction plus the worst-case LP reserve, pulled at open.
-///      - Tokens out: allocations at claim (or vested, Raise #32); the LP position; unsold supply,
-///        burned for Degen and returned for Raise (#29), or returned if nothing sold at all.
-///      Claims open only after the LP is seeded, so no auctioned token exists outside the contract
-///      before the pool does (#27, bug #7). If seeding is blocked — for example someone initialised
-///      the pool at a bad price — anyone can open claims after `lpGracePeriod`; seeding then retries
-///      at the pool's own price, and unused LP MON is burned so nobody profits from the griefing.
+///      - Tokens out: allocations (or vested, Raise #32); the LP position; unsold supply, burned for
+///        Degen and returned for Raise (#29), or returned if nothing sold at all.
+///      Tokens are delivered only after the LP is seeded, so no auctioned token exists outside the
+///      contract before the pool does (#27, bug #7). The LP is only ever seeded at the clearing price.
+///      If seeding stays blocked for `lpGracePeriod`, anyone can abandon the LP: its MON share is
+///      burned and token delivery opens. Burning, rather than returning, means nobody — least of all
+///      the creator — gains from blocking the pool (AUDIT.md, second review, H1).
+///      Refunds never depend on the token: a paused or blacklisting token cannot hold MON hostage (M2).
 contract AuctionEngine is SealingLayer, UniformClearing {
     using SafeTransferLib for address;
 
     uint256 public constant PRICE_SCALE = 1e18;
     uint256 public constant BPS = 10_000;
     uint256 public constant MAX_SPLITS = 4;
+    uint256 public constant MIN_RAISE_LOCK = 30 days;
 
     enum Preset {
         Degen,
@@ -43,7 +48,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         address token;
         uint128 sellAmount;
         uint96 depositAmount;
-        uint96 minBidSize; // on a bid's max spend, in MON wei
+        uint96 minBidSize; // minimum of amount × reservePrice, in MON wei
         uint96 tickSize; // price grid, MON wei per 1e18 token units
         uint96 reservePrice;
         uint64 commitEnd;
@@ -52,9 +57,9 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         string allowlistURI; // where bidders fetch the tree to build proofs
         uint16 lpShareBps; // share of tokens sold and MON raised that goes to the LP
         DexSplit[] dexSplits;
-        uint64 lockEnd; // Raise only; Degen locks are permanent
+        uint64 lockDuration; // Raise only: LP lock length from seeding; Degen locks are permanent
         string lockFeeTier; // GoPlus fee name: DEFAULT, LVP or LLP
-        uint16 tgeBps; // Raise vesting: share paid at claim
+        uint16 tgeBps; // Raise vesting: share delivered at claim
         uint64 cliff;
         uint64 vestDuration; // 0 = no vesting
     }
@@ -73,7 +78,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         uint96 reservePrice;
         uint64 commitEnd;
         uint64 revealEnd;
-        uint64 lockEnd;
+        uint64 lockDuration;
         uint64 cliff;
         uint64 vestDuration;
         uint64 settledAt;
@@ -81,7 +86,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         string lockFeeTier;
         bool claimsOpen;
         bool lpDone;
-        bool auctionUnsoldDisposed;
+        bool lpAbandoned;
         bool dustSwept;
         uint256 lpMonSpent;
         uint256 lpMonBurned;
@@ -89,6 +94,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         uint256 collected;
         uint256 withdrawn;
         uint256 allocatedTotal;
+        uint256 unsoldOwed;
         uint256 tokensOut;
     }
 
@@ -112,6 +118,8 @@ contract AuctionEngine is SealingLayer, UniformClearing {
     mapping(uint256 => DexSplit[]) internal _splits;
     mapping(uint256 => mapping(address => Bid)) public bids;
     mapping(uint256 => mapping(address => Vest)) public vests;
+    mapping(uint256 => mapping(address => bool)) public tokensClaimed;
+    bool private _seeding;
 
     event RoundOpened(
         uint256 indexed roundId, address indexed creator, address indexed token, Preset preset, string allowlistURI
@@ -126,9 +134,11 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         uint256 monAmount,
         uint256 lockId
     );
+    event LPAbandoned(uint256 indexed roundId, uint256 monBurned);
     event ClaimsOpened(uint256 indexed roundId, bool lpSeeded);
     event UnsoldDisposed(uint256 indexed roundId, address indexed to, uint256 amount);
     event Claimed(uint256 indexed roundId, address indexed bidder, uint256 allocated, uint256 paid, uint256 refund);
+    event TokensClaimed(uint256 indexed roundId, address indexed bidder, uint256 amount);
     event VestedClaimed(uint256 indexed roundId, address indexed bidder, uint256 amount);
     event ProceedsWithdrawn(uint256 indexed roundId, uint256 amount);
 
@@ -137,7 +147,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
     ///                          route LP proceeds to a contract of their own.
     /// @param permanentLockEnd_ Unlock time passed to the locker for Degen rounds. The engine is the lock
     ///                          owner and has no unlock path, so the lock is permanent regardless.
-    /// @param lpGracePeriod_    How long after settlement seeding may stay blocked before anyone can open claims.
+    /// @param lpGracePeriod_    How long after settlement seeding may stay blocked before anyone can abandon it.
     constructor(address locker_, address[] memory adapters_, uint256 permanentLockEnd_, uint256 lpGracePeriod_) {
         require(locker_.code.length != 0, "locker has no code");
         require(permanentLockEnd_ > block.timestamp, "lock end in past");
@@ -170,7 +180,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         r.reservePrice = p.reservePrice;
         r.commitEnd = p.commitEnd;
         r.revealEnd = p.revealEnd;
-        r.lockEnd = p.lockEnd;
+        r.lockDuration = p.lockDuration;
         r.cliff = p.cliff;
         r.vestDuration = p.vestDuration;
         r.allowlistRoot = p.allowlistRoot;
@@ -193,6 +203,11 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         require(p.tickSize != 0, "zero tick");
         require(p.reservePrice != 0 && p.reservePrice % p.tickSize == 0, "reserve off grid");
         require(p.minBidSize != 0 && p.depositAmount > p.minBidSize, "deposit must exceed min bid");
+        // Some amount at the reserve price must land in [minBidSize, depositAmount); otherwise no
+        // bid can ever be valid and every deposit would be burned (second review, L2).
+        require(
+            uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE, "no valid bid possible"
+        );
         require(p.commitEnd > block.timestamp && p.revealEnd > p.commitEnd, "bad windows");
         require(p.lpShareBps <= BPS, "lp share > 100%");
         if (p.lpShareBps == 0) {
@@ -202,6 +217,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
             uint256 sum;
             for (uint256 i; i < p.dexSplits.length; ++i) {
                 require(isAdapter[p.dexSplits[i].adapter], "adapter not allowed");
+                require(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee), "fee tier not supported");
                 require(p.dexSplits[i].bps != 0, "zero split");
                 sum += p.dexSplits[i].bps;
             }
@@ -212,11 +228,12 @@ contract AuctionEngine is SealingLayer, UniformClearing {
             require(p.lpShareBps != 0, "degen needs LP");
             require(p.allowlistRoot == bytes32(0), "degen is open");
             require(p.tgeBps == 0 && p.cliff == 0 && p.vestDuration == 0, "degen has no vesting");
-            require(p.lockEnd == 0, "degen lock is permanent");
+            require(p.lockDuration == 0, "degen lock is permanent");
         } else {
             if (p.vestDuration == 0) require(p.tgeBps == 0 && p.cliff == 0, "vesting fields without duration");
             else require(p.tgeBps < BPS, "tge must be below 100%");
-            if (p.lpShareBps != 0) require(p.lockEnd > p.revealEnd, "lock ends before reveal");
+            if (p.lpShareBps != 0) require(p.lockDuration >= MIN_RAISE_LOCK, "lock too short");
+            else require(p.lockDuration == 0, "lock without LP");
         }
     }
 
@@ -237,9 +254,10 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         Round storage r = _rounds[roundId];
         require(price % r.tickSize == 0 && price >= r.reservePrice, "price off grid or below reserve");
         require(amount != 0, "zero amount");
-        uint256 maxSpend = _mulDivUp(price, amount, PRICE_SCALE);
-        require(maxSpend >= r.minBidSize, "below minimum bid");
-        require(maxSpend < r.depositAmount, "bid exceeds deposit");
+        require(_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount, "bid exceeds deposit");
+        // The minimum applies to what the bid would pay at the reserve price, so every bid — and
+        // every price level it creates — is worth at least minBidSize if it wins (second review, L3).
+        require(_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize, "below minimum bid");
         bids[roundId][bidder] = Bid(price, amount);
         _addBid(roundId, price, amount, hint);
     }
@@ -261,47 +279,62 @@ contract AuctionEngine is SealingLayer, UniformClearing {
 
     // ─── LP ─────────────────────────────────────────────────────────────
 
-    /// @notice Seed and lock the LP, dispose of unsold supply, and open claims. Anyone, once settled.
+    /// @notice Seed and lock the LP at the clearing price, then open token delivery. Anyone, once settled.
     function seedLP(uint256 roundId) external nonReentrant {
         Round storage r = _rounds[roundId];
         Book storage b = _books[roundId];
         require(b.settled, "not settled");
-        require(!r.lpDone, "already seeded");
-        bool relaxed = r.claimsOpen;
-        bool seeded;
-        uint256 soldLB = _soldLowerBound(roundId);
-        if (r.lpShareBps != 0 && soldLB != 0) {
-            uint256 price = b.clearingPrice;
-            uint256 lpTokens = soldLB * r.lpShareBps / BPS;
-            uint256 lpMon = (soldLB * price / PRICE_SCALE) * r.lpShareBps / BPS;
-            if (lpTokens != 0 && lpMon != 0) {
-                _seed(roundId, r, price, lpTokens, lpMon, relaxed);
-                seeded = true;
-            }
-        }
+        require(!r.lpDone, "LP already done");
+        (uint256 lpTokens, uint256 lpMon) = _lpTargets(roundId, r, b);
+        bool seeded = lpTokens != 0 && lpMon != 0;
+        if (seeded) _seed(roundId, r, b.clearingPrice, lpTokens, lpMon);
         r.lpDone = true;
         r.claimsOpen = true;
-        _disposeUnsold(roundId, r, b);
+        _recordUnsold(r, b);
         emit ClaimsOpened(roundId, seeded);
     }
 
-    /// @notice Liveness escape: if seeding stays blocked for `lpGracePeriod` after settlement,
-    ///         anyone may open claims. `seedLP` stays callable and then seeds at the pool's own price.
-    function forceOpenClaims(uint256 roundId) external nonReentrant {
+    /// @notice Liveness escape: if seeding stays blocked for `lpGracePeriod` after settlement, anyone may
+    ///         abandon the LP. Its MON share is burned — not returned to anyone — so blocking the pool
+    ///         never pays. Makes no token transfers, so a misbehaving token cannot block it either.
+    function abandonLP(uint256 roundId) external nonReentrant {
         Round storage r = _rounds[roundId];
         Book storage b = _books[roundId];
         require(b.settled, "not settled");
-        require(!r.claimsOpen, "claims already open");
+        require(!r.lpDone, "LP already done");
         require(block.timestamp >= uint256(r.settledAt) + lpGracePeriod, "grace period not over");
+        (, uint256 lpMon) = _lpTargets(roundId, r, b);
+        r.lpDone = true;
+        r.lpAbandoned = true;
         r.claimsOpen = true;
-        _disposeUnsold(roundId, r, b);
+        r.lpMonBurned = lpMon;
+        _recordUnsold(r, b); // the whole reserve is unused
+        if (lpMon != 0) _debit(roundId, lpMon);
+        emit LPAbandoned(roundId, lpMon);
         emit ClaimsOpened(roundId, false);
+        if (lpMon != 0) SafeTransferLib.sendValue(BURN, lpMon);
     }
 
-    function _seed(uint256 roundId, Round storage r, uint256 price, uint256 lpTokens, uint256 lpMon, bool relaxed)
+    /// @notice Transfer unsold supply and dust owed to its recipient (burn for Degen, creator for Raise).
+    ///         Separate and retryable, so opening claims never depends on this transfer succeeding.
+    function disposeUnsold(uint256 roundId) external nonReentrant {
+        _disposeOwed(roundId, _rounds[roundId]);
+    }
+
+    function _lpTargets(uint256 roundId, Round storage r, Book storage b)
         private
+        view
+        returns (uint256 lpTokens, uint256 lpMon)
     {
+        uint256 soldLB = _soldLowerBound(roundId);
+        if (r.lpShareBps == 0 || soldLB == 0) return (0, 0);
+        lpTokens = soldLB * r.lpShareBps / BPS;
+        lpMon = (soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS;
+    }
+
+    function _seed(uint256 roundId, Round storage r, uint256 price, uint256 lpTokens, uint256 lpMon) private {
         _debit(roundId, lpMon); // reverts if this round cannot cover it
+        _seeding = true;
         DexSplit[] storage splits = _splits[roundId];
         uint256 tokensLeft = lpTokens;
         uint256 monLeft = lpMon;
@@ -314,40 +347,27 @@ contract AuctionEngine is SealingLayer, UniformClearing {
             uint256 mon = isLast ? monLeft : lpMon * s.bps / BPS;
             tokensLeft -= tok;
             monLeft -= mon;
-            (uint256 t, uint256 m) = _seedOne(roundId, r, s, price, tok, mon, relaxed);
+            (uint256 t, uint256 m) = _seedOne(roundId, r, s, price, tok, mon);
             tokensUsed += t;
             monUsed += m;
         }
+        _seeding = false;
         r.lpTokensUsed = tokensUsed;
         r.lpMonSpent = monUsed;
         _tokensOut(r, tokensUsed);
-        uint256 unused = lpMon - monUsed;
-        if (unused != 0) {
-            if (relaxed) {
-                // Seeding was blocked and now happens at someone else's price: burn what the pool
-                // didn't take, so neither the creator nor the griefer gains from the block.
-                r.lpMonBurned = unused;
-                SafeTransferLib.sendValue(BURN, unused);
-            } else {
-                _credit(roundId, unused); // rounding dust: stays with the round, reaches the creator
-            }
-        }
+        // Rounding dust the pool did not take stays with the round and reaches the creator.
+        if (lpMon > monUsed) _credit(roundId, lpMon - monUsed);
     }
 
-    function _seedOne(
-        uint256 roundId,
-        Round storage r,
-        DexSplit memory s,
-        uint256 price,
-        uint256 tok,
-        uint256 mon,
-        bool relaxed
-    ) private returns (uint256 tokUsed, uint256 monUsed) {
+    function _seedOne(uint256 roundId, Round storage r, DexSplit memory s, uint256 price, uint256 tok, uint256 mon)
+        private
+        returns (uint256 tokUsed, uint256 monUsed)
+    {
         address token = r.token;
         uint256 tokBefore = IERC20Minimal(token).balanceOf(address(this));
         uint256 monBefore = address(this).balance;
         token.safeApprove(s.adapter, tok);
-        (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, relaxed, address(this));
+        (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, address(this));
         token.safeApprove(s.adapter, 0);
         tokUsed = tokBefore - IERC20Minimal(token).balanceOf(address(this));
         monUsed = monBefore - address(this).balance;
@@ -357,23 +377,29 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         bool permanent = r.preset == Preset.Degen;
         IERC721Minimal(npm).approve(address(locker), nftId);
         uint256 lockId = locker.lock(
-            npm, nftId, permanent ? address(this) : r.creator, r.creator, permanent ? permanentLockEnd : r.lockEnd, r.lockFeeTier
+            npm,
+            nftId,
+            permanent ? address(this) : r.creator,
+            r.creator,
+            permanent ? permanentLockEnd : block.timestamp + r.lockDuration,
+            r.lockFeeTier
         );
         emit LPSeeded(roundId, s.adapter, npm, nftId, tokUsed, monUsed, lockId);
     }
 
-    function _disposeUnsold(uint256 roundId, Round storage r, Book storage b) private {
-        uint256 amount;
-        if (!r.auctionUnsoldDisposed) {
-            r.auctionUnsoldDisposed = true;
-            amount += uint256(r.sellAmount) - b.sold;
-        }
-        if (r.lpDone) amount += uint256(r.tokenReserve) - r.lpTokensUsed;
-        if (amount == 0) return;
-        address to = _unsoldRecipient(r, b);
+    /// @dev Called exactly once, when the LP is seeded or abandoned.
+    function _recordUnsold(Round storage r, Book storage b) private {
+        r.unsoldOwed += (uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed);
+    }
+
+    function _disposeOwed(uint256 roundId, Round storage r) private {
+        uint256 amount = r.unsoldOwed;
+        require(amount != 0, "nothing to dispose");
+        r.unsoldOwed = 0;
+        address to = _unsoldRecipient(r, _books[roundId]);
         _tokensOut(r, amount);
-        r.token.safeTransfer(to, amount);
         emit UnsoldDisposed(roundId, to, amount);
+        r.token.safeTransfer(to, amount);
     }
 
     /// @dev Decision #29: Degen burns unsold supply, Raise returns it. A round that sold nothing
@@ -385,29 +411,60 @@ contract AuctionEngine is SealingLayer, UniformClearing {
 
     // ─── Claim ──────────────────────────────────────────────────────────
 
-    /// @notice Tokens won plus the refund of `deposit − paid`. Revealed bidders only, once claims open.
+    /// @notice Refund and tokens for msg.sender, whichever are available and not yet claimed.
     function claim(uint256 roundId) external nonReentrant {
+        bool refunded = accounts[roundId][msg.sender].settled;
+        if (!refunded) _refund(roundId, msg.sender);
+        if (_rounds[roundId].claimsOpen && !tokensClaimed[roundId][msg.sender]) {
+            _deliver(roundId, msg.sender);
+        } else {
+            require(!refunded, "nothing to claim");
+        }
+    }
+
+    /// @notice Refund of `deposit − paid` to `bidder`. Anyone may trigger it; funds always go to the bidder.
+    ///         Available as soon as the round is settled, whatever state the token or the LP is in.
+    function claimRefund(uint256 roundId, address bidder) external nonReentrant {
+        _refund(roundId, bidder);
+    }
+
+    /// @notice Tokens won, to `bidder`. Anyone may trigger it; tokens always go to the bidder.
+    function claimTokens(uint256 roundId, address bidder) external nonReentrant {
+        if (!accounts[roundId][bidder].settled) _refund(roundId, bidder);
+        _deliver(roundId, bidder);
+    }
+
+    function _refund(uint256 roundId, address bidder) private {
         Round storage r = _rounds[roundId];
-        require(r.claimsOpen, "claims not open");
-        require(commitments[roundId][msg.sender].revealed, "not revealed");
-        Bid memory bid = bids[roundId][msg.sender];
+        require(_books[roundId].settled, "not settled");
+        require(commitments[roundId][bidder].revealed, "not revealed");
+        Bid memory bid = bids[roundId][bidder];
         uint256 alloc = _allocation(roundId, bid.price, bid.amount);
         uint256 paid = _mulDivUp(alloc, _books[roundId].clearingPrice, PRICE_SCALE);
-        uint256 refund = _settleAccount(roundId, msg.sender, paid);
+        uint256 refund = _settleAccount(roundId, bidder, paid);
         r.collected += paid;
         r.allocatedTotal += alloc;
+        emit Claimed(roundId, bidder, alloc, paid, refund);
+        if (refund != 0) SafeTransferLib.sendValue(bidder, refund);
+    }
 
+    function _deliver(uint256 roundId, address bidder) private {
+        Round storage r = _rounds[roundId];
+        require(r.claimsOpen, "claims not open");
+        require(!tokensClaimed[roundId][bidder], "tokens already claimed");
+        tokensClaimed[roundId][bidder] = true;
+        Bid memory bid = bids[roundId][bidder];
+        uint256 alloc = _allocation(roundId, bid.price, bid.amount);
         uint256 release = alloc;
         if (r.vestDuration != 0 && alloc != 0) {
             release = alloc * r.tgeBps / BPS;
-            vests[roundId][msg.sender] = Vest(uint128(alloc), uint128(release));
+            vests[roundId][bidder] = Vest(uint128(alloc), uint128(release));
         }
+        emit TokensClaimed(roundId, bidder, release);
         if (release != 0) {
             _tokensOut(r, release);
-            r.token.safeTransfer(msg.sender, release);
+            r.token.safeTransfer(bidder, release);
         }
-        emit Claimed(roundId, msg.sender, alloc, paid, refund);
-        if (refund != 0) SafeTransferLib.sendValue(msg.sender, refund);
     }
 
     /// @notice Raise rounds: release tokens vested since the last call.
@@ -420,15 +477,16 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         require(amount != 0, "nothing vested");
         v.released = uint128(vested);
         _tokensOut(r, amount);
-        r.token.safeTransfer(msg.sender, amount);
         emit VestedClaimed(roundId, msg.sender, amount);
+        r.token.safeTransfer(msg.sender, amount);
     }
 
-    /// @notice Creator's share of the MON raised: payments collected so far, minus what went to the LP.
+    /// @notice Creator's share of the MON raised: payments collected so far, minus the LP's share
+    ///         (spent on the pool, or burned if the LP was abandoned).
     function withdrawProceeds(uint256 roundId) external nonReentrant {
         Round storage r = _rounds[roundId];
         require(msg.sender == r.creator, "not creator");
-        require(r.lpDone, "LP not seeded");
+        require(r.lpDone, "LP not done");
         uint256 amount = _creatorAvailable(r);
         require(amount != 0, "nothing to withdraw");
         r.withdrawn += amount;
@@ -437,20 +495,15 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         SafeTransferLib.sendValue(r.creator, amount);
     }
 
-    /// @notice After every revealed bidder has claimed, dispose of pro-rata rounding dust like unsold supply.
+    /// @notice Once every revealed bidder has been refunded, dispose of pro-rata rounding dust like unsold supply.
     function sweepDust(uint256 roundId) external nonReentrant {
         Round storage r = _rounds[roundId];
         Ledger storage l = ledgers[roundId];
         require(r.lpDone && !r.dustSwept, "not sweepable");
-        require(l.claims == l.reveals, "claims outstanding");
+        require(l.claims == l.reveals, "refunds outstanding");
         r.dustSwept = true;
-        Book storage b = _books[roundId];
-        uint256 dust = b.sold - r.allocatedTotal;
-        if (dust == 0) return;
-        address to = _unsoldRecipient(r, b);
-        _tokensOut(r, dust);
-        r.token.safeTransfer(to, dust);
-        emit UnsoldDisposed(roundId, to, dust);
+        r.unsoldOwed += _books[roundId].sold - r.allocatedTotal;
+        if (r.unsoldOwed != 0) _disposeOwed(roundId, r);
     }
 
     // ─── Views ──────────────────────────────────────────────────────────
@@ -463,7 +516,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         return _splits[roundId];
     }
 
-    /// @notice What `bidder` would receive at claim. Reverts until the round is settled.
+    /// @notice What `bidder` receives: tokens allocated, MON paid, MON refunded. Reverts until settled.
     function quote(uint256 roundId, address bidder)
         external
         view
@@ -491,7 +544,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
     function _creatorAvailable(Round storage r) private view returns (uint256) {
         uint256 lpCost = r.lpMonSpent + r.lpMonBurned;
         uint256 entitled = r.collected > lpCost ? r.collected - lpCost : 0;
-        return entitled - r.withdrawn;
+        return entitled > r.withdrawn ? entitled - r.withdrawn : 0;
     }
 
     function _vestedAmount(Round storage r, uint256 total) private view returns (uint256) {
@@ -513,9 +566,9 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         return x == 0 ? 0 : (x - 1) / d + 1;
     }
 
-    /// @dev Only adapters return MON (unused LP funds).
+    /// @dev Only adapters return MON, and only while seeding: anything else would be unaccounted.
     receive() external payable {
-        require(isAdapter[msg.sender], "unexpected MON");
+        require(_seeding && isAdapter[msg.sender], "unexpected MON");
     }
 
     function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
