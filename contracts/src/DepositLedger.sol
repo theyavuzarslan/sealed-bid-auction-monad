@@ -1,84 +1,82 @@
 // SPDX-License-Identifier: LGPL-3.0
 pragma solidity ^0.8.24;
 
-/// @notice Native-value deposit accounting shared by the sealing layer.
+import {SafeTransferLib} from "./lib/SafeTransferLib.sol";
+
+/// @notice Uniform-deposit accounting shared by every sealed-bid product.
+/// @dev Every bidder in a round locks the same `deposit`. A revealed bidder settles exactly once,
+///      splitting their deposit into `paid` (kept by the round) and `refunded` (sent back).
+///      Unrevealed deposits are burned in aggregate (10-decisions.md #30): because deposits are
+///      uniform, the amount is `(commits - reveals) * deposit`, so burning is O(1).
+///      `roundBalance` tracks the MON each round holds; every outflow is a checked subtraction,
+///      so no round can ever spend another round's MON.
 abstract contract DepositLedger {
-    struct Deposit {
-        uint256 locked;
-        uint256 appliedToFill;
-        uint256 refunded;
-        uint256 slashed;
+    address internal constant BURN = 0x000000000000000000000000000000000000dEaD;
+
+    struct Ledger {
+        uint64 commits;
+        uint64 reveals;
+        uint64 claims;
+        uint256 burned;
     }
 
-    mapping(uint256 => mapping(address => Deposit)) public deposits;
-    address payable public immutable slashDestination;
-    address payable public immutable fillDestination;
-    bool private entered;
-
-    event Slashed(uint256 indexed roundId, address indexed bidder, uint256 amount);
-
-    constructor(address payable slashDestination_, address payable fillDestination_) {
-        require(slashDestination_ != address(0) && fillDestination_ != address(0), "zero destination");
-        require(slashDestination_ != address(this) && fillDestination_ != address(this), "self destination");
-        slashDestination = slashDestination_;
-        // TODO: not specified: which clearing core / LP seeder receives fill proceeds?
-        fillDestination = fillDestination_;
+    struct Account {
+        uint128 paid;
+        uint128 refunded;
+        bool settled;
     }
+
+    mapping(uint256 => Ledger) public ledgers;
+    mapping(uint256 => mapping(address => Account)) public accounts;
+    mapping(uint256 => uint256) public roundBalance;
+
+    uint256 private _lock = 1;
+
+    event UnrevealedBurned(uint256 indexed roundId, uint256 count, uint256 amount);
 
     modifier nonReentrant() {
-        require(!entered, "reentrancy");
-        entered = true;
+        require(_lock == 1, "reentrancy");
+        _lock = 2;
         _;
-        entered = false;
+        _lock = 1;
     }
 
-    function _lockDeposit(uint256 roundId, address bidder, uint256 amount) internal {
-        require(amount != 0 && deposits[roundId][bidder].locked == 0, "invalid deposit");
-        deposits[roundId][bidder].locked = amount;
+    /// @notice Burn every deposit whose commitment was never revealed. Anyone, after the reveal window.
+    function burnUnrevealed(uint256 roundId) external nonReentrant {
+        require(block.timestamp >= _revealEndOf(roundId), "reveal window open");
+        Ledger storage l = ledgers[roundId];
+        uint256 unrevealed = l.commits - l.reveals;
+        uint256 due = unrevealed * _depositOf(roundId);
+        uint256 amount = due - l.burned;
+        require(amount != 0, "nothing to burn");
+        l.burned = due;
+        _debit(roundId, amount);
+        emit UnrevealedBurned(roundId, unrevealed, amount);
+        SafeTransferLib.sendValue(BURN, amount);
     }
 
-    function slashUnrevealed(uint256 roundId, address[] calldata bidders) external nonReentrant {
-        for (uint256 i; i < bidders.length; ++i) {
-            address bidder = bidders[i];
-            require(_canSlash(roundId, bidder), "not slashable");
-            Deposit storage deposit = deposits[roundId][bidder];
-            _requireUnsettled(deposit);
-            deposit.slashed = deposit.locked;
-            _assertSettled(deposit);
-            emit Slashed(roundId, bidder, deposit.slashed);
-            _send(slashDestination, deposit.slashed);
-        }
+    /// @dev Records a revealed bidder's settlement. The caller sends the refund after all effects.
+    function _settleAccount(uint256 roundId, address bidder, uint256 paid) internal returns (uint256 refund) {
+        uint256 deposit = _depositOf(roundId);
+        Account storage a = accounts[roundId][bidder];
+        require(!a.settled, "already settled");
+        require(paid < deposit, "paid exceeds deposit");
+        refund = deposit - paid;
+        a.settled = true;
+        a.paid = uint128(paid);
+        a.refunded = uint128(refund);
+        ledgers[roundId].claims += 1;
+        _debit(roundId, refund);
     }
 
-    /// @dev Call only after authenticated clearing-core settlement; never accept a bidder-supplied fill.
-    function _releaseDeposit(uint256 roundId, address bidder, uint256 appliedToFill) internal nonReentrant {
-        require(_canRelease(roundId, bidder), "not settled and revealed");
-        Deposit storage deposit = deposits[roundId][bidder];
-        _requireUnsettled(deposit);
-        require(appliedToFill <= deposit.locked, "fill exceeds deposit");
-        deposit.appliedToFill = appliedToFill;
-        deposit.refunded = deposit.locked - appliedToFill;
-        _assertSettled(deposit);
-        _send(fillDestination, appliedToFill);
-        _send(payable(bidder), deposit.refunded);
+    function _credit(uint256 roundId, uint256 amount) internal {
+        roundBalance[roundId] += amount;
     }
 
-    function _requireUnsettled(Deposit storage deposit) private view {
-        require(deposit.locked != 0, "no deposit");
-        require(deposit.appliedToFill == 0 && deposit.refunded == 0 && deposit.slashed == 0, "already settled");
+    function _debit(uint256 roundId, uint256 amount) internal {
+        roundBalance[roundId] -= amount;
     }
 
-    function _assertSettled(Deposit storage deposit) private view {
-        assert(deposit.locked == deposit.appliedToFill + deposit.refunded + deposit.slashed);
-    }
-
-    function _send(address payable recipient, uint256 amount) private {
-        if (amount == 0) return;
-        (bool success,) = recipient.call{value: amount}("");
-        require(success, "transfer failed");
-    }
-
-    // TODO: not specified: clearing-core settlement authentication / integration interface.
-    function _canRelease(uint256 roundId, address bidder) internal view virtual returns (bool);
-    function _canSlash(uint256 roundId, address bidder) internal view virtual returns (bool);
+    function _depositOf(uint256 roundId) internal view virtual returns (uint256);
+    function _revealEndOf(uint256 roundId) internal view virtual returns (uint256);
 }

@@ -1,40 +1,30 @@
 // SPDX-License-Identifier: LGPL-3.0
 pragma solidity ^0.8.24;
 
-import {Script} from "forge-std/Script.sol";
-import {SealingLayer} from "../src/SealingLayer.sol";
-import {ClearingCore} from "../src/ClearingCore.sol";
-import {DepositLedger} from "../src/DepositLedger.sol";
-import {LPSeeder} from "../src/LPSeeder.sol";
-import {ExitAdapter} from "../src/ExitAdapter.sol";
+import {Script, console2} from "forge-std/Script.sol";
+import {AuctionEngine} from "../src/AuctionEngine.sol";
 
+/// @notice Deploy the engine to Monad.
+/// Env: DEPLOYER_PRIVATE_KEY (required), ADAPTERS (comma-separated DEX adapter addresses, required),
+///      LOCKER (default: GoPlus UniV3LPLocker on Monad), PERMANENT_LOCK_END (default 2100-01-01),
+///      LP_GRACE_SECONDS (default 1 day).
 contract Deploy is Script {
-    function run() external {
-        uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+    address constant GOPLUS_UNIV3_LOCKER = 0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d;
 
-        vm.startBroadcast(deployerKey);
-        SealingLayer sealingLayer = new SealingLayer();
-        ClearingCore clearingCore = new ClearingCore();
-        DepositLedger depositLedger = new DepositLedger();
-        LPSeeder lpSeeder = new LPSeeder();
-        ExitAdapter exitAdapter = new ExitAdapter();
+    function run() external returns (AuctionEngine engine) {
+        uint256 key = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address[] memory adapters = vm.envAddress("ADAPTERS", ",");
+        address locker = vm.envOr("LOCKER", GOPLUS_UNIV3_LOCKER);
+        uint256 lockEnd = vm.envOr("PERMANENT_LOCK_END", uint256(4102444800));
+        uint256 grace = vm.envOr("LP_GRACE_SECONDS", uint256(1 days));
+
+        vm.startBroadcast(key);
+        engine = new AuctionEngine(locker, adapters, lockEnd, grace);
         vm.stopBroadcast();
 
-        // TODO: not specified — wiring between sealing layer, clearing core,
-        // deposit ledger, LP seeder and exit adapter (grant/settable roles)
-        // is undefined in 03-architecture.md / 06-api.md. Add once the
-        // contracts expose their linkage functions.
-        // TODO: not specified — constructor parameters for each contract
-        // (e.g. slash destination in DepositLedger) are per-agent decisions;
-        // update this script when core/fork land their parameters.
-
-        // addresses go to a json file for the deploy log and the indexer env
-        vm.serializeAddress("deployed", "sealingLayer", address(sealingLayer));
-        vm.serializeAddress("deployed", "clearingCore", address(clearingCore));
-        vm.serializeAddress("deployed", "depositLedger", address(depositLedger));
-        vm.serializeAddress("deployed", "lpSeeder", address(lpSeeder));
-        string memory json = vm.serializeAddress("deployed", "exitAdapter", address(exitAdapter));
-        vm.createDir("deployments", true);
-        vm.writeJson(json, "deployments/monad-testnet.json");
+        console2.log("AuctionEngine", address(engine));
+        string memory json = vm.serializeAddress("deployed", "auctionEngine", address(engine));
+        json = vm.serializeAddress("deployed", "locker", locker);
+        vm.writeJson(json, string.concat("deployments/", vm.toString(block.chainid), ".json"));
     }
 }
