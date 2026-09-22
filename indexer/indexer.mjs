@@ -26,7 +26,7 @@ import { createServer } from "./server.mjs";
 // Round fields that never change after openRound; the mutable ones are served by the event views.
 const CONFIG_FIELDS = [
   "sellAmount", "tokenReserve", "depositAmount", "minBidSize", "tickSize", "reservePrice",
-  "commitEnd", "revealEnd", "lpShareBps", "tgeBps", "cliff", "vestDuration", "lockEnd",
+  "commitEnd", "revealEnd", "lpShareBps", "tgeBps", "cliff", "vestDuration", "lockDuration",
   "lockFeeTier", "allowlistRoot",
 ];
 

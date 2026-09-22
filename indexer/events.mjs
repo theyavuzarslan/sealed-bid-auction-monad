@@ -11,7 +11,7 @@ import { eventRegistry } from "./abi.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_ABI_PATH = path.resolve(here, "../contracts/abi/AuctionEngine.json");
 
-/** Every event the views consume. Emitted by AuctionEngine, SealingLayer and DepositLedger. */
+/** Every event the views consume (13). Emitted by AuctionEngine, SealingLayer and DepositLedger. */
 export const EXPECTED_EVENTS = [
   "RoundOpened",
   "Committed",
@@ -19,9 +19,11 @@ export const EXPECTED_EVENTS = [
   "UnrevealedBurned",
   "Cleared",
   "LPSeeded",
+  "LPAbandoned",
   "ClaimsOpened",
   "UnsoldDisposed",
   "Claimed",
+  "TokensClaimed",
   "VestedClaimed",
   "ProceedsWithdrawn",
 ];

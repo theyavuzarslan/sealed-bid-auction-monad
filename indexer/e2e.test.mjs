@@ -1,4 +1,5 @@
-// End-to-end: anvil + DeployLocal + one full Degen round (+ a small Raise round for VestedClaimed),
+// End-to-end: anvil + DeployLocal + one full Degen round (+ a small Raise round for VestedClaimed and a
+// Degen round whose LP is abandoned),
 // driven with real transactions, then the indexer and its HTTP API are checked against the chain.
 //
 // Needs Foundry (anvil, forge, cast) on PATH or in ~/.foundry/bin; skipped otherwise.
@@ -79,7 +80,7 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
   const engine = dep.auctionEngine.toLowerCase();
 
   const accounts = (await rpc("eth_accounts")).map((a) => a.toLowerCase());
-  const [creator, alice, bob, carol, dave, eve, frank] = accounts;
+  const [creator, alice, bob, carol, dave, eve, frank, george] = accounts;
   const now = async () => Number(BigInt((await rpc("eth_getBlockByNumber", ["latest", false])).timestamp));
   const warp = async (seconds) => {
     await rpc("evm_increaseTime", [seconds]);
@@ -144,10 +145,18 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
   }
   await warp(600);
   await send(frank, calldata("settle(uint256,uint256)", 1, 100));
+  // Refunds are open as soon as the round is settled: Bob pulls his own, Frank triggers Carol's.
+  await send(bob, calldata("claimRefund(uint256,address)", 1, bob));
+  await send(frank, calldata("claimRefund(uint256,address)", 1, carol));
   await send(frank, calldata("seedLP(uint256)", 1));
-  for (const b of bids.filter((b) => !b.neverReveals)) await send(b.who, calldata("claim(uint256)", 1));
+  await send(alice, calldata("claim(uint256)", 1)); // refund + tokens in one tx
+  await send(bob, calldata("claimTokens(uint256,address)", 1, bob));
+  await send(carol, calldata("claimTokens(uint256,address)", 1, carol));
+  await send(dave, calldata("claimTokens(uint256,address)", 1, dave)); // refunds first, same tx
   await send(frank, calldata("burnUnrevealed(uint256)", 1));
+  await send(frank, calldata("disposeUnsold(uint256)", 1));
   await send(creator, calldata("withdrawProceeds(uint256)", 1));
+  await send(frank, calldata("sweepDust(uint256)", 1)); // no dust here: no event
 
   // ─── Round 2: Raise with vesting, to exercise VestedClaimed ───────────
   t0 = await now();
@@ -161,22 +170,39 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
   await send(frank, calldata("settle(uint256,uint256)", 2, 100));
   await send(frank, calldata("seedLP(uint256)", 2));
   await send(frank, calldata("claim(uint256)", 2));
+  await send(frank, calldata("disposeUnsold(uint256)", 2));
   await warp(1000);
   await send(frank, calldata("claimVested(uint256)", 2));
+
+  // ─── Round 3: Degen whose LP is never seeded, to exercise abandonLP ──
+  t0 = await now();
+  const degen3 = `(0,${dep.token},${100n * E18},${10n * E18},${10n ** 16n},${E15},${E15},${t0 + 600},${t0 + 1200},0x${"0".repeat(64)},"",5000,[(${dep.adapter},10000,500)],0,DEFAULT,0,0,0)`;
+  await send(creator, calldata(OPEN_SIG, degen3));
+  const gb = { price: 3n * E15, amount: 50n * E18 };
+  await send(george, calldata("commit(uint256,bytes32,bytes32[],bytes)", 3, commitHash(gb.price, gb.amount, salt(george), george), "[]", "0x"), 10n * E18);
+  await warp(600);
+  await send(george, calldata("reveal(uint256,uint96,uint96,bytes32)", 3, gb.price, gb.amount, salt(george)));
+  await warp(600);
+  await send(frank, calldata("settle(uint256,uint256)", 3, 100));
+  await warp(86_400); // lpGracePeriod in DeployLocal
+  await send(frank, calldata("abandonLP(uint256)", 3));
+  await send(george, calldata("claim(uint256)", 3));
+  await send(frank, calldata("disposeUnsold(uint256)", 3));
 
   // ─── Index and check the views ─────────────────────────────────────
   await indexer.syncOnce();
   s = indexer.store;
-  const seenEvents = new Set([...s.events(1).events, ...s.events(2).events].map((e) => e.event));
+  const seenEvents = new Set([1, 2, 3].flatMap((r) => s.events(r).events).map((e) => e.event));
   assert.deepEqual([...seenEvents].sort(), [
-    "Claimed", "ClaimsOpened", "Cleared", "Committed", "LPSeeded", "ProceedsWithdrawn",
-    "Revealed", "RoundOpened", "UnrevealedBurned", "UnsoldDisposed", "VestedClaimed",
+    "Claimed", "ClaimsOpened", "Cleared", "Committed", "LPAbandoned", "LPSeeded", "ProceedsWithdrawn",
+    "Revealed", "RoundOpened", "TokensClaimed", "UnrevealedBurned", "UnsoldDisposed", "VestedClaimed",
   ]);
 
   const sum1 = s.summary(1);
   assert.equal(sum1.phase, "claims-open");
   assert.equal(sum1.creator, creator);
-  assert.deepEqual([sum1.commitCount, sum1.revealCount, sum1.claimCount], [5, 4, 4]);
+  assert.deepEqual([sum1.commitCount, sum1.revealCount, sum1.refundCount, sum1.tokensClaimedCount], [5, 4, 4, 4]);
+  assert.equal(sum1.lpAbandoned, false);
   assert.equal(s.reveals(1).unrevealedCount, 1);
 
   const demand = s.demand(1);
@@ -203,17 +229,29 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
   assert.equal(lp.seeds[0].positionManager, dep.positionManager.toLowerCase());
   assert.deepEqual([lp.seeds[0].tokenAmount, lp.seeds[0].monAmount, lp.seeds[0].nftId], [lpTokens, lpMon, 1n]);
   assert.deepEqual(lp.lockIds, [0n]);
+  assert.equal(lp.abandoned, null);
   assert.equal(lp.claimsOpened.lpSeeded, true);
   assert.deepEqual(lp.unsoldDisposed.map((u) => [u.to, u.amount]), [[BURN, 500n * E18 - lpTokens]]);
 
-  const expectClaims = { [alice]: [400n, 12n, 88n], [bob]: [400n, 12n, 88n], [carol]: [100n, 3n, 97n], [dave]: [100n, 3n, 97n] };
-  for (const [who, [alloc, paid, refund]] of Object.entries(expectClaims)) {
+  // Journeys: commit -> reveal -> refund -> tokens, with refund and tokens in one tx or two.
+  const expect = {
+    [alice]: { claim: [400n, 12n, 88n], sameTx: true, txs: 3, own: 3 },
+    [bob]: { claim: [400n, 12n, 88n], sameTx: false, txs: 4, own: 4 },
+    [carol]: { claim: [100n, 3n, 97n], sameTx: false, txs: 4, own: 3 },
+    [dave]: { claim: [100n, 3n, 97n], sameTx: true, txs: 3, own: 3 },
+  };
+  for (const [who, e] of Object.entries(expect)) {
     const j = s.journey(1, who);
+    const [alloc, paid, refund] = e.claim;
     assert.equal(j.status, "claimed", who);
-    assert.deepEqual([j.claim.allocated, j.claim.paid, j.claim.refund], [alloc * E18, paid * E17, refund * E17], who);
+    assert.deepEqual([j.refund.allocated, j.refund.paid, j.refund.refund], [alloc * E18, paid * E17, refund * E17], who);
+    assert.equal(j.tokens.amount, alloc * E18, who);
+    assert.equal(j.tokens.sameTxAsRefund, e.sameTx, who);
     assert.equal(j.journey.complete, true);
-    for (const step of [j.commit, j.reveal, j.claim]) {
-      assert.equal(step.from, who);
+    assert.equal(j.journey.transactions, e.txs, who);
+    assert.equal(j.journey.paidByBidder.transactions, e.own, who);
+    const steps = [j.commit, j.reveal, j.refund, j.tokens];
+    for (const step of steps) {
       assert.ok(step.gasUsed > 21000n);
       assert.ok(step.gasLimit >= step.gasUsed);
       assert.equal(step.fee, step.gasUsed * step.effectiveGasPrice);
@@ -222,7 +260,12 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
       assert.equal(step.gasUsed, tx.gasUsed);
       assert.equal(step.gasLimit, tx.gasLimit);
     }
+    // The journey fee covers refund and tokens, counting a shared transaction once.
+    const unique = [...new Map(steps.map((st) => [st.txHash, st])).values()];
+    assert.equal(j.journey.fee, unique.reduce((a, st) => a + st.fee, 0n), who);
+    assert.equal(j.journey.feeAtGasLimit, unique.reduce((a, st) => a + st.feeAtGasLimit, 0n), who);
   }
+  assert.equal(s.journey(1, carol).refund.from, frank);
   const alice1 = s.journey(1, alice);
   assert.equal(alice1.commit.note, bids[0].note);
   assert.equal(alice1.commit.noteBytes, 192);
@@ -242,8 +285,19 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
   assert.equal(s.lp(2).claimsOpened.lpSeeded, false);
   assert.deepEqual(s.lp(2).unsoldDisposed.map((u) => [u.to, u.amount]), [[creator, 50n * E18]]);
   const fj = s.journey(2, frank);
-  assert.equal(fj.claim.allocated, 50n * E18);
+  assert.equal(fj.refund.allocated, 50n * E18);
+  assert.equal(fj.tokens.amount, (50n * E18 * 2500n) / 10000n); // share delivered at claim
   assert.deepEqual(fj.vested.map((v) => v.amount), [(50n * E18 * 7500n) / 10000n]);
+
+  // Abandoned round: LP MON share burned, claims open without an LP, unsold burned.
+  const lp3 = s.lp(3);
+  assert.equal(lp3.seeds.length, 0);
+  assert.equal(lp3.abandoned.monBurned, (((50n * E18 * 3n * E15) / E18) * 5000n) / 10000n);
+  assert.equal(lp3.claimsOpened.lpSeeded, false);
+  assert.equal(lp3.claimsOpened.txHash, lp3.abandoned.txHash);
+  assert.deepEqual(lp3.unsoldDisposed.map((u) => [u.to, u.amount]), [[BURN, 100n * E18]]);
+  assert.equal(s.summary(3).lpAbandoned, true);
+  assert.equal(s.journey(3, george).tokens.sameTxAsRefund, true);
 
   // ─── HTTP API over the same indexer ────────────────────────────────
   const server = createServer(indexer).listen(0, "127.0.0.1");
@@ -255,14 +309,18 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
     return res.json();
   };
   assert.equal((await api("/health")).chainId, 31337);
-  assert.equal((await api("/rounds")).rounds.length, 2);
+  assert.equal((await api("/rounds")).rounds.length, 3);
   assert.equal((await api("/rounds/1/demand")).levels[0].price, (5n * E15).toString());
   assert.equal((await api("/rounds/1/clearing")).clearing.clearingPrice, (3n * E15).toString());
   assert.deepEqual((await api("/rounds/1/lp")).lockIds, ["0"]);
+  assert.ok((await api("/rounds/3/lp")).abandoned);
   assert.equal((await api(`/rounds/1/bidders/${eve}`)).status, "burned");
   const bidders = await api("/rounds/1/bidders");
   assert.equal(bidders.bidders.length, 5);
   assert.equal(bidders.gas.completeJourney.count, 4);
+  assert.equal(bidders.gas.refundAndTokens.count, 2);
+  assert.equal(bidders.gas.refund.count, 2);
+  assert.equal(bidders.gas.tokens.count, 2);
 
   // Report what the bidder journey cost on anvil (gas is chain-independent; price is not).
   const rows = bidders.bidders.map((j) => ({
@@ -270,7 +328,9 @@ test("indexer end-to-end against anvil", { skip: !haveFoundry && "Foundry not in
     status: j.status,
     commit: j.commit.gasUsed,
     reveal: j.reveal?.gasUsed ?? "-",
-    claim: j.claim?.gasUsed ?? "-",
+    refund: j.refund?.gasUsed ?? "-",
+    tokens: j.tokens ? (j.tokens.sameTxAsRefund ? "same tx" : j.tokens.gasUsed) : "-",
+    journeyTxs: j.journey.transactions,
     journeyGasUsed: j.journey.gasUsed,
     journeyGasLimit: j.journey.gasLimit,
   }));

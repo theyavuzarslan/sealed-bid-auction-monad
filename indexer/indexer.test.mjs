@@ -54,7 +54,7 @@ test("keccak256 matches known vectors", () => {
   assert.equal(keccak256("a".repeat(300)), "0x5b7e0e47a96f32a88b4f14ca177982790807c40e1a105742ba0fc1babe1ef826");
 });
 
-test("registry holds exactly the 11 engine events, with topic0 pinned to `cast keccak`", () => {
+test("registry holds exactly the 13 engine events, with topic0 pinned to `cast keccak`", () => {
   const golden = {
     RoundOpened: "0xc224542a71761c7ae92ac7ed9b95e048b8e5f2014e530d813a6bfaf449a595f6",
     Committed: "0x8daffcd94bd021b70deafcb36e489fb123de1c46c815e498394ee7d0253cbc38",
@@ -67,6 +67,8 @@ test("registry holds exactly the 11 engine events, with topic0 pinned to `cast k
     Claimed: "0x528937b330082d892a98d4e428ab2dcca7844b51d227a1c0ae67f0b5261acbd9",
     VestedClaimed: "0x91a4d47b34b2149c2bffac92455fd5cdd24cbcdb8fb3811990a2ec7da68bd4f5",
     ProceedsWithdrawn: "0xfb9162e0e6f61275329ea60e067830394da2cdb58c7408290b5fae09d6ba2f3c",
+    LPAbandoned: "0xa17a577e87de737663d213c574b163ab75575a2cd88d891c1cd55d95f4b70c5a",
+    TokensClaimed: "0x880f2ef2613b092f1a0a819f294155c98667eb294b7e6bf7a3810278142c1a1c",
   };
   const names = Object.values(registry).map((e) => e.name).sort();
   assert.deepEqual(names, [...EXPECTED_EVENTS].sort());
@@ -111,7 +113,7 @@ test("Revealed, Cleared, Claimed, VestedClaimed, ProceedsWithdrawn decode number
   assert.deepEqual(rec.args, { roundId: 2n, amount: 2n ** 255n });
 });
 
-test("UnrevealedBurned, LPSeeded, ClaimsOpened, UnsoldDisposed decode", () => {
+test("UnrevealedBurned, LPSeeded, LPAbandoned, ClaimsOpened, UnsoldDisposed, TokensClaimed decode", () => {
   let rec = decodeLog(registry, log("UnrevealedBurned", [u(1)], u(1) + u(10n ** 19n)));
   assert.deepEqual(rec.args, { roundId: 1n, count: 1n, amount: 10n ** 19n });
   rec = decodeLog(registry, log("LPSeeded", [u(1), ad(ADAPTER)], ad(NPM) + u(1) + u(499) + u(1497) + u(0)));
@@ -120,6 +122,10 @@ test("UnrevealedBurned, LPSeeded, ClaimsOpened, UnsoldDisposed decode", () => {
   assert.deepEqual(rec.args, { roundId: 1n, lpSeeded: false });
   rec = decodeLog(registry, log("UnsoldDisposed", [u(1), ad(DEAD)], u(3)));
   assert.deepEqual(rec.args, { roundId: 1n, to: DEAD, amount: 3n });
+  rec = decodeLog(registry, log("LPAbandoned", [u(4)], u(1497)));
+  assert.deepEqual(rec.args, { roundId: 4n, monBurned: 1497n });
+  rec = decodeLog(registry, log("TokensClaimed", [u(4), ad(BOB)], u(0)));
+  assert.deepEqual(rec.args, { roundId: 4n, bidder: BOB, amount: 0n });
 });
 
 test("foreign topics decode to null; a wrong topic count throws", () => {
@@ -183,10 +189,10 @@ const txh = (n) => "0x" + n.toString(16).padStart(64, "0");
 
 function scenarioStore() {
   const store = new Store();
-  const put = (l, ts) => {
+  const put = (l, ts, from) => {
     const rec = decodeLog(registry, l);
     rec.blockTimestamp = ts;
-    store.setTx(rec.txHash, { from: rec.args.bidder ?? CREATOR, status: 1, gasUsed: 50_000n, gasLimit: 60_000n, effectiveGasPrice: 100n * 10n ** 9n });
+    store.setTx(rec.txHash, { from: from ?? rec.args.bidder ?? CREATOR, status: 1, gasUsed: 50_000n, gasLimit: 60_000n, effectiveGasPrice: 100n * 10n ** 9n });
     store.ingest(rec);
   };
   let n = 1;
@@ -223,7 +229,15 @@ test("full round: demand curve, clearing, LP, journeys, burn", () => {
   put(log("Cleared", [u(1)], u(P(3)) + u(1000n * E18) + u(1), 8, next()), 310);
   put(log("LPSeeded", [u(1), ad(ADAPTER)], ad(NPM) + u(1) + u(499n * E18) + u(1497n * 10n ** 15n) + u(0), 9, next()), 320);
   put(log("ClaimsOpened", [u(1)], u(1), 9, txh(99)), 320);
-  put(log("Claimed", [u(1), ad(ALICE)], u(600n * E18) + u(18n * 10n ** 17n) + u(82n * 10n ** 17n), 10, next()), 330);
+  // Alice: claim() -> refund and tokens in one transaction.
+  const aliceClaim = next();
+  put(log("Claimed", [u(1), ad(ALICE)], u(600n * E18) + u(18n * 10n ** 17n) + u(82n * 10n ** 17n), 10, aliceClaim), 330);
+  put(log("TokensClaimed", [u(1), ad(ALICE)], u(600n * E18), 10, aliceClaim), 330);
+  // Bob: claimRefund sent by a third party, then claimTokens by Bob.
+  put(log("Claimed", [u(1), ad(BOB)], u(400n * E18) + u(12n * 10n ** 17n) + u(88n * 10n ** 17n), 10, next()), 330, CREATOR);
+  assert.equal(store.journey(1, BOB).status, "refunded");
+  assert.equal(store.journey(1, BOB).journey.complete, false);
+  put(log("TokensClaimed", [u(1), ad(BOB)], u(400n * E18), 11, next()), 335);
   put(log("UnrevealedBurned", [u(1)], u(1) + u(10n * E18), 11, next()), 340);
   put(log("UnsoldDisposed", [u(1), ad(DEAD)], u(2), 12, next()), 350);
   store.setHead(12, 350);
@@ -241,31 +255,65 @@ test("full round: demand curve, clearing, LP, journeys, burn", () => {
   const lp = store.lp(1);
   assert.deepEqual(lp.lockIds, [0n]);
   assert.equal(lp.seeds[0].nftId, 1n);
+  assert.equal(lp.abandoned, null);
   assert.equal(lp.claimsOpened.lpSeeded, true);
   assert.equal(lp.unsoldDisposed[0].burned, true);
 
+  const gp = 100n * 10n ** 9n;
   const alice = store.journey(1, ALICE);
   assert.equal(alice.status, "claimed");
   assert.equal(alice.commit.noteBytes, 2);
   assert.equal(alice.reveal.price, P(5));
-  assert.equal(alice.claim.refund, 82n * 10n ** 17n);
+  assert.equal(alice.refund.refund, 82n * 10n ** 17n);
+  assert.equal(alice.tokens.amount, 600n * E18);
+  assert.equal(alice.tokens.sameTxAsRefund, true);
   assert.equal(alice.journey.complete, true);
+  assert.equal(alice.journey.transactions, 3); // the shared refund+tokens tx counts once
   assert.equal(alice.journey.gasUsed, 150_000n);
-  assert.equal(alice.journey.fee, 150_000n * 100n * 10n ** 9n);
-  assert.equal(alice.journey.feeAtGasLimit, 180_000n * 100n * 10n ** 9n);
-  assert.equal(store.journey(1, BOB).status, "revealed");
+  assert.equal(alice.journey.fee, 150_000n * gp);
+  assert.equal(alice.journey.feeAtGasLimit, 180_000n * gp);
+
+  const bob = store.journey(1, BOB);
+  assert.equal(bob.status, "claimed");
+  assert.equal(bob.tokens.sameTxAsRefund, false);
+  assert.equal(bob.refund.from, CREATOR);
+  assert.equal(bob.journey.transactions, 4);
+  assert.equal(bob.journey.fee, 200_000n * gp);
+  assert.deepEqual(bob.journey.paidByBidder, { transactions: 3, fee: 150_000n * gp, feeAtGasLimit: 180_000n * gp });
   assert.equal(store.journey(1, EVE).status, "burned");
   assert.equal(store.journey(1, "0x" + "99".repeat(20)), null);
 
   const b = store.bidders(1);
   assert.equal(b.bidders.length, 3);
-  assert.deepEqual(b.gas.completeJourney, { count: 1, min: 150_000n, max: 150_000n });
+  assert.deepEqual(b.gas.refundAndTokens, { count: 1, min: 50_000n, max: 50_000n });
+  assert.equal(b.gas.refund.count, 1);
+  assert.equal(b.gas.tokens.count, 1);
+  assert.deepEqual(b.gas.completeJourney, { count: 2, min: 150_000n, max: 200_000n });
   const s = store.summary(1);
   assert.equal(s.phase, "claims-open");
-  assert.deepEqual([s.commitCount, s.revealCount, s.claimCount], [3, 2, 1]);
+  assert.deepEqual([s.commitCount, s.revealCount, s.refundCount, s.tokensClaimedCount], [3, 2, 2, 2]);
+  assert.equal(s.lpAbandoned, false);
   assert.equal(s.unrevealedBurned.amount, 10n * E18);
   assert.equal(store.reveals(1).unrevealedCount, 1);
-  assert.equal(store.events(1).events.length, 12);
+  assert.equal(store.events(1).events.length, 15);
+});
+
+test("abandoned LP and a losing bid's journey", () => {
+  const { store, put, next } = scenarioStore();
+  put(log("Revealed", [u(1), ad(ALICE)], u(P(5)) + u(600n * E18), 5, next()), 210);
+  put(log("Revealed", [u(1), ad(BOB)], u(P(1)) + u(700n * E18), 6, next()), 220);
+  put(log("Cleared", [u(1)], u(P(5)) + u(600n * E18) + u(0), 8, next()), 310);
+  // Bob loses: refund of the whole deposit right after settlement, nothing to deliver.
+  put(log("Claimed", [u(1), ad(BOB)], u(0) + u(0) + u(10n * E18), 9, next()), 315);
+  assert.equal(store.journey(1, BOB).journey.complete, true);
+  const tx = next();
+  put(log("LPAbandoned", [u(1)], u(9n * 10n ** 17n), 20, tx), 90_000);
+  put(log("ClaimsOpened", [u(1)], u(0), 20, tx), 90_000);
+  const lp = store.lp(1);
+  assert.equal(lp.abandoned.monBurned, 9n * 10n ** 17n);
+  assert.equal(lp.claimsOpened.lpSeeded, false);
+  assert.equal(store.summary(1).lpAbandoned, true);
+  assert.deepEqual(store.events(1).events.slice(-2).map((e) => e.event), ["LPAbandoned", "ClaimsOpened"]);
 });
 
 test("ingest is idempotent per (txHash, logIndex)", () => {
@@ -330,23 +378,27 @@ test("fee-report: gas price parsing and MON formatting", () => {
   assert.equal(formatMon(1n), "0.000000000000000001");
 });
 
-test("fee-report: prices FEEPROBE journeys, skips incomplete ones in the verdict", () => {
+test("fee-report: prices FEEPROBE journeys on both claim paths, skips incomplete ones in the verdict", () => {
+  const z = '{"used":0,"needed":0}';
   const text = [
     "noise",
-    '  FEEPROBE {"label":"a","noteBytes":0,"commit":{"used":70000,"needed":73000},"reveal":{"used":100000,"needed":103000},"claim":{"used":170000,"needed":173000}}',
-    '  FEEPROBE {"label":"b","noteBytes":0,"commit":{"used":76000,"needed":79000},"reveal":{"used":0,"needed":0},"claim":{"used":0,"needed":0}}',
+    `  FEEPROBE {"label":"a","path":"claim","noteBytes":0,"commit":{"used":70000,"needed":73000},"reveal":{"used":100000,"needed":103000},"claim":{"used":170000,"needed":173000},"refund":${z},"tokens":${z}}`,
+    `  FEEPROBE {"label":"a","path":"refund+tokens","noteBytes":0,"commit":{"used":70000,"needed":73000},"reveal":{"used":100000,"needed":103000},"claim":${z},"refund":{"used":120000,"needed":123000},"tokens":{"used":110000,"needed":113000}}`,
+    `  FEEPROBE {"label":"b","path":"claim","noteBytes":0,"commit":{"used":76000,"needed":79000},"reveal":${z},"claim":${z},"refund":${z},"tokens":${z}}`,
   ].join("\n");
   const journeys = parseProbe(text);
-  assert.equal(journeys.length, 2);
+  assert.equal(journeys.length, 3);
   const gasPrice = 100n * 10n ** 9n;
   let r = report({ journeys, gasPrice });
+  assert.equal(r.rows[0].label, "a [claim]");
   assert.equal(r.rows[0].totalGas, 349_000n);
-  assert.equal(r.rows[0].feeWei, 349_000n * gasPrice);
-  assert.equal(r.rows[1].complete, false);
-  assert.equal(r.worst.label, "a");
+  assert.equal(r.rows[1].totalGas, 412_000n); // refund and tokens both counted
+  assert.equal(r.rows[1].feeWei, 412_000n * gasPrice);
+  assert.equal(r.rows[2].complete, false);
+  assert.equal(r.worst.label, "a [refund+tokens]");
   assert.match(r.verdict, /cannot judge/);
   r = report({ journeys, gasPrice, monUsd: 0.1 });
-  assert.match(r.verdict, /^PASS/); // 0.0349 MON * $0.1 = $0.00349
+  assert.match(r.verdict, /^PASS/); // 0.0412 MON * $0.1 = $0.00412
   r = report({ journeys, gasPrice, monUsd: 1 });
   assert.match(r.verdict, /^FAIL/);
   r = report({ journeys, gasPrice, basis: "used", bufferPct: 10 });

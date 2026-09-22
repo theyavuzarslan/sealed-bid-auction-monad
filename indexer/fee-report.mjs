@@ -1,11 +1,16 @@
 #!/usr/bin/env node
-// Turn bidder-journey gas (commit + reveal + claim) into MON and USD, against the PRD budget of
-// < $0.01 in network fees per journey. No MON price is built in: pass it with --mon-usd.
+// Turn bidder-journey gas into MON and USD, against the PRD budget of < $0.01 in network fees per
+// journey. No MON price is built in: pass it with --mon-usd.
+//
+// A journey is commit -> reveal -> refund -> tokens. Refund and tokens are either one transaction
+// (`claim`, step "claim") or two (`claimRefund` then `claimTokens`, steps "refund" and "tokens");
+// a losing bid ends at the refund. The journey fee is the sum of every step present.
 //
 // Gas input, one of:
 //   forge script script/FeeProbe.s.sol --isolate | node fee-report.mjs --gas-price 102gwei
 //                                        (reads the FEEPROBE lines from stdin, or --probe <file>)
 //   node fee-report.mjs --commit 78805 --reveal 163243 --claim 175974 --gas-price 102gwei
+//   node fee-report.mjs --commit 78805 --reveal 163243 --refund 126485 --tokens 114477 --gas-price 102gwei
 // Gas price, one of:
 //   --gas-price <wei | N gwei>      e.g. 102000000000 or 102gwei
 //   --rpc <url>                      reads eth_gasPrice (read-only), e.g. https://rpc.monad.xyz
@@ -48,7 +53,9 @@ export function parseGasPrice(s) {
   return BigInt(m[1]);
 }
 
-/** FEEPROBE {json} lines -> journeys. Steps a bidder never took have gas 0 and are marked incomplete. */
+export const STEPS = ["commit", "reveal", "claim", "refund", "tokens"];
+
+/** FEEPROBE {json} lines -> journeys. Steps a bidder never took have gas 0; see `complete` below. */
 export function parseProbe(text) {
   return text
     .split("\n")
@@ -70,13 +77,14 @@ export function report({ journeys, gasPrice, monUsd = null, basis = "needed", bu
       const base = BigInt(typeof v === "object" ? v[basis] : v);
       return (base * BigInt(Math.round((100 + bufferPct) * 100))) / 10000n;
     };
-    const gas = { commit: g("commit"), reveal: g("reveal"), claim: g("claim") };
-    const total = gas.commit + gas.reveal + gas.claim;
+    const gas = Object.fromEntries(STEPS.map((st) => [st, g(st)]));
+    const total = STEPS.reduce((a, st) => a + gas[st], 0n);
     const feeWei = total * gasPrice;
     const usd = monUsd == null ? null : (Number(feeWei) / 1e18) * monUsd;
     return {
-      label: j.label ?? "journey",
-      complete: gas.commit > 0n && gas.reveal > 0n && gas.claim > 0n,
+      label: j.path ? `${j.label} [${j.path}]` : j.label ?? "journey",
+      // Complete once the bidder got their MON back (claim, or refund); tokens follow for winners.
+      complete: gas.commit > 0n && gas.reveal > 0n && (gas.claim > 0n || gas.refund > 0n),
       gas,
       totalGas: total,
       feeWei,
@@ -115,9 +123,8 @@ function printText(r, source) {
   for (const row of r.rows) {
     const usd = row.feeUsd == null ? "" : `  $${row.feeUsd.toFixed(6)}`;
     const tag = row.complete ? "" : "  (incomplete journey)";
-    console.log(
-      `${row.label.padEnd(42)} commit ${String(row.gas.commit).padStart(7)}  reveal ${String(row.gas.reveal).padStart(7)}  claim ${String(row.gas.claim).padStart(7)}  = ${String(row.totalGas).padStart(7)} gas  ${row.feeMon} MON${usd}${tag}`,
-    );
+    const steps = STEPS.filter((st) => row.gas[st] > 0n).map((st) => `${st} ${row.gas[st]}`).join(" + ");
+    console.log(`${row.label}${tag}\n    ${steps} = ${row.totalGas} gas  ${row.feeMon} MON${usd}`);
   }
   console.log("");
   console.log(r.verdict);
@@ -134,12 +141,12 @@ async function main() {
   } else throw new Error("pass --gas-price or --rpc");
 
   let journeys;
-  if (args.commit || args.reveal || args.claim) {
-    journeys = [{ label: "journey", commit: args.commit ?? 0, reveal: args.reveal ?? 0, claim: args.claim ?? 0 }];
+  if (STEPS.some((st) => args[st])) {
+    journeys = [{ label: "journey", ...Object.fromEntries(STEPS.map((st) => [st, args[st] ?? 0])) }];
   } else {
     const text = args.probe ? fs.readFileSync(args.probe, "utf8") : process.stdin.isTTY ? "" : fs.readFileSync(0, "utf8");
     journeys = parseProbe(text);
-    if (!journeys.length) throw new Error("no FEEPROBE lines found: pipe FeeProbe output in, or pass --commit/--reveal/--claim");
+    if (!journeys.length) throw new Error("no FEEPROBE lines found: pipe FeeProbe output in, or pass --commit/--reveal and --claim or --refund/--tokens");
   }
   const basis = args.basis ?? "needed";
   if (!["needed", "used"].includes(basis)) throw new Error("--basis must be needed or used");

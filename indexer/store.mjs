@@ -17,10 +17,12 @@ function emptyRound(roundId) {
     reveals: [],
     cleared: null,
     lpSeeds: [],
+    abandoned: null,
     claimsOpened: null,
     unsold: [],
     burns: [],
-    claims: [],
+    refunds: [],
+    tokens: [],
     vested: [],
     proceeds: [],
   };
@@ -83,14 +85,20 @@ export class Store {
       case "LPSeeded":
         r.lpSeeds.push({ ...meta, adapter: a.adapter, positionManager: a.positionManager, nftId: a.nftId, tokenAmount: a.tokenAmount, monAmount: a.monAmount, lockId: a.lockId });
         break;
+      case "LPAbandoned":
+        r.abandoned = { ...meta, monBurned: a.monBurned };
+        break;
       case "ClaimsOpened":
         r.claimsOpened = { ...meta, lpSeeded: a.lpSeeded };
         break;
       case "UnsoldDisposed":
         r.unsold.push({ ...meta, to: a.to, amount: a.amount, burned: a.to === BURN });
         break;
-      case "Claimed":
-        r.claims.push({ ...meta, bidder: a.bidder, allocated: a.allocated, paid: a.paid, refund: a.refund });
+      case "Claimed": // emitted at the refund step (claimRefund, or the first half of claim/claimTokens)
+        r.refunds.push({ ...meta, bidder: a.bidder, allocated: a.allocated, paid: a.paid, refund: a.refund });
+        break;
+      case "TokensClaimed":
+        r.tokens.push({ ...meta, bidder: a.bidder, amount: a.amount });
         break;
       case "VestedClaimed":
         r.vested.push({ ...meta, bidder: a.bidder, amount: a.amount });
@@ -138,9 +146,11 @@ export class Store {
       config: r.config,
       commitCount: r.commits.length,
       revealCount: r.reveals.length,
-      claimCount: r.claims.length,
+      refundCount: r.refunds.length,
+      tokensClaimedCount: r.tokens.length,
       clearing: this.clearing(roundId).clearing,
       lpSeeded: r.lpSeeds.length > 0,
+      lpAbandoned: r.abandoned != null,
       claimsOpen: r.claimsOpened != null,
       unrevealedBurned: burned,
       proceedsWithdrawn: sum(r.proceeds.map((p) => p.amount)),
@@ -215,6 +225,7 @@ export class Store {
       })),
       lockIds: r.lpSeeds.map((s) => s.lockId),
       totals: { tokenAmount: sum(r.lpSeeds.map((s) => s.tokenAmount)), monAmount: sum(r.lpSeeds.map((s) => s.monAmount)) },
+      abandoned: r.abandoned ? { monBurned: r.abandoned.monBurned, ...pickMeta(r.abandoned) } : null,
       claimsOpened: r.claimsOpened ? { lpSeeded: r.claimsOpened.lpSeeded, ...pickMeta(r.claimsOpened) } : null,
       unsoldDisposed: r.unsold.map((u) => ({ to: u.to, amount: u.amount, burned: u.burned, ...pickMeta(u) })),
     };
@@ -225,18 +236,25 @@ export class Store {
     return { count: r.burns[r.burns.length - 1].count, amount: sum(r.burns.map((b) => b.amount)), ...pickMeta(r.burns[r.burns.length - 1]) };
   }
 
-  /** Per-bidder journey: commit -> reveal -> claim, each with gas used and fee paid. */
+  /**
+   * Per-bidder journey: commit -> reveal -> refund -> tokens, each with gas used and fee paid.
+   * Refund and tokens are one transaction (claim, or claimTokens before any refund) or two
+   * (claimRefund after settlement, then claimTokens once claims open). Anyone may send them, so
+   * each step carries `from`; journey totals count each transaction once.
+   */
   journey(roundId, bidder) {
     const r = this.round(roundId);
     const who = bidder.toLowerCase();
     const commit = r.commits.find((c) => c.bidder === who);
     if (!commit) return null;
     const reveal = r.reveals.find((c) => c.bidder === who);
-    const claim = r.claims.find((c) => c.bidder === who);
+    const refund = r.refunds.find((c) => c.bidder === who);
+    const tokens = r.tokens.find((c) => c.bidder === who);
     const vested = r.vested.filter((c) => c.bidder === who);
 
     let status = "committed";
-    if (claim) status = "claimed";
+    if (tokens) status = "claimed";
+    else if (refund) status = "refunded";
     else if (reveal) status = "revealed";
     else if (r.burns.length) status = "burned";
     else if (["awaiting-settlement", "cleared", "claims-open"].includes(this.phase(r))) status = "unrevealed";
@@ -244,10 +262,15 @@ export class Store {
     const steps = {
       commit: { hash: commit.hash, note: commit.note, noteBytes: (commit.note.length - 2) / 2, ...this.cost(commit) },
       reveal: reveal ? { price: reveal.price, amount: reveal.amount, ...this.cost(reveal) } : null,
-      claim: claim ? { allocated: claim.allocated, paid: claim.paid, refund: claim.refund, ...this.cost(claim) } : null,
+      refund: refund ? { allocated: refund.allocated, paid: refund.paid, refund: refund.refund, ...this.cost(refund) } : null,
+      tokens: tokens ? { amount: tokens.amount, sameTxAsRefund: tokens.txHash === refund?.txHash, ...this.cost(tokens) } : null,
     };
-    const done = Object.values(steps).filter(Boolean);
-    const known = done.every((s) => s.gasUsed != null);
+    // A losing bid has nothing to deliver, so its journey ends at the refund.
+    const complete = Boolean(reveal && refund && (tokens || refund.allocated === 0n));
+    const txs = [...new Map(Object.values(steps).filter(Boolean).map((st) => [st.txHash, st])).values()];
+    const known = txs.every((t) => t.gasUsed != null);
+    const total = (key, xs = txs) => (known ? sum(xs.map((t) => t[key] ?? 0n)) : null);
+    const own = txs.filter((t) => t.from === who);
     return {
       roundId: r.roundId,
       bidder: who,
@@ -255,12 +278,13 @@ export class Store {
       ...steps,
       vested: vested.map((v) => ({ amount: v.amount, ...this.cost(v) })),
       journey: {
-        steps: done.length,
-        complete: done.length === 3,
-        gasUsed: known ? sum(done.map((s) => s.gasUsed)) : null,
-        gasLimit: known ? sum(done.map((s) => s.gasLimit)) : null,
-        fee: known ? sum(done.map((s) => s.fee)) : null,
-        feeAtGasLimit: known ? sum(done.map((s) => s.feeAtGasLimit)) : null,
+        complete,
+        transactions: txs.length,
+        gasUsed: total("gasUsed"),
+        gasLimit: total("gasLimit"),
+        fee: total("fee"),
+        feeAtGasLimit: total("feeAtGasLimit"),
+        paidByBidder: { transactions: own.length, fee: total("fee", own), feeAtGasLimit: total("feeAtGasLimit", own) },
       },
     };
   }
@@ -278,7 +302,9 @@ export class Store {
       gas: {
         commit: stat(journeys.map((j) => j.commit.gasUsed)),
         reveal: stat(journeys.map((j) => j.reveal?.gasUsed)),
-        claim: stat(journeys.map((j) => j.claim?.gasUsed)),
+        refund: stat(journeys.map((j) => (j.refund && !j.tokens?.sameTxAsRefund ? j.refund.gasUsed : null))),
+        tokens: stat(journeys.map((j) => (j.tokens && !j.tokens.sameTxAsRefund ? j.tokens.gasUsed : null))),
+        refundAndTokens: stat(journeys.map((j) => (j.tokens?.sameTxAsRefund ? j.tokens.gasUsed : null))),
         completeJourney: stat(journeys.filter((j) => j.journey.complete).map((j) => j.journey.gasUsed)),
       },
     };
@@ -311,9 +337,11 @@ export class Store {
       ...tag("UnrevealedBurned", r.burns),
       ...tag("Cleared", r.cleared ? [r.cleared] : []),
       ...tag("LPSeeded", r.lpSeeds),
+      ...tag("LPAbandoned", r.abandoned ? [r.abandoned] : []),
       ...tag("ClaimsOpened", r.claimsOpened ? [r.claimsOpened] : []),
       ...tag("UnsoldDisposed", r.unsold),
-      ...tag("Claimed", r.claims),
+      ...tag("Claimed", r.refunds),
+      ...tag("TokensClaimed", r.tokens),
       ...tag("VestedClaimed", r.vested),
       ...tag("ProceedsWithdrawn", r.proceeds),
     ];
