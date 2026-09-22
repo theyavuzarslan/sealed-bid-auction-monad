@@ -179,3 +179,30 @@ table.bids th { color: var(--muted); font-weight: 400; }
 }
 
 .hidden { display: none; }
+
+/* ── added for the rewritten round and creator screens ── */
+.stats { display: flex; gap: 24px; flex-wrap: wrap; margin: 12px 0 2px; }
+.statline span { color: var(--muted); font-size: 13px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+.problems { margin: 8px 0; padding-left: 18px; font-size: 14px; }
+.explain { color: var(--muted); font-size: 14px; border-left: 3px solid var(--line); padding-left: 10px; }
+.sealed { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+.split-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 10px; }
+@media (max-width: 640px) { .split-row { grid-template-columns: 1fr; } }
+textarea, select {
+  width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  color: var(--text); font: inherit; padding: 8px 10px; margin-top: 4px;
+}
+textarea { font-family: var(--mono); font-size: 13px; }
+#wallet-area { display: flex; gap: 8px; align-items: center; }
+#wallet-area select { width: auto; margin: 0; padding: 6px 8px; }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+.btn.file { display: inline-block; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.warn-btn { border-color: var(--warn); color: var(--warn); }
+.chip[data-phase="Clearing"] { color: var(--warn); border-color: var(--warn); }
+.chip[data-phase="Claims open"] { color: var(--ok); border-color: var(--ok); }
+ul.plain { list-style: none; padding: 0; display: flex; gap: 12px; flex-wrap: wrap; }
+details summary { cursor: pointer; color: var(--accent); margin: 8px 0; }
+.kv { grid-template-columns: minmax(120px, 190px) 1fr; }
+@media (max-width: 640px) { .topbar { flex-wrap: wrap; gap: 12px; } #wallet-area { margin-left: 0; } }

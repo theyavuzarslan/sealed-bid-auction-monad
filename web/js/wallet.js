@@ -1,63 +1,87 @@
-// Minimal EIP-1193 wrapper over window.ethereum — no wallet library.
-// TODO (Q11): wallet library choice is an open question; the injected provider is the minimum.
+// Minimal EIP-1193 wrapper over the injected wallet (window.ethereum). No wallet library.
+import { revertReason } from "./engine.js";
+import { toQuantity } from "./hex.js";
 
 export function hasWallet() {
   return typeof window.ethereum !== "undefined";
 }
 
+const eth = (method, params = []) => {
+  if (!hasWallet()) throw new Error("No injected wallet found");
+  return window.ethereum.request({ method, params });
+};
+
 export async function connectWallet() {
-  if (!hasWallet()) throw new Error("No injected wallet found (window.ethereum)");
-  const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-  return accounts[0];
+  const accounts = await eth("eth_requestAccounts");
+  return accounts[0] ?? null;
 }
 
-export async function getChainId() {
-  const hex = await window.ethereum.request({ method: "eth_chainId" });
-  return parseInt(hex, 16);
+export async function currentAccount() {
+  if (!hasWallet()) return null;
+  const accounts = await eth("eth_accounts");
+  return accounts[0] ?? null;
 }
 
-export function onAccountsChanged(cb) {
-  if (hasWallet() && typeof window.ethereum.on === "function") window.ethereum.on("accountsChanged", cb);
+export async function walletChainId() {
+  if (!hasWallet()) return null;
+  return Number(BigInt(await eth("eth_chainId")));
 }
 
-export function onChainChanged(cb) {
-  if (hasWallet() && typeof window.ethereum.on === "function") window.ethereum.on("chainChanged", cb);
-}
-
-export async function sendTx({ from, to, data, value = "0x0" }) {
-  return await window.ethereum.request({
-    method: "eth_sendTransaction",
-    params: [{ from, to, value, data }],
-  });
-}
-
-export async function getReceipt(txHash, { pollMs = 1000, timeoutMs = 120000 } = {}) {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    const r = await window.ethereum.request({ method: "eth_getTransactionReceipt", params: [txHash] });
-    if (r) return r;
-    if (Date.now() > deadline) throw new Error("Transaction receipt timeout");
-    await new Promise((res) => setTimeout(res, pollMs));
+export async function switchChain(net) {
+  const hex = toQuantity(net.chainId);
+  try {
+    await eth("wallet_switchEthereumChain", [{ chainId: hex }]);
+  } catch (e) {
+    if (e?.code !== 4902 || !net.rpcUrl) throw e;
+    await eth("wallet_addEthereumChain", [{
+      chainId: hex, chainName: net.label, rpcUrls: [net.rpcUrl],
+      nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
+    }]);
   }
 }
 
-export async function sendAndWait({ from, to, data, value = "0x0" }) {
-  const txHash = await sendTx({ from, to, data, value });
-  const receipt = await getReceipt(txHash);
-  if (receipt.status !== "0x1") throw new Error(`Transaction reverted (tx ${txHash})`);
-  return receipt;
+export function onWalletEvents(onAccounts, onChain) {
+  if (!hasWallet() || typeof window.ethereum.on !== "function") return;
+  window.ethereum.on("accountsChanged", (a) => onAccounts(a[0] ?? null));
+  window.ethereum.on("chainChanged", (c) => onChain(Number(BigInt(c))));
 }
 
-export async function ethCall({ from, to, data }) {
-  return await window.ethereum.request({
-    method: "eth_call",
-    params: [{ from, to, data }, "latest"],
-  });
+export async function signTypedData(account, typedData) {
+  return eth("eth_signTypedData_v4", [account, JSON.stringify(typedData)]);
 }
 
-export async function getLogs({ address, topics, fromBlock = "0x0", toBlock = "latest" }) {
-  return await window.ethereum.request({
-    method: "eth_getLogs",
-    params: [{ address, topics, fromBlock, toBlock }],
-  });
+function friendly(err) {
+  if (err?.code === 4001) return new Error("Rejected in wallet");
+  const r = revertReason(err);
+  return r ? Object.assign(new Error(`Reverted: ${r}`), { reason: r }) : err;
+}
+
+// Simulates first so a revert shows its reason before the wallet prompt, then sends and waits.
+export async function sendTx(from, t, { onHash } = {}) {
+  const tx = { from, to: t.to, data: t.data, value: toQuantity(t.value ?? 0n) };
+  try {
+    await eth("eth_call", [tx, "latest"]);
+  } catch (e) {
+    throw friendly(e);
+  }
+  let hash;
+  try {
+    hash = await eth("eth_sendTransaction", [tx]);
+  } catch (e) {
+    throw friendly(e);
+  }
+  onHash?.(hash);
+  for (let i = 0; ; i++) {
+    const rc = await eth("eth_getTransactionReceipt", [hash]);
+    if (rc) {
+      if (rc.status !== "0x1") throw new Error(`Transaction reverted (${hash})`);
+      return rc;
+    }
+    if (i > 600) throw new Error(`No receipt yet for ${hash}`);
+    await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
+export function feeOf(receipt) {
+  return BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice ?? "0x0");
 }

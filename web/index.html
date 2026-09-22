@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sealed-Bid Auction Engine</title>
+  <title>Sealed-Bid Launches</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- vendor keccak must load as a classic script first: it attaches keccak256 to window.
+  <!-- Serve over http(s) (WebCrypto needs a secure context; localhost counts), e.g. from the repo root:
+         python3 -m http.server 8000   then open http://localhost:8000/web/
+       vendor keccak must load as a classic script first: it attaches keccak256 to window.
        Module scripts are deferred and run after it. (MIT, see vendor/js-sha3/LICENSE.txt) -->
   <script src="vendor/js-sha3/sha3.js"></script>
   <script type="module" src="js/main.js"></script>
