@@ -1,12 +1,14 @@
 {
   "name": "sba-indexer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Event indexer for the sealed-bid auction engine: decodes RoundOpened, Committed, Revealed, Cleared, Claimed, Slashed, LPSeeded.",
+  "description": "Event indexer and JSON API for the sealed-bid AuctionEngine: commitments over time, demand curve, clearing, LP seeding and per-bidder journey costs. Zero dependencies.",
   "scripts": {
-    "start": "INDEXER_MAIN=1 node indexer.mjs",
-    "test": "node indexer.test.mjs"
+    "start": "node indexer.mjs",
+    "test": "node --test indexer.test.mjs",
+    "test:e2e": "node --test e2e.test.mjs",
+    "fee-report": "node fee-report.mjs"
   },
   "engines": {
     "node": ">=18"
