@@ -94,7 +94,7 @@ contract AuctionEngineTest is Test {
         p.dexSplits = new AuctionEngine.DexSplit[](1);
         p.dexSplits[0] = AuctionEngine.DexSplit({adapter: address(adapter), bps: 10_000, fee: 3000});
         p.lockFeeTier = "DEFAULT";
-        if (preset == AuctionEngine.Preset.Raise) p.lockEnd = uint64(block.timestamp + 365 days);
+        if (preset == AuctionEngine.Preset.Raise) p.lockDuration = 365 days;
     }
 
     function _open(AuctionEngine.OpenParams memory p) internal returns (uint256) {
@@ -156,8 +156,14 @@ contract AuctionEngineTest is Test {
         assertEq(sold, SUPPLY);
         assertTrue(over);
 
-        vm.expectRevert("claims not open");
+        // Refunds do not wait for the LP; tokens do.
+        uint256 aliceBefore = alice.balance;
         _claim(r, alice);
+        assertEq(alice.balance - aliceBefore, uint256(DEPOSIT) - 1.2 ether);
+        assertEq(token.balanceOf(alice), 0);
+        vm.prank(alice);
+        vm.expectRevert("claims not open");
+        engine.claimTokens(r, alice);
 
         engine.seedLP(r);
         // LP: 50% of the lower bound of tokens sold, and the matching MON at the clearing price.
@@ -165,7 +171,6 @@ contract AuctionEngineTest is Test {
         assertEq(adapter.tokensHeld(), soldLB * 5000 / 10_000);
         assertEq(adapter.monHeld(), (soldLB * 0.003 ether / 1e18) * 5000 / 10_000);
         assertEq(adapter.lastPrice(), 0.003 ether);
-        assertFalse(adapter.lastRelaxed());
         // Permanent lock: the engine owns it, the creator collects fees.
         (address mgr, uint256 nftId, address owner, address collector, uint256 endTime, string memory fee) = locker.locks(0);
         assertEq(mgr, address(npm));
@@ -219,6 +224,7 @@ contract AuctionEngineTest is Test {
         assertEq(sold, 300e18);
         assertFalse(over);
         engine.seedLP(r);
+        engine.disposeUnsold(r);
         // Unsold auction supply (700) plus the unused LP reserve (500 - 150) are burned.
         assertEq(token.balanceOf(BURN), 700e18 + (500e18 - 150e18));
         _claim(r, alice);
@@ -234,6 +240,7 @@ contract AuctionEngineTest is Test {
         _toSettle(r);
         engine.settle(r, 1);
         engine.seedLP(r);
+        engine.disposeUnsold(r);
         assertEq(token.balanceOf(creator), before);
         assertEq(token.balanceOf(BURN), 0);
         assertEq(locker.lockCount(), 0);
@@ -252,11 +259,12 @@ contract AuctionEngineTest is Test {
         engine.settle(r, 10);
         uint256 creatorBefore = token.balanceOf(creator);
         engine.seedLP(r);
+        engine.disposeUnsold(r);
         // Raise: unsold 600 + unused reserve (500 - 200) go back to the creator; LP lock is the creator's.
         assertEq(token.balanceOf(creator) - creatorBefore, 600e18 + 300e18);
         (,, address owner,, uint256 endTime,) = locker.locks(0);
         assertEq(owner, creator);
-        assertEq(endTime, p.lockEnd);
+        assertEq(endTime, block.timestamp + 365 days); // counted from seeding
 
         _claim(r, alice);
         assertEq(token.balanceOf(alice), 100e18); // 25% at claim
@@ -321,7 +329,7 @@ contract AuctionEngineTest is Test {
         vm.expectRevert("not revealed");
         engine.claim(r);
         _claim(r, alice); // unaffected
-        vm.expectRevert("already settled");
+        vm.expectRevert("nothing to claim");
         _claim(r, alice);
     }
 
@@ -444,6 +452,7 @@ contract AuctionEngineTest is Test {
         _toSettle(r);
         engine.settle(r, 10);
         engine.seedLP(r);
+        engine.disposeUnsold(r);
         uint256 lpMon = ((uint256(SUPPLY) - 2) * 0.003 ether / 1e18) * 5000 / 10_000;
         assertEq(adapter.monHeld(), lpMon * 9000 / 10_000);
         uint256 lpTok = (uint256(SUPPLY) - 2) * 5000 / 10_000;
@@ -456,36 +465,37 @@ contract AuctionEngineTest is Test {
         assertEq(engine.creatorAvailable(r), 3 ether - adapter.monHeld());
     }
 
-    function test_LP_Blocked_GraceEscape_ThenRelaxedSeedBurnsUnused() public {
+    function test_LP_Blocked_AbandonBurnsLpShare() public {
         uint256 r = _open(_params(AuctionEngine.Preset.Degen));
         _standardBook(r);
         _toSettle(r);
         engine.settle(r, 10);
-        adapter.setRevert(true); // someone initialised the pool at a bad price
+        adapter.setRevert(true); // someone holds the pool at a bad price
         vm.expectRevert("pool price deviates");
         engine.seedLP(r);
         vm.expectRevert("grace period not over");
-        engine.forceOpenClaims(r);
+        engine.abandonLP(r);
 
         vm.warp(block.timestamp + GRACE);
-        engine.forceOpenClaims(r);
-        _claim(r, alice); // claims work even though the LP is not seeded
-        assertEq(token.balanceOf(alice), 400e18);
-        vm.prank(creator);
-        vm.expectRevert("LP not seeded");
-        engine.withdrawProceeds(r);
-
-        adapter.setRevert(false);
-        adapter.setUseBps(6000);
-        engine.seedLP(r);
-        assertTrue(adapter.lastRelaxed());
+        engine.abandonLP(r);
         uint256 lpMon = ((uint256(SUPPLY) - 2) * 0.003 ether / 1e18) * 5000 / 10_000;
-        uint256 used = lpMon * 6000 / 10_000;
-        assertEq(BURN.balance, lpMon - used); // unused LP MON burned, not given to anyone
+        assertEq(BURN.balance, lpMon); // the LP's MON is burned, not handed to anyone
+        vm.expectRevert("LP already done");
+        engine.seedLP(r); // and it can never be seeded at an unchecked price later
+
+        _claim(r, alice);
         _claim(r, bob);
         _claim(r, carol);
         _claim(r, dave);
+        _claim(r, eve);
+        assertEq(token.balanceOf(alice), 400e18);
         assertEq(engine.creatorAvailable(r), 3 ether - lpMon);
+        vm.prank(creator);
+        engine.withdrawProceeds(r);
+        engine.sweepDust(r); // also disposes the unsold reserve
+        assertEq(token.balanceOf(BURN), 500e18); // the whole LP reserve (200/600 splits exactly: no dust)
+        assertEq(address(engine).balance, 0);
+        assertEq(token.balanceOf(address(engine)), 0);
     }
 
     // ─── Open validation ───────────────────────────────────────────────
@@ -579,9 +589,9 @@ contract AuctionEngineTest is Test {
             who[i] = address(uint160(0x10000 + i));
             vm.deal(who[i], 100 ether);
             price[i] = uint96((1 + x % 8) * TICK);
-            // Keep max spend within [min bid, deposit): amount <= 9.9 MON / price.
+            // Max spend below the deposit: amount <= 9.9 MON / price. Minimum on amount × reserve: >= 0.01 MON.
             uint256 maxAmt = uint256(9.9 ether) * 1e18 / price[i];
-            uint256 minAmt = uint256(0.01 ether) * 1e18 / price[i] + 1;
+            uint256 minAmt = uint256(0.01 ether) * 1e18 / TICK + 1;
             amount[i] = uint96(minAmt + (x >> 16) % (maxAmt - minAmt));
             reveals[i] = (x >> 200) % 5 != 0; // ~20% never reveal
             _commit(r, who[i], price[i], amount[i]);
@@ -590,6 +600,8 @@ contract AuctionEngineTest is Test {
         for (uint256 i; i < n; ++i) if (reveals[i]) _reveal(r, who[i], price[i], amount[i]);
         _toSettle(r);
         while (!engine.settle(r, 2)) {}
+        // Some bidders take their refund before the LP exists; anyone may trigger it for them.
+        for (uint256 i; i < n; ++i) if (reveals[i] && (seed >> (i + 8)) & 1 == 1) engine.claimRefund(r, who[i]);
         engine.seedLP(r);
         uint256 revealedCount;
         for (uint256 i; i < n; ++i) {
@@ -597,7 +609,7 @@ contract AuctionEngineTest is Test {
             ++revealedCount;
             (uint256 alloc, uint256 paid,) = engine.quote(r, who[i]);
             assertLe(paid, _mulDivUp(price[i], amount[i]), "paid above own bid");
-            _claim(r, who[i]);
+            engine.claimTokens(r, who[i]);
             assertEq(token.balanceOf(who[i]), alloc);
             assertEq(who[i].balance, 100 ether - paid);
         }
@@ -607,6 +619,7 @@ contract AuctionEngineTest is Test {
             engine.withdrawProceeds(r);
         }
         engine.sweepDust(r);
+        if (engine.getRound(r).unsoldOwed != 0) engine.disposeUnsold(r);
         // MON: nothing left behind, and every wei is accounted for.
         assertEq(address(engine).balance, 0, "MON left in engine");
         assertEq(engine.roundBalance(r), 0);

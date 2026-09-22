@@ -70,6 +70,19 @@
   },
   {
     "type": "function",
+    "name": "MIN_RAISE_LOCK",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "PRICE_SCALE",
     "inputs": [],
     "outputs": [
@@ -80,6 +93,19 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "abandonLP",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -165,6 +191,42 @@
         "name": "roundId",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimRefund",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bidder",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimTokens",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bidder",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -310,6 +372,19 @@
   },
   {
     "type": "function",
+    "name": "disposeUnsold",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "findHint",
     "inputs": [
       {
@@ -331,19 +406,6 @@
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "forceOpenClaims",
-    "inputs": [
-      {
-        "name": "roundId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -427,7 +489,7 @@
             "internalType": "uint64"
           },
           {
-            "name": "lockEnd",
+            "name": "lockDuration",
             "type": "uint64",
             "internalType": "uint64"
           },
@@ -467,7 +529,7 @@
             "internalType": "bool"
           },
           {
-            "name": "auctionUnsoldDisposed",
+            "name": "lpAbandoned",
             "type": "bool",
             "internalType": "bool"
           },
@@ -503,6 +565,11 @@
           },
           {
             "name": "allocatedTotal",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "unsoldOwed",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -721,7 +788,7 @@
             ]
           },
           {
-            "name": "lockEnd",
+            "name": "lockDuration",
             "type": "uint64",
             "internalType": "uint64"
           },
@@ -985,6 +1052,30 @@
   },
   {
     "type": "function",
+    "name": "tokensClaimed",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "vestedOf",
     "inputs": [
       {
@@ -1174,6 +1265,25 @@
   },
   {
     "type": "event",
+    "name": "LPAbandoned",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "monBurned",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "LPSeeded",
     "inputs": [
       {
@@ -1304,6 +1414,31 @@
         "type": "string",
         "indexed": false,
         "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokensClaimed",
+    "inputs": [
+      {
+        "name": "roundId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "bidder",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false

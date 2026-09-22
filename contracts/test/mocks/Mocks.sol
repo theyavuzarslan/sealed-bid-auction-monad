@@ -75,7 +75,6 @@ contract MockAdapter {
     uint256 public useBps = 10_000; // share of tokens and MON the "pool" takes
     bool public shouldRevert;
     uint256 public lastPrice;
-    bool public lastRelaxed;
     uint256 public tokensHeld;
     uint256 public monHeld;
 
@@ -91,14 +90,17 @@ contract MockAdapter {
         shouldRevert = r;
     }
 
-    function seed(address token, uint256 tokenAmount, uint256 price, uint24, bool relaxed, address recipient)
+    function supportsFee(uint24 fee) external pure returns (bool) {
+        return fee == 500 || fee == 3000 || fee == 10_000;
+    }
+
+    function seed(address token, uint256 tokenAmount, uint256 price, uint24, address recipient)
         external
         payable
         returns (address, uint256 nftId)
     {
         require(!shouldRevert, "pool price deviates");
         lastPrice = price;
-        lastRelaxed = relaxed;
         uint256 tokUse = tokenAmount * useBps / 10_000;
         uint256 monUse = msg.value * useBps / 10_000;
         MockToken(token).transferFrom(msg.sender, address(this), tokUse);

@@ -2,7 +2,7 @@
 
 Operational sequence for running the agent crew. Not part of the 13-document set.
 
-Status: draft
+Status: **superseded 23 Sep** — the herdr multi-agent setup was dropped; everything is now built directly on `master`. Kept for the record. See `CLAUDE.md` for current commands.
 
 ## Step 0 — two decisions only you can make
 

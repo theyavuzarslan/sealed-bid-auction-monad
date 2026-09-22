@@ -6,12 +6,17 @@ pragma solidity ^0.8.24;
 ///      wraps msg.value MON, makes sure the pool trades at `price`, mints a full-range position owned
 ///      by `recipient`, and sends every unused token and MON back to msg.sender.
 ///      `price` is MON wei per 1e18 token units — the clearing price, unscaled.
-///      `relaxed` skips the price-deviation check; the engine only sets it after its grace period.
+///      The adapter must revert if the pool cannot be made to trade at `price` (within its tolerance):
+///      the engine never seeds at any other price (AUDIT.md second review, H1).
 interface IDexAdapter {
-    function seed(address token, uint256 tokenAmount, uint256 price, uint24 fee, bool relaxed, address recipient)
+    function seed(address token, uint256 tokenAmount, uint256 price, uint24 fee, address recipient)
         external
         payable
         returns (address positionManager, uint256 nftId);
+
+    /// @notice Whether a round may use this fee tier. Checked at openRound, so a tier that cannot be
+    ///         seeded safely is rejected before anyone bids.
+    function supportsFee(uint24 fee) external view returns (bool);
 }
 
 /// @notice GoPlus SafeToken `UniV3LPLocker` (0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d on Monad).
