@@ -7,16 +7,17 @@ Status: draft
 | Layer | Choice | Why | Alternative passed on |
 | --- | --- | --- | --- |
 | Chain | Monad | Sub-second finality makes two-transaction commit-reveal cost pennies; hackathon target; nad.fun is the incumbent to contrast against [src: Monad Sealed-Bid Auction Engine.md] | Arbitrum One — portable, but Fair Launch niche already occupied by Uniswap CCA + HuddlePad [src: https://www.coinrank.io/crypto/uniswap-cca-is-rewriting-arbitrum-native-token-launches/]; Ethereum L1 — two-tx flow "economically absurd" [src: Monad Sealed-Bid Auction Engine.md] |
-| Clearing math | Fork of Gnosis EasyAuction (LGPL-3.0, audited by Adam Kolar and G0 Group, Feb–Mar 2021) | Audited off-by-one-at-the-marginal-bid logic, partial fills, multi-tx settlement, min bid size [src: Monad Sealed-Bid Auction Engine.md] | Regenerating the clearing loop with an LLM — the marginal-bid bug is the main reason not to [src: Monad Sealed-Bid Auction Engine.md] |
-| Sealing | Commit-reveal with `keccak256(price, quantity, salt, msg.sender)` | Only sealing primitive that exists on Monad today [src: Monad Sealed-Bid Auction Engine.md] | BTX encrypted mempool — a Category Labs research scheme, no deployment mention [src: https://eprint.iacr.org/2026/754]; FHE / MPC / enclave / ZK — non-goals [src: Monad Sealed-Bid Auction Engine.md] |
+| Clearing math | **Decided 22 Sep (decision 22):** Zama-style uniform-price clearing — price + amount, pro-rata at the clearing price, refunds [src: https://docs.zama.org/auction/how-it-works]. Implemented as an internal contract of the engine, not a separately deployed core | Fixed-quantity fills; no reveal-order tie advantage; an internal contract cannot be called around the engine (removes the AUDIT C1–C3 class) | Gnosis EasyAuction fork — audited, but sums budgets and breaks ties by reveal order |
+| Sealing | Commit-reveal with `keccak256(price, amount, salt, msg.sender)` | Only sealing primitive that exists on Monad today [src: Monad Sealed-Bid Auction Engine.md] | BTX encrypted mempool — a Category Labs research scheme, no deployment mention [src: https://eprint.iacr.org/2026/754]; FHE / MPC / enclave / ZK — non-goals [src: Monad Sealed-Bid Auction Engine.md] |
 | Collateral | Uniform capped deposit (a16z OverCollateralizedAuction pattern) | A bid-proportional deposit leaks the bid [src: Monad Sealed-Bid Auction Engine.md] | CREATE2 vaults + state proofs — not a three-week build [src: Monad Sealed-Bid Auction Engine.md] |
 | Reveal enforcement | Slashing of non-revealers | Makes reveal refusal costly rather than free [src: Monad Sealed-Bid Auction Engine.md] | No penalty — losers would never reveal |
-| Contract language | Solidity | EasyAuction is Solidity; Monad is EVM | Vyper / Stylus — would forfeit the fork |
+| Contract language | Solidity | Monad is EVM; the team's existing code is Solidity | Vyper — no advantage for this build |
 | Contract tooling | TODO: not found in source (Foundry likely, given fork + fuzz needs) | — | Hardhat |
 | Frontend | TODO: not found in source | Vibe-coded freely per PRD [src: Monad Sealed-Bid Auction Engine.md] | — |
 | Wallet | TODO: not found in source | — | — |
 | Indexer | TODO: not found in source; event decoding is vibe-code territory [src: Monad Sealed-Bid Auction Engine.md] | — | — |
-| DEX for LP seed | TODO: not found in source | Must support pool creation + LP lock atomically at settle | — |
+| DEX for LP seed | Multiple, through one adapter interface: Uniswap v3 first, PancakeSwap v3 second [src: user, 22 Sep] | Creator chooses venues; Uniswap v3 has verified Monad addresses [src: https://developers.uniswap.org/docs/protocols/v3/deployments/v3-monad-deployments] | Kuru — order book, no lockable LP position; Uniswap v4 — deferred, hooks add review surface |
+| LP lock | GoPlus `UniV3LPLocker` `0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d` [src: https://docs.gopluslabs.io/page/goplus-safetoken-locker] | Verified on Monad [src: on-chain, Monad RPC, 22 Sep]; locks v3 position NFTs; creator keeps trading fees as `collector` | Burning the LP — free, but loses fee income and a verifiable lock |
 | Demo harness | Custom sniper bot + bonding curve baseline + vault-run simulator [src: Monad Sealed-Bid Auction Engine.md] | The head-to-head is the pitch for the Culture track | — |
 | Security check | `/agentguard scan` on our own contracts; report in README [src: Monad Sealed-Bid Auction Engine.md] | Covers reentrancy, unlimited approval, signature replay, hidden transfers, access control — five of the eight bugs | Paid audit — no time |
 
@@ -34,6 +35,6 @@ Rationale: LLM assistance multiplies throughput 3–5x on the left column and ~1
 
 ## Licensing note
 
-EasyAuction is LGPL-3.0 (copyleft). Fine for a hackathon with disclosure; decide before commercializing [src: Monad Sealed-Bid Auction Engine.md].
+The original EasyAuction fork was LGPL-3.0 (copyleft). With Zama-style clearing replacing it (decision 22), no EasyAuction code remains, so that obligation goes too. Our files currently carry LGPL headers; changing them is our call.
 
 Related files: [03-architecture.md](03-architecture.md) · [10-decisions.md](10-decisions.md) · [11-roadmap.md](11-roadmap.md) · [12-open-questions.md](12-open-questions.md)

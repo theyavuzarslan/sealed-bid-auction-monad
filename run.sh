@@ -40,12 +40,16 @@ herdr pane rename "$DEMO" demo >/dev/null 2>&1 || true
 echo "    core=$CORE fork=$FORK settle=$SETTLE ui=$UI scripts=$SCRIPTS demo=$DEMO"
 
 echo "==> 4/5 agents"
+for m in "settle:openai/gpt-5.6-sol" "ui:nvidia/z-ai/glm-5.3" "scripts:nvidia/z-ai/glm-5.3-flash"; do
+  d="${m%%:*}"; v="${m#*:}"
+  [ -f "$WT/$d/opencode.json" ] || printf '{"model":"%s"}\n' "$v" > "$WT/$d/opencode.json"
+done
 running() { herdr agent get "$1" >/dev/null 2>&1; }
 running "$CORE"     || herdr agent start core    --kind codex    --pane "$CORE"    --timeout 120000
 running "$FORK"     || herdr agent start fork    --kind muse     --pane "$FORK"    --timeout 120000
-running "$SETTLE"   || herdr agent start settle  --kind opencode --pane "$SETTLE"  --timeout 120000 -- attach "http://localhost:$PORT" -m openai/gpt-5.6-sol
-running "$UI"       || herdr agent start ui      --kind opencode --pane "$UI"      --timeout 120000 -- attach "http://localhost:$PORT" -m nvidia/z-ai/glm-5.3
-running "$SCRIPTS"  || herdr agent start scripts --kind opencode --pane "$SCRIPTS" --timeout 120000 -- attach "http://localhost:$PORT" -m nvidia/z-ai/glm-5.3-flash
+running "$SETTLE"   || herdr agent start settle  --kind opencode --pane "$SETTLE"  --timeout 120000 -- attach "http://localhost:$PORT"
+running "$UI"       || herdr agent start ui      --kind opencode --pane "$UI"      --timeout 120000 -- attach "http://localhost:$PORT"
+running "$SCRIPTS"  || herdr agent start scripts --kind opencode --pane "$SCRIPTS" --timeout 120000 -- attach "http://localhost:$PORT"
 running "$DEMO"     || herdr agent start demo    --kind grok     --pane "$DEMO"    --timeout 120000
 
 echo "==> 5/5 task prompts"

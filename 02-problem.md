@@ -53,6 +53,19 @@ First-come-first-served allocation turns scarce access into a latency race, and 
 
 Conclusion for Arbitrum: the engine is portable (see [03-architecture.md](03-architecture.md)), but the Fair Launch slot on Arbitrum is already occupied by CCA + HuddlePad. The differentiator there would be *sealed* bids versus CCA's fully transparent bids, which is a narrower pitch than on Monad, where nad.fun's bonding curve is the incumbent.
 
+## Auction mechanics compared
+
+Two established ways to run a uniform-price auction differ in what the bidder fixes: how much they **spend**, or how many tokens they **get**.
+
+| Mechanism | A bid is | If the clearing price is below your bid | Ties at the clearing price | Bids sealed? |
+| --- | --- | --- | --- | --- |
+| Gnosis EasyAuction (our current fork) | Budget + max price | You spend the full budget and get **more tokens** | Priority by order size, then by who registered first — at our reveal step, that is who revealed first | No |
+| Uniswap CCA | Budget + max price, spread across blocks | "spends 1 ETH and receives 125 tokens" at a clearing price below the 0.01 max [src: https://developers.uniswap.org/whitepaper_cca.pdf] | Partial fill at the clearing price [src: https://developers.uniswap.org/whitepaper_cca.pdf] | No |
+| Zama public auction (Jan 2026) | **Price per token + token amount** | You get the **same tokens** and are **refunded** the overpayment [src: https://docs.zama.org/auction/how-it-works] | **Pro-rata** share of what is left [src: https://docs.zama.org/auction/how-it-works] | Amount encrypted with FHE; price public [src: https://docs.zama.org/auction/how-it-works] |
+| Classic uniform-price auction (US Treasury, Google IPO) | Price + quantity | Same as Zama | Pro-rata | Sealed by the auctioneer |
+
+Both models are established. The difference that matters for us: under EasyAuction, ties at the clearing price go to whoever revealed first, so timing still decides who gets filled at the margin. That contradicts our claim that "submission timing no longer determines price" (AUDIT.md M6). Zama's pro-rata rule removes it. See decision 22.
+
 ## Our edge
 
 1. **Blind bidding with one price.** No bidder sees another's price before clearing, and every clearing bid pays the same [src: Monad Sealed-Bid Auction Engine.md]. CCA on Arbitrum is uniform-price but fully transparent.

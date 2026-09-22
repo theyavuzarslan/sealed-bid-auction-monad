@@ -21,7 +21,7 @@ No HTML, mockups, or screenshots exist in the sources yet. Each screen below is 
 
 - Header: token, phase (Commit / Reveal / Clearing / Settled), countdown to next phase.
 - Live stats allowed to show: number of commitments and their timing — this is an intentional leak [src: Monad Sealed-Bid Auction Engine.md]. Never show revealed prices before clearing.
-- Commit panel: price, quantity; UI generates salt and stores it (localStorage + download-a-backup button). TODO: confirm salt UX.
+- Commit panel: **max price per token** (snaps to the round's tick size) and **token amount** (decision 22). Show the max spend, `ceil(price × amount)`, and explain: *"You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size."* The UI generates the salt, encrypts the bid into the on-chain `note`, and also keeps it in localStorage with a backup-file download; recovery from another device needs only the wallet (decision 33).
 - Deposit line: "Everyone locks the same X — this is what keeps your bid private" (explains the uniform deposit).
 - After commit: "Come back in the reveal window or you lose your deposit."
 
@@ -63,7 +63,7 @@ No HTML, mockups, or screenshots exist in the sources yet. Each screen below is 
 ## Screen 6 — Exit-Priority holder page (conditional)
 
 - Current round: exit capacity, countdown, commitment count.
-- Commit: "discount I will accept" + shares to exit.
+- Commit: "discount I will accept" + shares to exit. Reveal moves the shares into escrow; unfilled shares come back at claim (decision 31).
 - Reveal / claim as Screens 2–3.
 
 ```html

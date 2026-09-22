@@ -17,18 +17,18 @@ A sealed-bid, uniform-clearing-price batch auction on Monad, shipped as presets:
 
 Ranked by how likely an LLM is to write them here (`04-flows.md`, Flow 4):
 
-1. Commit without a salt. The preimage is `(price, quantity, salt, msg.sender)` — all four.
+1. Commit without a salt. The preimage is `(price, amount, salt, msg.sender)` — all four.
 2. Commit not bound to `msg.sender` → replay and reveal front-running.
-3. Slashing accounting on non-reveal. Invariant: `locked == appliedToFill + refunded + slashed`.
-4. Off-by-one at the marginal bid. Over-allocate → insolvent; under-allocate → tokens stuck.
+3. Slashing accounting on non-reveal. Non-revealers' deposits are burned (decision 30). Invariant: `locked == appliedToFill + refunded + burned`.
+4. Off-by-one at the clearing price. The pro-rata split at the clearing price must round down (over-allocating is insolvency) and payments must round up; either one backwards strands tokens or drains MON.
 5. Reentrancy on refund and claim.
-6. Gas DoS via dust commit spam. Keep EasyAuction's minimum bid size; it is mandatory.
+6. Gas DoS via dust commit spam. The minimum bid size is mandatory.
 7. Sandwichable LP seed (first swap after seeding).
-8. Precision on `price × quantity` truncating in the bidder's favor.
+8. Precision on `price × amount` truncating in the bidder's favor.
 
-## Inherited constraints (EasyAuction fork, LGPL-3.0)
+## Clearing rules (decision 22, Zama-style)
 
-Total bidding-token volume < 2^96. Prices are uint96 fractions. Settlement may span multiple transactions. Keep the LGPL notice.
+A bid is a price per token plus a token amount. Bids above the clearing price get their full amount; bids at it share pro-rata; everyone pays the clearing price and is refunded the rest. Prices sit on a per-round tick grid. Amounts are `uint96`; compute products in `uint256`. Settlement may span multiple transactions. The exact rounding rules are in `tasks/clearing.md` — follow them, don't improvise.
 
 ## Language rules for any user-facing string
 

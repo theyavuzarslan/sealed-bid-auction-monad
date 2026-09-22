@@ -8,12 +8,12 @@ Status: draft
 
 | Component | Responsibility | Origin [src: Monad Sealed-Bid Auction Engine.md] |
 | --- | --- | --- |
-| Sealing layer | Accepts commitments `keccak256(price, quantity, salt, msg.sender)` and uniform deposits; accepts reveals; tracks who revealed | Hand-written |
-| Clearing core | Ranks revealed bids by price, accumulates volume to the sell amount, sets the uniform price, handles partial fill at the marginal bid, multi-transaction settlement | Forked from Gnosis EasyAuction, read line by line |
+| Sealing layer | Accepts commitments `keccak256(price, amount, salt, msg.sender)` and uniform deposits; accepts reveals; tracks who revealed | Hand-written |
+| Clearing core | Walks revealed bids by price level, sets the clearing price where amounts cover the supply, splits pro-rata at that price, computes payments and refunds; resumable across transactions | Hand-written, Zama-style (decision 22), inherited by the engine — not a separately deployed contract |
 | Deposit & slashing | Holds uniform deposits, slashes non-revealers, refunds losers and excess | Hand-written |
 | LP seeder (Fair Launch only) | Takes proceeds + remaining supply, seeds a DEX pool, locks LP | Hand-written |
 | Preset config | Degen / Raise / Vault parameter sets on the same contracts | Config |
-| Exit adapter (Exit-Priority only) | Wraps a vault so exit slots are the auctioned asset and the clearing discount accrues to remaining holders | Hand-written (reuses clearing core unchanged) |
+| Exit adapter (Exit-Priority only) | `ExitAuction`: the same sealing, deposit and clearing modules as the launch engine, with discount as price and shares as amount; the clearing discount is donated to the vault for holders who stay | Hand-written; reuses the clearing module unchanged (decision 34) |
 | Frontend | Wallet connect, creator setup, bidder commit/reveal/claim, countdown, dashboards | LLM-assisted |
 | Indexer | Decodes events for dashboards and the demo | LLM-assisted |
 | Demo harness | Sniper bot vs bonding curve vs auction; vault-run simulator | LLM-assisted |
@@ -33,7 +33,7 @@ graph TD
   subgraph Monad_contracts["Monad contracts"]
     SL[Sealing layer<br/>commit / reveal]
     DP[Deposit & slashing]
-    CC[Clearing core<br/>EasyAuction fork]
+    CC[Clearing core<br/>Zama-style uniform price]
     LP[LP seeder<br/>Fair Launch]
     EX[Exit adapter<br/>Exit-Priority]
     PR[Preset config<br/>Degen / Raise / Vault]
@@ -67,27 +67,28 @@ graph TD
 1. Creator (or vault adapter) opens a round with preset parameters.
 2. Bidders commit hash + uniform deposit during the commit window.
 3. Bidders reveal during the reveal window.
-4. Anyone triggers clearing; the clearing core runs the EasyAuction loop over revealed bids only.
+4. Anyone triggers clearing once the reveal window closes; the clearing core walks revealed bids only.
 5. Settlement pays fills, refunds losers, slashes non-revealers.
 6. Fair Launch: LP seeder pools proceeds + remainder and locks LP. Exit-Priority: adapter pays exiting holders at the clearing discount and credits the remainder to stayers.
 
 Sources for steps 2–6: [src: Monad Sealed-Bid Auction Engine.md]. Step 1 and the "anyone triggers clearing" assumption are derived from EasyAuction's permissionless `settleAuction` pattern and marked in [12-open-questions.md](12-open-questions.md).
 
-## Inherited constraints from EasyAuction [src: Monad Sealed-Bid Auction Engine.md]
+## Clearing constraints
 
-- Total bidding-token volume must stay under 2^96 or the auction becomes unsettleable.
-- Prices must be representable as uint96 fractions.
-- Minimum bid size is required, not optional — it is the defense against gas DoS by dust commits.
-- LGPL-3.0 is copyleft; fine for a hackathon with disclosure, decide before commercializing.
+- Prices and amounts are `uint96`; products are computed in `uint256`.
+- Prices sit on a per-round tick grid, so settlement cost scales with the number of distinct price levels, not the number of bids.
+- Minimum bid size (on the max spend) is required, not optional — it is the defense against gas DoS by dust commits [src: Monad Sealed-Bid Auction Engine.md].
+- No EasyAuction code remains once `tasks/clearing.md` lands, so its LGPL-3.0 obligation goes with it. The licence of our own files is our call (10-decisions.md #5).
 
 ## External services
 
 | Service | Used for | Status |
 | --- | --- | --- |
 | Monad RPC / testnet | Deploy, transact | TODO: which RPC, testnet vs mainnet for demo |
-| DEX on Monad | LP seeding | TODO: not found in source — which DEX and LP-lock contract |
+| DEXs on Monad | LP seeding through adapters | Decided: multiple DEXs (#23). Uniswap v3 first — factory `0x204faca1764b154221e35c0d20abb3c525710498`, NonfungiblePositionManager `0x7197e214c0b767cfb76fb734ab638e2c192f4e53`, WMON `0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A` [src: https://developers.uniswap.org/docs/protocols/v3/deployments/v3-monad-deployments]. PancakeSwap v3 second. Kuru excluded |
+| GoPlus SafeToken Locker | Locks the LP position | `UniV3LPLocker` `0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d`, `TokenLocker` `0xF17A08A7d41F53B24AD07Eb322CBBdA2ebdeC04b` [src: https://docs.gopluslabs.io/page/goplus-safetoken-locker]; code and lock functions verified on Monad [src: on-chain, Monad RPC, 22 Sep] |
 | nad.fun bonding curve | Demo baseline for the sniper head-to-head [src: Monad Sealed-Bid Auction Engine.md] | TODO: use live nad.fun or a local fork |
-| Target vault for Exit-Priority | One vault, one asset [src: Monad Sealed-Bid Auction Engine.md] | TODO: not found in source — which vault |
+| Target vault for Exit-Priority | One vault, one asset [src: Monad Sealed-Bid Auction Engine.md] | Our own demo ERC-4626 over WMON (decision 31) |
 | `/agentguard scan` | Self-scan of contracts before submission [src: Monad Sealed-Bid Auction Engine.md] | Planned |
 
 ## Threat model (what the architecture defends and what it does not)
@@ -99,7 +100,7 @@ Sources for steps 2–6: [src: Monad Sealed-Bid Auction Engine.md]. Step 1 and t
 
 ## Portability to Arbitrum (requested check)
 
-Buildable: yes. Everything is Solidity plus standard EVM opcodes; EasyAuction is an Ethereum-mainnet contract and Arbitrum One is EVM-equivalent. What changes:
+Buildable: yes. Everything is Solidity plus standard EVM opcodes, and Arbitrum One is EVM-equivalent. What changes:
 
 | Aspect | Monad | Arbitrum One | Effect on the engine |
 | --- | --- | --- | --- |

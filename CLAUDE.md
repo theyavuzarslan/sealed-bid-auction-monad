@@ -4,9 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository state
 
-Pre-code. The only file is `Monad Sealed-Bid Auction Engine.md`, the PRD for a Monad Metropolis hackathon submission (due 13 Oct 2026). There is no build, lint, or test tooling yet, so none is documented here. Add commands to this file when the toolchain is chosen.
+Hackathon build for Monad Metropolis (submission 13 Oct 2026). The PRD is `Monad Sealed-Bid Auction Engine.md`; the 13 numbered docs plus `README.md` are the synthesized spec. `AUDIT.md` holds the current security findings — read it before touching `contracts/`. The parent `/Users/0xatakan/CLAUDE.md` is an open-slide guide and does not apply here.
 
-The parent `/Users/0xatakan/CLAUDE.md` is the open-slide authoring guide. It applies to `slides/<id>/` decks only, not to this project.
+Work is split across git worktrees, one per agent, under `/Users/0xatakan/Claude Code/sba-agents/<name>` on branches `agent/<name>` (core, fork, settle, ui, scripts, demo). `setup.sh` creates them; `run.sh` launches the herdr panes. `agent/fork` has the integrated `AuctionEngine.sol`; `master` does not yet.
+
+## Commands
+
+Foundry lives in `~/.foundry/bin`; add it to `PATH` if `forge` is missing.
+
+```bash
+cd contracts && forge build
+cd contracts && forge test
+cd contracts && forge test --match-test test_PartialFillAtMarginal -vvv
+cd contracts && forge test --match-contract AuctionEngineTest
+```
+
+The demo is a separate Foundry project: `cd demo && forge test` (inside the `demo` worktree). The frontend is static ES modules in `web/`; the indexer is Node in `indexer/`.
 
 ## What is being built
 
@@ -17,13 +30,16 @@ One sealed-bid, uniform-clearing-price batch auction engine, shipped as two conf
 
 ## Architecture
 
-Per-round pipeline: **Commit → Reveal → Clear → Settle** (plus **Slash** for non-revealers, and **Seed LP** for use case 1).
+Per-round pipeline: **Commit → Reveal → Clear → Settle** (plus **Slash** for non-revealers, whose deposits are burned, and **Seed LP** for use case 1).
 
-- **Commit:** `keccak256(price, quantity, salt, msg.sender)` plus a *uniform* capped collateral deposit (a16z OverCollateralizedAuction pattern). The deposit must not scale with the bid, or it leaks the bid.
-- **Clear/settle:** fork of Gnosis EasyAuction (LGPL-3.0, copyleft). Keep its logic unchanged, including partial fill at the marginal bid, the minimum bid size parameter, and multi-transaction settlement.
-- **Hand-written, not forked:** the commit-reveal layer, deposit slashing, and LP auto-seed.
+- **Commit:** `keccak256(price, amount, salt, msg.sender)` plus a *uniform* capped collateral deposit (a16z OverCollateralizedAuction pattern). The deposit must not scale with the bid, or it leaks the bid.
+- **Clear/settle:** Zama-style uniform-price clearing (decision 22, 22 Sep), replacing the original EasyAuction fork. A bid is a price per token plus a token amount. Bids above the clearing price get their full amount, bids at it share pro-rata, everyone pays the clearing price and the overpayment is refunded. It is an internal contract inherited by the engine, so nothing can call clearing around the engine. Rounding rules are in `tasks/clearing.md`.
+- **Seed LP:** sized from the result (`lpShareBps` of tokens sold and of MON raised, so the two sides already match the clearing price), seeded before any claim, and locked in the GoPlus `UniV3LPLocker` — permanent for Degen, creator-chosen for Raise. Unsold supply is burned (Degen) or returned to the creator (Raise). See `04-flows.md` Flow 8.
+- **Everything on the money path is hand-written:** commit-reveal, clearing, the deposit ledger and slashing, LP seed.
 
-EasyAuction constraints that carry over: total bidding-token volume < 2^96, prices representable as uint96 fractions, and the minimum bid size is mandatory (it is the defense against gas-DoS from dust commits).
+Constraints: amounts are `uint96`, prices sit on a per-round tick grid, and the minimum bid size is mandatory (it is the defense against gas DoS from dust commits).
+
+Implementation briefs for pending work live in `tasks/` (`fix-core`, `clearing`, `ui-bid`, `lp`, then `raise` and `exit`).
 
 ## Working rules from the PRD
 
@@ -32,11 +48,11 @@ EasyAuction constraints that carry over: total bidding-token volume < 2^96, pric
   1. Commit missing the salt.
   2. Commit not bound to `msg.sender`.
   3. Slashing accounting on non-reveal.
-  4. Off-by-one at the marginal bid.
+  4. Off-by-one at the clearing price (pro-rata rounds down, payments round up).
   5. Reentrancy on refund and claim.
   6. Gas DoS via dust commit spam.
   7. Sandwichable LP seed.
-  8. `price × quantity` precision favoring the bidder.
+  8. `price × amount` precision favoring the bidder.
 - **No encrypted mempool.** Monad does not have one, and a contract cannot call BTX. Privacy comes from commit-reveal alone. Do not add it as a dependency. Treat it only as positioning ("when BTX lands, commit-reveal collapses to one transaction").
 - **Claim wording:** say "snipe-resistant: submission timing no longer determines price", never "no sniping". Say "privacy via commit-reveal", not via an encrypted mempool. Post-clear transparency of bids is intentional.
 - **Non-goals:** KYC, RWA, FHE/MPC/enclave/ZK, cross-chain, perpetual privacy of losing bids.

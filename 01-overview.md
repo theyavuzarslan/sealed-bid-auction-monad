@@ -10,9 +10,9 @@ A sealed-bid, uniform-price batch auction on Monad that replaces first-come-firs
 
 ## What it does
 
-- **Commit.** A bidder posts `keccak256(price, quantity, salt, msg.sender)` plus a uniform capped collateral deposit [src: Monad Sealed-Bid Auction Engine.md].
-- **Reveal.** The bidder opens the commitment with price and salt. Non-revealers are slashed [src: Monad Sealed-Bid Auction Engine.md].
-- **Clear.** Bids rank by price, volume accumulates to the sell amount, the crossing bid sets the uniform price. Bids at or above it fill; the rest refund [src: Monad Sealed-Bid Auction Engine.md].
+- **Commit.** A bidder posts `keccak256(price, amount, salt, msg.sender)` plus a uniform capped collateral deposit [src: Monad Sealed-Bid Auction Engine.md].
+- **Reveal.** The bidder opens the commitment with price, amount and salt. Non-revealers are slashed [src: Monad Sealed-Bid Auction Engine.md].
+- **Clear.** Walking from the highest price down, the price at which bid amounts first cover the supply becomes the clearing price. Bids above it get their full amount, bids exactly at it share the rest pro-rata, and everyone pays the clearing price with the overpayment refunded [src: https://docs.zama.org/auction/how-it-works].
 - **Settle.** Fills, refunds, and slashes are paid out; for Fair Launch, proceeds plus remaining supply auto-seed a DEX pool with locked LP [src: Monad Sealed-Bid Auction Engine.md].
 
 One engine, three presets [src: Monad Sealed-Bid Auction Engine.md]:

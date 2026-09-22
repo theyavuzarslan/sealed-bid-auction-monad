@@ -4,7 +4,7 @@ Entities the engine stores onchain and what the indexer derives, with fields and
 
 Status: draft
 
-No contract code exists yet; every entity below is derived from the PRD's mechanism description [src: Monad Sealed-Bid Auction Engine.md] and EasyAuction's order model [src: https://github.com/Gnosis-Auction/auction-contracts]. Field names are proposals — TODO: align with code once written.
+Fields below are the **target design** (decisions 22–29). The code on `agent/fork` still differs — see `06-api.md` for what exists today. Field names are proposals until code matches.
 
 ## Round (Auction)
 
@@ -14,15 +14,23 @@ No contract code exists yet; every entity below is derived from the PRD's mechan
 | preset | enum {Degen, Raise, Vault} | Parameter set [src: Monad Sealed-Bid Auction Engine.md] |
 | auctioningToken | address | Token being sold (Fair Launch) or exit capacity marker (Exit-Priority) |
 | biddingToken | address | Token bids are paid in (e.g. MON or a stable) |
-| sellAmount | uint96 | Supply locked; must be < 2^96 per EasyAuction [src: Monad Sealed-Bid Auction Engine.md] |
+| sellAmount | uint96 | Supply offered in the auction |
 | minBidSize | uint96 | Required anti-spam floor [src: Monad Sealed-Bid Auction Engine.md] |
 | depositAmount | uint256 | Uniform collateral each bidder locks; larger than the max allowed bid [src: Monad Sealed-Bid Auction Engine.md] |
 | commitEnd | uint64 | Timestamp/block the commit window closes |
 | revealEnd | uint64 | Timestamp/block the reveal window closes |
-| allowlistRoot | bytes32 | Raise preset only; zero otherwise [src: Monad Sealed-Bid Auction Engine.md] |
-| vesting | struct | Raise preset only [src: Monad Sealed-Bid Auction Engine.md]; TODO: schedule shape not found in source |
+| allowlistRoot | bytes32 | OpenZeppelin `StandardMerkleTree` root; zero = open round (decision 32) |
+| tgeBps / cliff / vestDuration | uint16 / uint64 / uint64 | Raise only: share paid at claim, then linear after the cliff, counted from settlement (decision 32) |
 | autoLP | bool | Seed DEX pool on settle (Degen yes, Raise optional, Vault no) [src: Monad Sealed-Bid Auction Engine.md] |
-| clearingPrice | uint96 num / uint96 den | Set at settle; uint96 fraction per EasyAuction [src: Monad Sealed-Bid Auction Engine.md] |
+| tickSize | uint96 | Prices must be multiples of this (decision 22) |
+| reservePrice | uint96 | Lowest acceptable price per token, per round (AUDIT M4) |
+| lpShareBps | uint16 | Share of MON raised and tokens sold that goes to the LP (decision 25) |
+| dexSplits | (address adapter, uint16 bps)[] | Creator-chosen venues; bps sum to 10000 (decision 26) |
+| lockOwner / lockEnd / lockFeeTier | address / uint64 / string | GoPlus lock terms; Degen: owner is the engine, permanent (decision 28) |
+| tokenReserve | uint256 | Worst-case LP token reserve deposited at open: `sellAmount × lpShareBps / 10000` |
+| clearingPrice | uint96 | P: MON wei per 1e18 token units; the lowest price at which a bid fills (decision 22) |
+| qtyAbove / qtyAtPrice / countAtPrice | uint256 | Set at settle; drive the pro-rata fill at P |
+| seeded | bool | Claims open only after the LP is seeded (decision 27) |
 | status | enum {Open, Revealing, Settling, Settled} | Settling exists because settlement can span multiple transactions [src: Monad Sealed-Bid Auction Engine.md] |
 
 ## Commitment
@@ -31,10 +39,11 @@ No contract code exists yet; every entity below is derived from the PRD's mechan
 | --- | --- | --- |
 | roundId | uint256 | FK → Round |
 | bidder | address | `msg.sender` at commit; part of the hash preimage [src: Monad Sealed-Bid Auction Engine.md] |
-| hash | bytes32 | `keccak256(price, quantity, salt, msg.sender)` [src: Monad Sealed-Bid Auction Engine.md] |
+| hash | bytes32 | `keccak256(price, amount, salt, msg.sender)` [src: Monad Sealed-Bid Auction Engine.md] |
 | depositLocked | uint256 | Equals Round.depositAmount |
 | committedAt | uint64 | Block; leaks timing by design [src: Monad Sealed-Bid Auction Engine.md] |
 | revealed | bool | Set on successful reveal |
+| note | bytes | Encrypted bid backup; emitted in `Committed`, **never stored** (decision 33) |
 
 TODO: one commitment per address per round, or many — not found in source.
 
@@ -44,12 +53,14 @@ TODO: one commitment per address per round, or many — not found in source.
 | --- | --- | --- |
 | roundId | uint256 | FK → Round |
 | bidder | address | FK → Commitment |
-| price | uint96 | Limit price as uint96 fraction [src: Monad Sealed-Bid Auction Engine.md] |
-| quantity | uint96 | Bidding-token amount; ≥ minBidSize |
+| price | uint96 | Max price per whole token, in wei of MON per 1e18 token units [src: user decision, 22 Sep] |
+| amount | uint96 | Token units wanted. Winners above P get all of it; bids at P share what is left pro-rata (decision 22) |
+| maxSpend | uint96 | `ceil(price × amount / 1e18)`. Must be ≥ minBidSize and < the uniform deposit |
+| allocated | uint96 | Set at claim: full `amount` above P, `floor(amount × (supply − qtyAbove) / qtyAtPrice)` at P, 0 below |
+| paid | uint96 | `ceil(allocated × P / 1e18)`; never exceeds `maxSpend`. Refund = deposit − paid |
 | salt | bytes32 | Only needed at reveal; not stored after verification |
-| filled | uint96 | Amount filled at settle (partial at the marginal bid) [src: Monad Sealed-Bid Auction Engine.md] |
 
-For Exit-Priority, `price` is interpreted as the accepted discount and `quantity` as the amount of vault shares to exit [src: Monad Sealed-Bid Auction Engine.md].
+For Exit-Priority, `price` is interpreted as the accepted discount and `amount` as the amount of vault shares to exit [src: Monad Sealed-Bid Auction Engine.md].
 
 ## Deposit ledger
 
@@ -59,28 +70,31 @@ For Exit-Priority, `price` is interpreted as the accepted discount and `quantity
 | locked | uint256 | Uniform amount |
 | appliedToFill | uint256 | Portion consumed by the fill at clearing price |
 | refunded | uint256 | Returned to bidder |
-| slashed | uint256 | Taken on non-reveal [src: Monad Sealed-Bid Auction Engine.md] |
+| burned | uint256 | The whole deposit, on non-reveal (decision 30) |
 
-Invariant: `locked == appliedToFill + refunded + slashed` after settlement. Bug #3 in the PRD is exactly a violation of this [src: Monad Sealed-Bid Auction Engine.md].
+Invariant: `locked == appliedToFill + refunded + burned` after settlement, where `appliedToFill` is what the bidder paid. Bug #3 is exactly a violation of this.
 
 ## LP seed record (Fair Launch)
 
 | Field | Type | Description |
 | --- | --- | --- |
 | roundId | uint256 | FK → Round |
+| adapter | address | DEX adapter used (Uniswap v3, PancakeSwap v3, …) — one record per venue when liquidity is split |
 | pool | address | DEX pool created |
+| lpRef | uint256 | LP position NFT id (v3/v4) or 0 for an ERC-20 LP token |
+| lockId | uint256 | GoPlus `UniV3LPLocker` lock id [src: https://docs.gopluslabs.io/page/goplus-safetoken-locker] |
 | tokenAmount | uint256 | Remaining supply added |
 | proceedsAmount | uint256 | Bidding-token proceeds added |
-| lpLockedUntil | uint64 | Lock expiry [src: Monad Sealed-Bid Auction Engine.md]; TODO: duration not found in source |
+| lpLockedUntil | uint64 | Lock expiry [src: Monad Sealed-Bid Auction Engine.md]; TODO: duration still open (Q4) |
 
 ## Exit round record (Exit-Priority)
 
 | Field | Type | Description |
 | --- | --- | --- |
 | roundId | uint256 | FK → Round |
-| vault | address | Target vault; TODO: not named in source |
-| exitCapacity | uint256 | Shares redeemable this round |
-| clearingDiscount | uint96 fraction | Uniform discount paid by all exits |
+| vault | address | Our demo ERC-4626 over WMON (decision 31) |
+| exitCapacity | uint256 | `min(idle buffer in shares, maxExitSharesPerRound)`, fixed at open |
+| clearingDiscount | uint96 | Clearing price of the exit round, in bps |
 | accruedToStayers | uint256 | Discount amount credited to remaining holders [src: Monad Sealed-Bid Auction Engine.md] |
 
 ## Relations

@@ -8,7 +8,7 @@ Status: draft
 
 - One sealed-bid, uniform-clearing-price batch auction engine on Monad, shipped as configured presets rather than separate codebases [src: Monad Sealed-Bid Auction Engine.md].
 - Bidders commit a hash plus a uniform collateral deposit, reveal later, and everyone who clears pays the same price; non-revealers are slashed [src: Monad Sealed-Bid Auction Engine.md].
-- Clearing math is forked from Gnosis EasyAuction; the commit-reveal layer, slashing and LP auto-seed are hand-written [src: Monad Sealed-Bid Auction Engine.md].
+- Clearing is Zama-style: a bid is a price per token plus a token amount; winners pay the clearing price, bids at the clearing price share pro-rata, and overpayment is refunded [src: https://docs.zama.org/auction/how-it-works]. It replaced the original EasyAuction fork on 22 Sep (decision 22).
 - Use case 1 (primary): memecoin **Fair Launch** for the Social, Attention & Culture track. Use case 2 (conditional): vault **Exit-Priority Auction** for the Onchain Finance & Trading track [src: Monad Sealed-Bid Auction Engine.md].
 - Privacy comes from commit-reveal alone today; Monad's BTX encrypted mempool is a research scheme, not a live feature, and is treated as a future upgrade path (see [12-open-questions.md](12-open-questions.md)).
 

@@ -27,10 +27,19 @@ Status: draft
 
 | Title | Link | What it's for |
 | --- | --- | --- |
-| Gnosis EasyAuction contracts | https://github.com/Gnosis-Auction/auction-contracts | Clearing core to fork (LGPL-3.0, audited 2021) |
+| Gnosis EasyAuction contracts | https://github.com/Gnosis-Auction/auction-contracts | Original clearing reference; replaced by Zama-style clearing on 22 Sep (decision 22) |
 | a16z OverCollateralizedAuction | https://a16zcrypto.com/posts/article/hidden-in-plain-sight-a-sneaky-solidity-implementation-of-a-sealed-bid-auction | Uniform-deposit pattern; why deposit must not scale with bid |
 | a16z — On the limits of encrypted mempools | https://a16zcrypto.com/posts/article/limits-encrypted-mempools | Speculative MEV / reveal refusal argument |
 | Censorship-Resistant Sealed-Bid Auctions on Blockchains (Alpos, Heimbach, Nayak, Wadhwa, Jun 2026) | https://arxiv.org/html/2606.14939 | Academic alternative: timestamping committee + inclusion lists + ZK; not commit-reveal; useful for the "what we did not build" section |
+
+## DEX and LP lock (Monad)
+
+| Title | Link | What it's for |
+| --- | --- | --- |
+| Uniswap v3 Monad deployments | https://developers.uniswap.org/docs/protocols/v3/deployments/v3-monad-deployments | Factory, NonfungiblePositionManager, SwapRouter02, WMON addresses (chain 143) |
+| GoPlus supported lockers | https://docs.gopluslabs.io/reference/supported-locker | Confirms SafeToken Locker on Monad |
+| GoPlus SafeToken Locker app | https://lock.gopluslabs.io/ | Locker UI; lock detail pages |
+| PancakeSwap V3 (Monad) | https://www.coingecko.com/en/exchanges/pancakeswap-v3-monad | Second adapter target |
 
 ## Competitive landscape
 
@@ -43,6 +52,15 @@ Status: draft
 | HuddlePad | https://huddlepad.xyz/ | Arbitrum-native CCA launchpad |
 | Arbitrum Timeboost — gentle introduction | https://docs.arbitrum.io/how-arbitrum-works/timeboost/gentle-introduction | Sealed-bid second-price express-lane auction; private sequencer mempool; 200 ms delay |
 | Arbitrum Timeboost FAQ | https://docs.arbitrum.io/how-arbitrum-works/timeboost/timeboost-faq | Auction parameters |
+
+## Auction mechanics references
+
+| Title | Link | What it's for |
+| --- | --- | --- |
+| Zama Public Auction — how it works | https://docs.zama.org/auction/how-it-works | Price + amount bids, pro-rata at the clearing price, refunds (decision 22) |
+| Uniswap Liquidity Launchpad (CCA) whitepaper | https://developers.uniswap.org/whitepaper_cca.pdf | Budget + max price bids; LP seeded from a pre-committed share of proceeds (decision 25) |
+| GoPlus SafeToken Locker integration guide | https://docs.gopluslabs.io/page/goplus-safetoken-locker | Locker addresses per chain, `lock` ABI, fee tiers |
+| Liquidity locks: locked vs burned | https://www.barryguard.com/blog/understanding-liquidity-locks | pump.fun burns LP at graduation — the memecoin norm behind decision 28 |
 
 ## Tooling
 
