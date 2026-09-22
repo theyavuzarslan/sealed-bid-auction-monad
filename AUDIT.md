@@ -24,7 +24,23 @@ The contracts were rewritten on `master` (commit `6ddfb1c`): Zama-style clearing
 | M6 ties go to earlier revealers | **Resolved** | Allocation depends only on price and amount; ties at the clearing price share pro-rata |
 | New: cheap pool-griefing could lock claims forever | **Mitigated** | Anyone can call `forceOpenClaims` after `lpGracePeriod`; seeding then retries at the pool's price and burns unused LP MON. Test `test_LP_Blocked_GraceEscape_ThenRelaxedSeedBurnsUnused` |
 
-An independent adversarial review of the new contracts is running; its findings will be added here.
+### Second review — independent adversarial audit of the rewritten contracts (23 Sep)
+
+Run by a separate agent on a copy of `6ddfb1c`, with a proof of concept for every confirmed finding. It found no path that loses or double-spends MON or tokens, and no way for one round to spend another's (3,000 random interleavings). Findings and fixes (`1556d9b`); every PoC now lives in `contracts/test/AuditRegressions.t.sol` asserting the attack fails.
+
+| Finding | Severity | Fix |
+| --- | --- | --- |
+| H1 — "relaxed" seeding after the grace period let anyone, the creator most of all, drain the LP's MON with one token sale. My own comment "nobody profits from the griefing" was wrong | High | Relaxed seeding removed. The engine only ever seeds at the clearing price; if seeding stays blocked, `abandonLP` burns the LP's MON share |
+| M1 — if seeding failed forever, proceeds, the LP reserve and dust were stranded | Medium | `abandonLP` sets the round done |
+| M2 — a pausable or blacklisting creator token could hold every bidder's MON refund hostage | Medium | `claimRefund` is available at settlement, independent of the token; tokens are delivered separately; unsold disposal is a separate retryable call |
+| L1 — one winner who never claims blocked the dust sweep and the creator's share | Low | `claimRefund` / `claimTokens` callable by anyone, funds always to the bidder |
+| L2 — parameters under which no valid bid exists | Low | Rejected at open |
+| L3 — price levels far above the clearing price cost almost nothing | Low | Minimum bid applies at the reserve price |
+| Info — a Raise lock could already be expired; stray adapter MON; fee tier 100 cannot be repriced in one transaction | — | Lock is a duration from seeding (≥ 30 days); `receive()` only while seeding; adapters declare supported fee tiers |
+
+Still open: M5 (hash domain separation, low). Known limit: an LP position so small that GoPlus's 0.40% fee rounds to zero cannot be locked; such a round ends in `abandonLP`.
+
+Current state: 105 contract tests, 4 fuzz suites clean at 10,000 runs, 19 fork tests against real Uniswap v3 and GoPlus on Monad mainnet.
 
 
 ## Where the repo stands
