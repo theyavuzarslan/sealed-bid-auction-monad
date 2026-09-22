@@ -3,27 +3,64 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sealed-Bid Launches</title>
+  <title>Even · Fair launches on Monad</title>
+  <meta name="description" content="Sealed-bid token launches on Monad. Everyone who wins pays one clearing price.">
+  <meta name="theme-color" content="#200052">
+  <!--
+    THESIS: A launch is a two-player game the bot can no longer win. The page is an arcade cabinet
+      where the curve's race (1P) and Even's draw (2P) run side by side. It refuses the category
+      default: a launchpad grid of token cards on near-black with neon gradients.
+    OWN-WORLD: Monad indigo screen field; off-white notched bezel panels with hard indigo offset
+      shadows; berry = Player 1 and the coin, purple = Player 2, lime = a lamp that just lit.
+      Jersey 10 marquee pixels, Silkscreen lamp labels, Schibsted Grotesk for every amount.
+      Monad's pixel stair becomes the demand staircase.
+    STORY: The visitor watches the same bot win the curve and draw on Even with real numbers,
+      learns insert coin, continue?, results, collect, and presses start or hosts a launch.
+    FIRST VIEWPORT: marquee headline "Nobody gets a head start." left, one-line promise right;
+      below, the full-width two-player screen replaying the demo; under it Insert coin / Host.
+    FORM: grounded list #4 (two-player arcade); staging: pixel wipes only at real phase
+      changes; seed 9db22226.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Schibsted+Grotesk:wght@400;500;600;700&family=Silkscreen&display=swap">
   <link rel="stylesheet" href="styles.css">
   <!-- Serve over http(s) (WebCrypto needs a secure context; localhost counts), e.g. from the repo root:
          python3 -m http.server 8000   then open http://localhost:8000/web/
-       vendor keccak must load as a classic script first: it attaches keccak256 to window.
-       Module scripts are deferred and run after it. (MIT, see vendor/js-sha3/LICENSE.txt) -->
+       vendor keccak must load as a classic script first: it attaches keccak256 to window. (MIT, vendor/js-sha3/LICENSE.txt) -->
   <script src="vendor/js-sha3/sha3.js"></script>
+  <!-- Development only: inactive unless the URL has ?devwallet=<n> (see tools/dev-wallet.js). -->
+  <script src="tools/dev-wallet.js"></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#/">Sealed-Bid Auction Engine</a>
-    <nav class="topnav">
-      <a href="#/creator">Open a launch</a>
-    </nav>
-    <div id="wallet-area"></div>
+  <a class="skip" href="#view">Skip to content</a>
+  <header class="marquee">
+    <div class="marquee-in">
+      <a class="logo" href="#/" aria-label="Even, home">
+        <span class="logo-plate" aria-hidden="true">EVEN</span>
+        <span class="logo-sub">Fair launches<br>on Monad</span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="#/play" data-nav="play">Play</a>
+        <a href="#/host" data-nav="host">Host a launch</a>
+        <a href="#/how" data-nav="how">How it plays</a>
+      </nav>
+      <div class="wallet" id="wallet-area"></div>
+    </div>
   </header>
-  <main id="view"></main>
-  <footer class="foot">
-    <span>Privacy via commit-reveal</span>
-    <span>Snipe-resistant: submission timing no longer determines price</span>
+  <main id="view" tabindex="-1"></main>
+  <footer class="site-foot">
+    <div class="site-foot-in">
+      <div>
+        <p class="claims">Snipe-resistant: submission timing no longer determines price · Privacy via commit-reveal</p>
+        <p>Bids are sealed with commit-reveal. The number and timing of bids are public; every bid is public once a round settles.</p>
+      </div>
+      <details class="settings" id="settings">
+        <summary>Cabinet settings</summary>
+        <div id="settings-body"></div>
+      </details>
+    </div>
   </footer>
 </body>
 </html>

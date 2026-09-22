@@ -68,6 +68,16 @@ Status: draft
 | --- | --- | --- |
 | `/agentguard scan` | Installed locally: `~/.hermes/plugins/agentguard` and `~/.hermes/skills/agentguard` (hooks example at `~/.hermes/agentguard-hooks.example.yaml`) | Pre-submission self-scan; report goes in README |
 | Muse Code CLI (Meta Muse Spark) | https://developer.meta.com/ai/models/muse-spark/ | Fifth agent for parallel build; 1M context, OpenAI-compatible API |
-| Herdr agent multiplexer | https://github.com/harry81/herdr-team | Running four to five agents in parallel panes with git worktrees |
+| Herdr agent multiplexer | https://github.com/harry81/herdr-team | Running four to five agents in parallel panes with git worktrees (retired 23 Sep; the build moved to one session with subagents) |
+| Impeccable (Claude Code plugin) | Installed locally as a Claude Code plugin | Design process and detector used for the Even redesign; records in PRODUCT.md and DESIGN.md |
+
+## Design references (Even redesign, 23 Sep)
+
+| Title | Link | What it's for |
+| --- | --- | --- |
+| Monad | https://monad.xyz | Brand palette (#6E54FF, #A0055D, #200052, #FBFAF9), stepped pixel art, outlined numerals |
+| nad.fun | https://nad.fun | Monad memecoin launchpad: dark field, purple accent |
+| Kuru | https://kuru.io | Monad order-book DEX: dark UI, lime call to action |
+| Magma | https://magmastaking.xyz | Monad liquid staking: navy and orange |
 
 Related files: [02-problem.md](02-problem.md) · [03-architecture.md](03-architecture.md) · [10-decisions.md](10-decisions.md) · [12-open-questions.md](12-open-questions.md)

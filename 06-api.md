@@ -6,7 +6,25 @@ Status: draft
 
 ## HTTP / indexer API
 
-TODO: not found in source. No backend endpoints exist yet. If the indexer exposes an API, document it here as method / path / request / response / status codes.
+The indexer (`indexer/`, Node built-ins only) serves a read-only JSON API on `127.0.0.1:8787` by default (`HOST`/`PORT`). Full request/response shapes: [indexer/README.md](indexer/README.md) [src: indexer/README.md].
+
+All endpoints are `GET`, return `application/json` and send `access-control-allow-origin: *`; unknown paths, rounds or bidders get `404 {"error": …}`, other methods `405`, failures `500 {"error": …}`. Amounts are decimal strings in wei.
+
+| Path | Returns |
+| --- | --- |
+| `/health` | Liveness and the indexed block |
+| `/rounds` | All rounds |
+| `/rounds/:id` | Round summary |
+| `/rounds/:id/commitments` | Commitment count over time |
+| `/rounds/:id/reveals` | Reveals |
+| `/rounds/:id/demand` | Demand curve after reveals |
+| `/rounds/:id/clearing` | Clearing result |
+| `/rounds/:id/lp` | LP seeding and locks |
+| `/rounds/:id/bidders` | Every bidder's journey |
+| `/rounds/:id/bidders/:address` | One bidder's journey |
+| `/rounds/:id/events` | Raw decoded events |
+
+The web app does not depend on the indexer; it reads the engine directly through the wallet or the network's RPC.
 
 ## Contract interface — implemented (23 Sep)
 
@@ -21,12 +39,15 @@ Source of truth: `contracts/src/AuctionEngine.sol` with `SealingLayer.sol`, `Dep
 | `reveal(roundId, price, amount, salt)` / `revealWithHint(…, hint)` | Bidder | `commitEnd` to `revealEnd` | Checks the hash with `msg.sender`, validates the bid, adds it to the book | `hash mismatch`, `price off grid or below reserve`, `below minimum bid`, `bid exceeds deposit` |
 | `burnUnrevealed(roundId)` | Anyone | after `revealEnd` | Burns `(commits − reveals) × deposit` | `nothing to burn` |
 | `settle(roundId, maxSteps)` | Anyone | after `revealEnd` | Walks up to `maxSteps` price levels; returns `true` once the clearing price is fixed | `reveal window open`, `not settleable` |
-| `seedLP(roundId)` | Anyone | once settled | Seeds and locks the LP, disposes of unsold supply, opens claims | `not settled`, `already seeded`, adapter reverts |
-| `forceOpenClaims(roundId)` | Anyone | `lpGracePeriod` after settlement | Opens claims while seeding is blocked; `seedLP` stays callable and then seeds at the pool's own price | `grace period not over`, `claims already open` |
-| `claim(roundId)` | Revealed bidder | claims open | Tokens won (or the TGE share on a vesting Raise) plus refund of `deposit − paid` | `claims not open`, `not revealed`, `already settled` |
+| `seedLP(roundId)` | Anyone | once settled | Seeds every DEX split at the clearing price, locks each position with GoPlus, opens token claims | `not settled`, `LP already done`, `adapter overspent`, `position not received`, adapter reverts |
+| `abandonLP(roundId)` | Anyone | `lpGracePeriod` after settlement, LP not done | Gives up on seeding: burns the LP's MON share and opens token claims (decision 25, audit H1) | `not settled`, `LP already done`, `grace period not over` |
+| `disposeUnsold(roundId)` | Anyone | after LP done or abandoned | Burns (Degen) or returns to the creator (Raise) the unsold supply; retryable | `nothing to dispose` |
+| `claimRefund(roundId, bidder)` | Anyone, for a bidder | once settled | Pays `deposit − paid` to the bidder; independent of the token (audit M2) | `not settled`, `not revealed` |
+| `claimTokens(roundId, bidder)` | Anyone, for a bidder | claims open | Tokens won (or the TGE share on a vesting Raise) | `claims not open`, `tokens already claimed` |
+| `claim(roundId)` | Revealed bidder | once settled | Refund, then tokens if claims are open | `nothing to claim` |
 | `claimVested(roundId)` | Raise winner | after claim | Releases tokens vested since the last call | `no vesting`, `nothing vested` |
-| `withdrawProceeds(roundId)` | Creator | after `seedLP` | Pays payments collected so far minus MON that went to the LP | `not creator`, `LP not seeded`, `nothing to withdraw` |
-| `sweepDust(roundId)` | Anyone | every revealed bidder has claimed | Disposes of pro-rata rounding dust like unsold supply | `claims outstanding` |
+| `withdrawProceeds(roundId)` | Creator | after the LP is done | Pays payments collected so far minus MON that went to the LP | `not creator`, `LP not done`, `nothing to withdraw` |
+| `sweepDust(roundId)` | Anyone | every revealed bidder has taken their refund | Disposes of pro-rata rounding dust like unsold supply | `not sweepable`, `refunds outstanding` |
 
 ### Views
 
@@ -49,15 +70,17 @@ Source of truth: `contracts/src/AuctionEngine.sol` with `SealingLayer.sol`, `Dep
 | `UnrevealedBurned` | roundId, count, amount |
 | `Cleared` | roundId, clearingPrice, sold, oversubscribed |
 | `LPSeeded` | roundId, adapter, positionManager, nftId, tokenAmount, monAmount, lockId |
+| `LPAbandoned` | roundId, monBurned |
 | `ClaimsOpened` | roundId, lpSeeded |
 | `UnsoldDisposed` | roundId, to, amount |
 | `Claimed` | roundId, bidder, allocated, paid, refund |
+| `TokensClaimed` | roundId, bidder, amount |
 | `VestedClaimed` | roundId, bidder, amount |
 | `ProceedsWithdrawn` | roundId, amount |
 
-### Not yet implemented
-- The Uniswap v3 adapter and the fork tests against the real GoPlus locker (in progress).
-- `ExitAuction` for Exit-Priority (in progress; decision 34).
+### Also implemented
+- `UniswapV3Adapter` (fork-tested against Uniswap v3 and the GoPlus locker on Monad mainnet, 19 tests).
+- `ExitAuction` and `DemoVault` for Exit-Priority (decisions 31, 34).
 
 ## Contract interface (original proposal, superseded)
 
@@ -85,7 +108,7 @@ The first proposal, kept for the record; the current and pending interfaces are 
 | --- | --- | --- | --- | --- |
 | `slashUnrevealed(roundId, bidders[])` | Anyone (or inside settle) | list | Moves deposit of non-revealers to the slash destination [src: Monad Sealed-Bid Auction Engine.md] | bidder revealed; before revealEnd |
 
-TODO: slash destination not found in source.
+Superseded: unrevealed deposits are burned to `0x…dEaD` by `burnUnrevealed` (decision 30).
 
 ### LP seeder (Fair Launch)
 
@@ -93,7 +116,7 @@ TODO: slash destination not found in source.
 | --- | --- | --- | --- | --- |
 | `seedLP(roundId)` | Inside settle | — | Creates pool with proceeds + remaining supply, locks LP [src: Monad Sealed-Bid Auction Engine.md] | autoLP false; already seeded |
 
-Note bug #7: the first swap after seeding is sandwichable; mitigation TODO (see [12-open-questions.md](12-open-questions.md)).
+Note bug #7: superseded. Pools start at the clearing price and no auctioned token exists outside the contract until seeding is done (Q5 resolved, decision 27).
 
 ### Exit adapter (Exit-Priority)
 
@@ -109,6 +132,6 @@ Note bug #7: the first swap after seeding is sandwichable; mitigation TODO (see 
 bytes32 h = keccak256(abi.encode(price, amount, salt, msg.sender));
 ```
 
-All four inputs are load-bearing: no salt → brute-forceable; no `msg.sender` → replayable / reveal-front-runnable [src: Monad Sealed-Bid Auction Engine.md]. Confirmed in code: `abi.encode`, in both `SealingLayer.reveal` and the frontend's `commitHash.js` [src: contracts/src/SealingLayer.sol, sba-agents/ui/web/js/commitHash.js].
+All four inputs are load-bearing: no salt → brute-forceable; no `msg.sender` → replayable / reveal-front-runnable [src: Monad Sealed-Bid Auction Engine.md]. Confirmed in code: `abi.encode`, in both `SealingLayer.reveal` and the frontend's `commitHash` in `web/js/bid.js`, which the page checks against a Foundry `cast` vector on every load [src: contracts/src/SealingLayer.sol, web/js/bid.js, web/js/main.js].
 
 Related files: [03-architecture.md](03-architecture.md) · [04-flows.md](04-flows.md) · [05-data-model.md](05-data-model.md) · [12-open-questions.md](12-open-questions.md)

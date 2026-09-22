@@ -4,7 +4,7 @@ Screen-by-screen description of the creator, bidder, and demo interfaces.
 
 Status: draft
 
-No HTML, mockups, or screenshots exist in the sources yet. Each screen below is derived from the flows in the PRD [src: Monad Sealed-Bid Auction Engine.md]. TODO: paste HTML snippets under each screen as they are built.
+The screens below were first derived from the PRD's flows [src: Monad Sealed-Bid Auction Engine.md]; screens 1–4 are now built as the "Even" web app in `web/` (static HTML/CSS/ES modules), styled by the Two-Player Cabinet design system in [DESIGN.md](DESIGN.md). Each screen names its source file instead of pasting markup, so the doc cannot drift from the code.
 
 ## Screen 1 — Creator: open a launch
 
@@ -14,19 +14,19 @@ No HTML, mockups, or screenshots exist in the sources yet. Each screen below is 
 - Copy guidance: lead with the community line, not the mechanism [src: Monad Sealed-Bid Auction Engine.md].
 
 ```html
-<!-- TODO: not found in source -->
+<!-- Built: web/js/screens/creator.js, route #/host ("Host a launch": Degen/Raise cartridges, pool split, allowlist, vesting). -->
 ```
 
 ## Screen 2 — Bidder: round page
 
 - Header: token, phase (Commit / Reveal / Clearing / Settled), countdown to next phase.
 - Live stats allowed to show: number of commitments and their timing — this is an intentional leak [src: Monad Sealed-Bid Auction Engine.md]. Never show revealed prices before clearing.
-- Commit panel: **max price per token** (snaps to the round's tick size) and **token amount** (decision 22). Show the max spend, `ceil(price × amount)`, and explain: *"You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size."* The UI generates the salt, encrypts the bid into the on-chain `note`, and also keeps it in localStorage with a backup-file download; recovery from another device needs only the wallet (decision 33).
+- Commit panel: **max price per token** (snaps to the round's tick size) and **token amount** (decision 22). Show the max spend, `ceil(price × amount / 1e18)`, which must stay below the deposit; the minimum bid applies to the amount at the **reserve** price, `ceil(reservePrice × amount / 1e18) ≥ minBidSize`, matching the contract. Explain: *"You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size."* The UI generates the salt, encrypts the bid into the on-chain `note`, and also keeps it in localStorage with a backup-file download; recovery from another device needs only the wallet (decision 33).
 - Deposit line: "Everyone locks the same X — this is what keeps your bid private" (explains the uniform deposit).
 - After commit: "Come back in the reveal window or you lose your deposit."
 
 ```html
-<!-- TODO: not found in source -->
+<!-- Built: web/js/screens/round.js, route #/round/<id> (phase lamps, clock, "Insert coin" commit panel, coin rack of commitments). -->
 ```
 
 ## Screen 3 — Bidder: reveal and claim
@@ -36,7 +36,7 @@ No HTML, mockups, or screenshots exist in the sources yet. Each screen below is 
 - Post-clear transparency is intentional: revealed bids may be listed after settlement [src: Monad Sealed-Bid Auction Engine.md].
 
 ```html
-<!-- TODO: not found in source -->
+<!-- Built: web/js/screens/round.js ("Continue?" reveal, "Results" with the called price, "Anyone can press" public actions, "You won"/"Refund" claim, bids board). -->
 ```
 
 ## Screen 4 — Demo: sniper head-to-head
@@ -47,7 +47,7 @@ No HTML, mockups, or screenshots exist in the sources yet. Each screen below is 
 - Target length: twenty seconds, no narration [src: Monad Sealed-Bid Auction Engine.md].
 
 ```html
-<!-- TODO: not found in source -->
+<!-- Built: web/js/screens/home.js, route #/ (two-player cabinet: bonding curve vs Even, replayed from demo/results.json via web/js/data/demo-results.js). -->
 ```
 
 ## Screen 5 — Demo: bank run not happening (Exit-Priority)
@@ -57,7 +57,7 @@ No HTML, mockups, or screenshots exist in the sources yet. Each screen below is 
 - Right (auction): rounds clearing at a widening discount, orderly exits, "accrued to stayers" counter rising.
 
 ```html
-<!-- TODO: not found in source -->
+<!-- Built outside the web app: demo/exit/index.html replays demo/exit/results.json from demo/exit/run.sh. -->
 ```
 
 ## Screen 6 — Exit-Priority holder page (conditional)
@@ -67,7 +67,7 @@ No HTML, mockups, or screenshots exist in the sources yet. Each screen below is 
 - Reveal / claim as Screens 2–3.
 
 ```html
-<!-- TODO: not found in source -->
+<!-- Not built: no holder page yet; the exit round is shown only by the demo page above (decisions 31, 34). -->
 ```
 
 ## Wording rules for all screens [src: Monad Sealed-Bid Auction Engine.md]

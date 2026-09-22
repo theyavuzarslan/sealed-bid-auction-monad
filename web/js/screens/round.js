@@ -17,6 +17,7 @@ import {
   loadRoundMeta, loadRoundState, phaseOf, PHASE, publicActions, bidderActions, parseBidInput, abandonAt, unrevealedDue,
 } from "../round-model.js";
 import { downloadText } from "../ui/dom.js";
+import { staircase } from "../ui/pixel.js";
 import { esc, short, fmtCountdown, fmtMon, fmtMonUsd, fmtTokens, fmtTime, fmtPct, plural } from "../format.js";
 
 export function renderRound(el, app, roundIdRaw) {
@@ -24,7 +25,7 @@ export function renderRound(el, app, roundIdRaw) {
   const eng = getEngine();
   const net = network();
   if (!eng) {
-    el.innerHTML = `<section class="wrap"><div class="card"><p class="err">No AuctionEngine address for ${esc(net.label)}. Set it in config.js or in the Network panel on the home page.</p></div></section>`;
+    el.innerHTML = `<section class="page page-narrow"><div class="panel"><div class="panel-in"><h1 class="panel-title">No engine</h1><p class="err">No AuctionEngine address for ${esc(net.label)}. Set it in config.js or under Cabinet settings at the bottom of the page.</p></div></div></section>`;
     return { cleanup() {}, onAccount() {} };
   }
 
@@ -38,15 +39,23 @@ export function renderRound(el, app, roundIdRaw) {
   const ctx = () => ({ chainId: net.chainId, engine: eng.address, roundId, bidder: me() });
 
   el.innerHTML = `
-  <section class="wrap">
-    <div class="card" id="p-head"></div>
-    <div id="p-commit"></div>
-    <div id="p-reveal"></div>
-    <div id="p-public"></div>
-    <div id="p-result"></div>
-    <div id="p-bids"></div>
-    <p class="msg" id="msg" role="status"></p>
-  </section>`;
+  <section class="page">
+    <div id="p-head"></div>
+    <div class="grid-app">
+      <div class="col">
+        <div id="p-commit"></div>
+        <div id="p-reveal"></div>
+        <div id="p-called"></div>
+        <div id="p-public"></div>
+        <div id="p-result"></div>
+        <div id="p-bids"></div>
+      </div>
+      <div class="col">
+        <div id="p-status"></div>
+      </div>
+    </div>
+  </section>
+  <div class="status-bar"><p class="msg" id="msg" role="status" aria-live="polite"></p></div>`;
   const $ = (sel) => el.querySelector(sel);
   const cache = new Map();
   const patch = (id, html) => {
@@ -66,67 +75,102 @@ export function renderRound(el, app, roundIdRaw) {
   const phase = () => phaseOf(s, chainNow()).phase;
   const recoveryOff = () => me() && signatureDeterminism(me()) === NONDETERMINISTIC;
   const sealedCopy = () => `Your bid is sealed. Reveal it in the reveal window or your deposit is burned.${recoveryOff() ? "" : " You can reveal from any device with this wallet."}`;
-  const button = (a, primary = false) => `<button class="btn${primary ? " primary" : ""}" data-act="${a.id}">${esc(a.label)}</button>`;
+  const btn = (a, kind = "") => `<button class="btn ${kind}" type="button" data-act="${a.id}">${esc(a.label)}</button>`;
+  const panel = (tone, title, body, sub = "") =>
+    `<section class="panel ${tone}"><div class="panel-in"><h2 class="panel-title">${title}${sub ? ` <small>${esc(sub)}</small>` : ""}</h2>${body}</div></section>`;
 
   // ── panels ──
+  // The four arcade stages (DESIGN.md "Phase lamps"): insert coin, continue?, results, collect.
+  const STAGES = [
+    { key: "commit", label: "Insert coin", sub: "commit", phases: [PHASE.Commit] },
+    { key: "reveal", label: "Continue?", sub: "reveal", phases: [PHASE.Reveal] },
+    { key: "results", label: "Results", sub: "settle", phases: [PHASE.Clearing, PHASE.Settled] },
+    { key: "collect", label: "Collect", sub: "claim", phases: [PHASE.ClaimsOpen] },
+  ];
+  function lampsHtml(ph) {
+    const cur = STAGES.findIndex((st) => st.phases.includes(ph));
+    return `<ol class="lamps" aria-label="Round stage">${STAGES.map((st, i) =>
+      `<li class="lamp" data-state="${i < cur ? "past" : i === cur ? "lit" : "dark"}" ${i === cur ? 'aria-current="step"' : ""}>${esc(st.label)}<b>${esc(st.sub)}</b></li>`).join("")}</ol>`;
+  }
+
   function headHtml() {
-    const { round, ledger, commits } = s;
+    const { round } = s;
     const ph = phaseOf(s, chainNow());
     const now = chainNow();
-    const blocks = commits.slice(-24).map((c) => `<span class="blockchip">#${c.blockNumber}</span>`).join("");
-    const unrevealed = ledger.commits - ledger.reveals;
+    const clockLabel = ph.phase === PHASE.Commit ? "Reveal opens in" : ph.phase === PHASE.Reveal ? "Continue? Reveal closes in" : "";
+    const urgent = ph.phase === PHASE.Reveal && ph.nextAt - now < 300;
     return `
-      <div class="round-title">
-        <h1>${esc(sym())} · round ${roundId}</h1>
-        <span class="chip">${round.preset === 0n ? "Degen" : "Raise"}</span>
-        <span class="chip" data-phase="${esc(ph.phase)}">${esc(ph.phase)}</span>
+      <div class="round-marquee">
+        <div>
+          <div class="chips">
+            <span class="chip chip-purple">${round.preset === 0n ? "Degen" : "Raise"}</span>
+            <span class="chip">Round ${roundId}</span>
+          </div>
+          <h1>${esc(sym())} <span>launch</span></h1>
+        </div>
+        <div class="clock">
+          ${ph.nextAt ? `<div class="clock-label">${esc(clockLabel)}</div>
+            <div class="clock-digits num${urgent ? " urgent" : ""}" id="countdown">${fmtCountdown(ph.nextAt - now)}</div>
+            <div class="clock-when">${esc(ph.next)} at ${esc(fmtTime(ph.nextAt))}</div>`
+            : `<div class="clock-label">Clock</div><div class="clock-digits">${ph.phase === PHASE.ClaimsOpen ? "Collect" : "Results"}</div>`}
+        </div>
       </div>
-      ${ph.nextAt ? `<div class="countdown" id="countdown">${fmtCountdown(ph.nextAt - now)}</div>
-        <span class="hint">${esc(ph.next)} at ${esc(fmtTime(ph.nextAt))}</span>` : ""}
-      <p class="deposit-line">Everyone locks the same ${esc(fmtMon(round.depositAmount))}. This is what keeps your bid private.</p>
-      <div class="stats">
-        <div class="statline"><strong>${ledger.commits}</strong> <span>${plural(ledger.commits, "commitment")}</span></div>
-        ${now >= Number(round.commitEnd) ? `<div class="statline"><strong>${ledger.reveals}</strong> <span>revealed</span></div>` : ""}
-        ${now >= Number(round.revealEnd) && unrevealed > 0n ? `<div class="statline"><strong>${unrevealed}</strong> <span>not revealed</span></div>` : ""}
+      ${lampsHtml(ph.phase)}`;
+  }
+
+  function statusHtml() {
+    const { round, ledger } = s;
+    const now = chainNow();
+    const unrevealed = ledger.commits - ledger.reveals;
+    const shown = Math.min(Number(ledger.commits), 120);
+    const coins = Array.from({ length: shown }, (_, i) =>
+      `<span class="coin${i < Number(ledger.reveals) ? " revealed" : ""}"></span>`).join("");
+    const lp = round.lpShareBps === 0n ? "No pool"
+      : `${fmtPct(round.lpShareBps)} of tokens sold and MON raised; ${round.preset === 0n ? "locked permanently" : `locked ${Number(round.lockDuration) / 86400} days from seeding`}`;
+    return panel("", "Coins in", `
+      <div class="coin-count">
+        <div><strong class="num">${ledger.commits}</strong><span>${plural(ledger.commits, "sealed bid")}</span></div>
+        ${now >= Number(round.commitEnd) ? `<div><strong class="num">${ledger.reveals}</strong><span>revealed</span></div>` : ""}
+        ${now >= Number(round.revealEnd) && unrevealed > 0n ? `<div><strong class="num">${unrevealed}</strong><span>not revealed</span></div>` : ""}
       </div>
-      <span class="hint">The number of commitments and when they arrived are public by design. Bid prices stay sealed until each bidder reveals.</span>
-      ${blocks ? `<div class="blockrow" title="Blocks of the most recent commitments">${blocks}</div>` : ""}
-      <dl class="kv">
+      <div class="coin-rack" aria-hidden="true">${coins}</div>
+      <p class="note">How many bids and when they arrived are public by design. Prices stay sealed until each bidder reveals.</p>
+      <dl class="readout">
         <dt>For sale</dt><dd>${esc(tokens(round.sellAmount))}</dd>
-        <dt>Reserve price</dt><dd>${esc(perToken(round.reservePrice))} per token</dd>
-        <dt>Tick size</dt><dd>${esc(perToken(round.tickSize))}</dd>
-        <dt>Minimum bid</dt><dd>${esc(fmtMon(round.minBidSize))} at the reserve price</dd>
-        <dt>Commit window ends</dt><dd>${esc(fmtTime(round.commitEnd))}</dd>
-        <dt>Reveal window ends</dt><dd>${esc(fmtTime(round.revealEnd))}</dd>
-        <dt>Liquidity</dt><dd>${round.lpShareBps === 0n ? "none" : `${fmtPct(round.lpShareBps)} of tokens sold and MON raised, ${round.preset === 0n ? "locked permanently" : `locked for ${Number(round.lockDuration) / 86400} days from seeding`}`}</dd>
-        ${round.allowlistRoot !== ZERO32 ? `<dt>Allowlist</dt><dd>yes${meta.allowlistURI ? ` · <a href="${esc(resolveUri(meta.allowlistURI, cfg.ipfsGateway))}" target="_blank" rel="noopener">tree</a>` : ""}</dd>` : ""}
-        ${round.vestDuration !== 0n ? `<dt>Vesting</dt><dd>${fmtPct(round.tgeBps)} at claim, the rest linear over ${Number(round.vestDuration) / 86400} days after a ${Number(round.cliff) / 86400}-day cliff</dd>` : ""}
+        <dt>Deposit</dt><dd>${esc(fmtMon(round.depositAmount))} each</dd>
+        <dt>Reserve</dt><dd>${esc(perToken(round.reservePrice))} / token</dd>
+        <dt>Tick</dt><dd>${esc(perToken(round.tickSize))}</dd>
+        <dt>Min bid</dt><dd>${esc(fmtMon(round.minBidSize))} at the reserve</dd>
+        <dt>Pool</dt><dd>${esc(lp)}</dd>
+        ${round.allowlistRoot !== ZERO32 ? `<dt>Allowlist</dt><dd>Yes${meta.allowlistURI ? ` · <a href="${esc(resolveUri(meta.allowlistURI, cfg.ipfsGateway))}" target="_blank" rel="noopener">tree</a>` : ""}</dd>` : ""}
+        ${round.vestDuration !== 0n ? `<dt>Vesting</dt><dd>${fmtPct(round.tgeBps)} at claim, the rest over ${Number(round.vestDuration) / 86400} days after a ${Number(round.cliff) / 86400}-day cliff</dd>` : ""}
+        <dt>Commit ends</dt><dd>${esc(fmtTime(round.commitEnd))}</dd>
+        <dt>Reveal ends</dt><dd>${esc(fmtTime(round.revealEnd))}</dd>
         <dt>Token</dt><dd class="mono">${esc(round.token)}</dd>
-      </dl>
-      <p class="taglines"><span>Snipe-resistant: submission timing no longer determines price</span><span>Privacy via commit-reveal</span></p>`;
+      </dl>`);
   }
 
   function commitShell() {
     if (phase() !== PHASE.Commit) return "";
-    if (!me()) return `<div class="card"><h2>Place a sealed bid</h2><p>Connect a wallet to bid.</p></div>`;
+    if (!me()) return panel("panel-p1", "Insert coin", `<p>Connect a wallet to place a sealed bid.</p>`, "commit");
     if (s.me.committed) {
-      return `<div class="card"><h2>Bid committed</h2>
-        <p class="ok">${esc(sealedCopy())}</p>
-        <p>Come back in the reveal window (opens ${esc(fmtTime(s.round.commitEnd))}) or you lose your deposit.</p>
-        ${loadBid(ctx()) ? `<button class="btn" data-act="backup">Download backup file</button>` : ""}</div>`;
+      return panel("panel-p1", "Coin in", `
+        <div class="ticket"><p class="ticket-line">Sealed</p><p>${esc(sealedCopy())}</p>
+          <p class="note">Come back when the reveal window opens (${esc(fmtTime(s.round.commitEnd))}), or your deposit is burned.</p></div>
+        ${loadBid(ctx()) ? `<div class="btn-row" style="margin-top:16px"><button class="btn btn-panel" type="button" data-act="backup">Download backup file</button></div>` : ""}`, "committed");
     }
-    return `<div class="card"><h2>Place a sealed bid</h2>
+    return panel("panel-p1", "Insert coin", `
+      <p>Everyone locks the same ${esc(fmtMon(s.round.depositAmount))}, so your deposit gives nothing away. Your price and amount are sealed as a hash.</p>
       <div id="allow-box"></div>
       <form id="bid-form" autocomplete="off">
-        <div class="grid2">
+        <div class="fields">
           <label>Max price per token (MON)<input id="f-price" inputmode="decimal" placeholder="${esc(formatUnits(wireToPerToken(s.round.reservePrice, dec()), 18))}"></label>
-          <label>Token amount (${esc(sym())})<input id="f-amount" inputmode="decimal"></label>
+          <label>Amount (${esc(sym())})<input id="f-amount" inputmode="decimal"></label>
         </div>
       </form>
       <div id="bid-derived"></div>
-      <p class="explain">You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size.</p>
-      <div id="bid-prepared"></div>
-    </div>`;
+      <p class="note">You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size.</p>
+      <div id="bid-prepared"></div>`, "commit");
   }
 
   function readForm() {
@@ -139,9 +183,9 @@ export function renderRound(el, app, roundIdRaw) {
   }
 
   function derivedHtml(f) {
-    const minLine = `<p class="hint">Smallest amount: ${esc(tokensUp(f.minAmount ?? 0n))} (the minimum bid at the reserve price).</p>`;
-    if (f.empty) return `${minLine}<p class="hint">Enter a max price and an amount to see your max spend.</p>`;
-    if (f.error) return `<p class="err">${esc(f.error)}</p>`;
+    const minLine = `<p class="field-hint">Smallest amount: ${esc(tokensUp(f.minAmount ?? 0n))} (the minimum bid at the reserve price).</p>`;
+    if (f.empty) return `${minLine}`;
+    if (f.error) return `<ul class="problems"><li>${esc(f.error)}</li></ul>`;
     const detail = (p) => {
       if (p.code === "BELOW_MIN_BID") return `${p.message} Smallest amount: ${tokensUp(f.minAmount)}.`;
       if (p.code === "AT_OR_ABOVE_DEPOSIT") return `${p.message} At this price the largest amount is ${tokens(f.maxAmount)}.`;
@@ -149,35 +193,35 @@ export function renderRound(el, app, roundIdRaw) {
       return p.message;
     };
     return `
-      ${f.snapped ? `<p class="hint">Snapped down to the tick grid: ${esc(perToken(f.price))} per token.</p>` : ""}
-      <dl class="kv">
-        <dt>Max spend</dt><dd>${esc(fmtMon(f.spend, 18))}</dd>
+      ${f.snapped ? `<p class="field-hint">Snapped down to the tick grid: ${esc(perToken(f.price))} per token.</p>` : ""}
+      <dl class="readout">
+        <dt>Max spend</dt><dd><strong>${esc(fmtMon(f.spend, 18))}</strong></dd>
         <dt>Deposit locked</dt><dd>${esc(fmtMon(s.round.depositAmount))}</dd>
       </dl>
-      ${f.problems.length ? `<ul class="problems">${f.problems.map((p) => `<li class="err">${esc(detail(p))}</li>`).join("")}</ul>`
-        : `<button class="btn primary" data-act="seal">Seal bid</button>`}`;
+      ${f.problems.length ? `<ul class="problems">${f.problems.map((p) => `<li>${esc(detail(p))}</li>`).join("")}</ul>`
+        : `<div class="btn-row"><button class="btn btn-start" type="button" data-act="seal">Seal bid</button></div>`}`;
   }
 
   function preparedHtml() {
     if (!prepared) return "";
     const needBackup = prepared.determinism === NONDETERMINISTIC && !prepared.backupSaved;
-    return `<div class="sealed">
-      <p><strong>Sealed:</strong> ${esc(perToken(prepared.price))} per token × ${esc(tokens(prepared.amount))}</p>
+    return `<div class="ticket">
+      <p class="ticket-line">Sealed · <span class="num">${esc(perToken(prepared.price))} × ${esc(tokens(prepared.amount))}</span></p>
       ${prepared.determinism === NONDETERMINISTIC
-        ? `<p class="warn">This wallet's signatures are not deterministic, so on-chain recovery is off for it. Download the backup file before committing; it is the only way to reveal from another browser.</p>`
-        : `<p class="hint">An encrypted copy goes on-chain with your commitment; this wallet can decrypt it from any device.</p>`}
-      <div class="row">
-        <button class="btn" data-act="backup-prepared">Download backup file</button>
-        <button class="btn primary" data-act="commit" ${needBackup ? "disabled" : ""}>Commit and lock ${esc(fmtMon(s.round.depositAmount))}</button>
+        ? `<p>This wallet's signatures are not deterministic, so on-chain recovery is off for it. Download the backup file before you insert your coin; it is the only way to reveal from another browser.</p>`
+        : `<p class="note">An encrypted copy goes on-chain with your bid. This wallet can decrypt it from any device.</p>`}
+      <div class="btn-row">
+        <button class="btn" type="button" data-act="backup-prepared">Download backup file</button>
+        <button class="btn btn-coin" type="button" data-act="commit" ${needBackup ? "disabled" : ""}>Insert coin · lock ${esc(fmtMon(s.round.depositAmount))}</button>
       </div>
     </div>`;
   }
 
   function allowHtml() {
     if (s.round.allowlistRoot === ZERO32) return "";
-    if (allow.status === "loading" || allow.status === "none") return `<p class="hint">Loading the allowlist…</p>`;
+    if (allow.status === "loading" || allow.status === "none") return `<p class="field-hint">Loading the allowlist…</p>`;
     if (allow.status === "ok") return `<p class="ok">This wallet is on the allowlist.</p>`;
-    if (allow.status === "missing") return `<p class="err">This wallet is not on the allowlist for this round.</p>`;
+    if (allow.status === "missing") return `<ul class="problems"><li>This wallet is not on the allowlist for this round.</li></ul>`;
     return `<p class="warn">Could not load the allowlist: ${esc(allow.error)}. Load the tree file yourself:</p>
       <input type="file" id="allow-file" accept="application/json">`;
   }
@@ -186,22 +230,80 @@ export function renderRound(el, app, roundIdRaw) {
     const ph = phase();
     if (!me() || !s.me.committed || ph === PHASE.Commit) return "";
     if (s.me.revealed) {
-      return ph === PHASE.Reveal ? `<div class="card"><h2>Revealed</h2><p class="ok">Your bid is in the book. Results after the reveal window closes.</p></div>` : "";
+      return ph === PHASE.Reveal ? panel("panel-p2", "Continued", `<p class="ok">Your bid is in the book. Results come when the reveal window closes.</p>`, "revealed") : "";
     }
-    if (ph !== PHASE.Reveal) return `<div class="card"><h2>Not revealed</h2><p class="err">This wallet's commitment was not revealed in the reveal window. Its deposit is burned.</p></div>`;
+    if (ph !== PHASE.Reveal) return panel("panel-p1", "Game over", `<p class="err">This wallet's bid was not revealed in time. Its deposit is burned.</p>`, "not revealed");
     const L = loadBid(ctx());
     const localOk = L && L.hash?.toLowerCase() === s.me.commitment.hash.toLowerCase();
-    return `<div class="card"><h2>Reveal your bid</h2>
-      ${localOk ? `<p>Saved in this browser: ${esc(perToken(L.price))} per token × ${esc(tokens(L.amount))}.</p>
-          <button class="btn primary" data-act="reveal">Reveal</button>`
+    return panel("panel-p2", "Continue?", `
+      ${localOk ? `<div class="ticket"><p class="ticket-line">Your bid · <span class="num">${esc(perToken(L.price))} × ${esc(tokens(L.amount))}</span></p><p class="note">Saved in this browser.</p></div>
+          <div class="btn-row" style="margin-top:16px"><button class="btn btn-start btn-lg" type="button" data-act="reveal">Reveal bid</button></div>`
         : `<p>${L ? "The bid saved in this browser does not match your commitment." : "No bid saved in this browser."}
             ${recoveryOff() ? "Load your backup file." : "Recover it with your wallet, or load your backup file."}</p>
-          <div class="row">
-            ${recoveryOff() ? "" : `<button class="btn primary" data-act="recover">Recover with wallet</button>`}
-            <label class="btn file">Load backup file<input type="file" id="backup-file" accept="application/json" hidden></label>
+          <div class="btn-row">
+            ${recoveryOff() ? "" : `<button class="btn btn-start" type="button" data-act="recover">Recover with wallet</button>`}
+            <label class="btn file">Load backup file<input type="file" id="backup-file" accept="application/json"></label>
           </div>`}
-      <p class="hint">Reveal closes ${esc(fmtTime(s.round.revealEnd))}. An unrevealed deposit is burned.</p>
-    </div>`;
+      <p class="note" style="margin-top:14px">Reveal closes ${esc(fmtTime(s.round.revealEnd))}. An unrevealed deposit is burned.</p>`, "reveal window");
+  }
+
+  // The result, called once for everyone (Monad's outlined numeral).
+  function calledHtml() {
+    const { round, clearing } = s;
+    if (chainNow() < Number(round.revealEnd)) return "";
+    if (!clearing.settled) {
+      return panel("panel-p2", "Counting", `<p>The reveal window is closed. Anyone can settle the round; large books settle over several transactions (${cfg.settleStepsPerTx} price levels each, ${clearing.levelCount} in this book). Press Settle below.</p>`, "results");
+    }
+    const lp = round.lpAbandoned ? `abandoned: its ${fmtMon(round.lpMonBurned)} share was burned`
+      : round.lpDone ? (round.lpMonSpent > 0n ? `seeded with ${tokens(round.lpTokensUsed)} + ${fmtMon(round.lpMonSpent)} and locked` : "none")
+        : "not seeded yet";
+    const P = perToken(clearing.clearingPrice);
+    return panel("panel-p2", "Results", `
+      ${stairHtml()}
+      <div class="called" aria-label="Clearing price ${esc(P)} per token">
+        <span class="called-price" aria-hidden="true">${esc(P.replace(" MON", ""))}</span>
+        <span class="called-unit">MON per token<br><span class="called-readable">${esc(P)}</span></span>
+      </div>
+      <p>Every winning bid pays this price. ${clearing.oversubscribed ? "Bids exactly at it share what was left, pro-rata." : "Every revealed bid filled in full."}</p>
+      <dl class="readout">
+        <dt>Sold</dt><dd>${esc(tokens(clearing.sold))} of ${esc(tokens(round.sellAmount))}</dd>
+        <dt>Refunds</dt><dd>Open now</dd>
+        <dt>Pool</dt><dd>${esc(lp)}</dd>
+        <dt>Tokens</dt><dd>${round.claimsOpen ? "Open" : "Open once the pool is seeded"}</dd>
+      </dl>`, "called");
+  }
+
+  // The demand staircase (DESIGN.md signature component) drawn from the revealed book:
+  // one step per price level, the supply line, and the step where they meet.
+  function stairHtml() {
+    if (!s.revealed?.length) return "";
+    const px = (wire) => Number(formatUnits(wireToPerToken(wire, dec()), 18));
+    const qn = (units) => Number(formatUnits(units, dec()));
+    const byPrice = new Map();
+    for (const r of s.revealed) byPrice.set(r.args.price, (byPrice.get(r.args.price) ?? 0n) + r.args.amount);
+    const P = s.clearing.clearingPrice;
+    const levels = [...byPrice.entries()].sort((a, b) => (b[0] > a[0] ? 1 : b[0] < a[0] ? -1 : 0))
+      .map(([price, qty]) => ({ price: px(price), qty: qn(qty), bot: price < P }));
+    const supply = qn(s.round.sellAmount);
+    const total = levels.reduce((t, l) => t + l.qty, 0);
+    const maxX = Math.max(total, supply) * 1.06;
+    const maxY = levels[0].price * 1.12;
+    const w = 460, h = 200, pad = 28;
+    const st = staircase({ levels, supply, clearing: px(P), maxX, maxY, w, h, pad,
+      colors: { step: "var(--monad-purple)", bot: "var(--screen-dim)" } });
+    const x0 = st.X(0), y0 = st.Y(0);
+    return `<figure class="stair-well">
+      <svg class="chart" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" role="img"
+        aria-label="Demand staircase: ${levels.length} price levels, supply ${esc(tokens(s.round.sellAmount))}, clearing at ${esc(perToken(P))}">
+        <line x1="${x0}" x2="${w - 8}" y1="${y0}" y2="${y0}" style="stroke:var(--screen-dim)" stroke-width="2"/>
+        ${st.svg}
+        <line x1="${st.supplyX}" x2="${st.supplyX}" y1="10" y2="${y0}" style="stroke:var(--marquee-white)" stroke-width="2" stroke-dasharray="4 4"/>
+        <text x="${st.supplyX - 4}" y="20" text-anchor="end">supply</text>
+        <line x1="${x0}" x2="${st.supplyX}" y1="${st.clearingY}" y2="${st.clearingY}" style="stroke:var(--win-lime)" stroke-width="3"/>
+        <text x="${x0 + 4}" y="${st.clearingY - 6}" style="fill:var(--win-lime)">one price</text>
+      </svg>
+      <figcaption>Revealed bids, highest price first. Where the stairs cross the supply line is the price everyone pays; grey steps sit below it and are refunded.</figcaption>
+    </figure>`;
   }
 
   function publicHtml() {
@@ -209,23 +311,15 @@ export function renderRound(el, app, roundIdRaw) {
     const now = chainNow();
     if (now < Number(round.revealEnd)) return "";
     const acts = publicActions(s, meta, now, { settleSteps: cfg.settleStepsPerTx });
-    const lp = round.lpAbandoned ? `abandoned: its ${fmtMon(round.lpMonBurned)} share was burned`
-      : round.lpDone ? (round.lpMonSpent > 0n ? `seeded: ${tokens(round.lpTokensUsed)} + ${fmtMon(round.lpMonSpent)}` : "none")
-        : "not seeded yet";
-    return `<div class="card"><h2>${clearing.settled ? "Result" : "Clearing"}</h2>
-      ${clearing.settled ? `<dl class="kv">
-          <dt>Clearing price</dt><dd>${esc(perToken(clearing.clearingPrice))} per token</dd>
-          <dt>Tokens sold</dt><dd>${esc(tokens(clearing.sold))} of ${esc(tokens(round.sellAmount))}</dd>
-          <dt>Demand</dt><dd>${clearing.oversubscribed ? "oversubscribed: bids at the clearing price share pro-rata" : "every revealed bid fills in full"}</dd>
-          <dt>Refunds</dt><dd>open</dd>
-          <dt>Liquidity</dt><dd>${esc(lp)}</dd>
-          <dt>Token delivery</dt><dd>${round.claimsOpen ? "open" : "opens once liquidity is seeded"}</dd>
-        </dl>`
-        : `<p>The reveal window is closed. Anyone can settle the round; large books settle over several transactions (${cfg.settleStepsPerTx} price levels each, ${clearing.levelCount} in this book).</p>`}
-      ${clearing.settled && !round.lpDone && now < abandonAt(s, meta) ? `<p class="hint">If seeding keeps failing, anyone can abandon the liquidity from ${esc(fmtTime(abandonAt(s, meta)))}: its MON share is burned and token delivery opens.</p>` : ""}
-      ${unrevealedDue(s) > 0n ? `<p class="hint">Deposits of commitments nobody revealed are burned, not paid to anyone.</p>` : ""}
-      ${acts.length ? `<div class="row">${acts.map((a) => button(a, a.id === "settle" || a.id === "seed")).join("")}</div><p class="hint">Anyone can press these.</p>` : ""}
-    </div>`;
+    const notes = [];
+    if (clearing.settled && !round.lpDone && now < abandonAt(s, meta)) notes.push(`If seeding keeps failing, anyone can abandon the pool from ${fmtTime(abandonAt(s, meta))}: its MON share is burned and token delivery opens.`);
+    if (unrevealedDue(s) > 0n) notes.push("Deposits of bids nobody revealed are burned, not paid to anyone.");
+    if (!acts.length && !notes.length) return "";
+    return `<section class="panel panel-dark"><div class="panel-in">
+      <h2 class="panel-title">Anyone can press</h2>
+      ${acts.length ? `<div class="btn-row">${acts.map((a) => btn(a, a.id === "settle" || a.id === "seed" ? "btn-start" : "")).join("")}</div>` : ""}
+      ${notes.map((t) => `<p class="note" style="margin-top:14px">${esc(t)}</p>`).join("")}
+    </div></section>`;
   }
 
   function resultHtml() {
@@ -235,46 +329,57 @@ export function renderRound(el, app, roundIdRaw) {
     const { round } = s;
     const acts = bidderActions(s, me());
     const status = [];
-    status.push(m.refunded ? `Refund of ${fmtMon(q.refund, 18)} claimed.` : "");
+    if (m.refunded) status.push(`Refund of ${fmtMon(q.refund, 18)} claimed.`);
     if (q.allocated > 0n) {
-      if (m.tokensClaimed) status.push("Tokens claimed.");
-      else if (!round.claimsOpen) status.push(`Your tokens are delivered once liquidity is seeded.${m.refunded ? "" : " Your refund is available now."}`);
+      if (m.tokensClaimed) status.push("Tokens collected.");
+      else if (!round.claimsOpen) status.push(`Your tokens arrive once the pool is seeded.${m.refunded ? "" : " Your refund is available now."}`);
     }
     const f = loadFees(ctx());
-    return `<div class="card"><h2>Your allocation</h2>
-      <dl class="kv">
-        <dt>Tokens won</dt><dd>${esc(tokens(q.allocated))}</dd>
+    return panel("panel-p2", q.allocated > 0n ? "You won" : "Refund", `
+      <dl class="readout">
+        <dt>Tokens won</dt><dd><strong>${esc(tokens(q.allocated))}</strong></dd>
         <dt>Paid</dt><dd>${esc(fmtMon(q.paid, 18))}</dd>
         <dt>Refund</dt><dd>${esc(fmtMon(q.refund, 18))}</dd>
         ${round.vestDuration !== 0n && q.allocated > 0n ? `<dt>At claim</dt><dd>${esc(tokens(q.allocated * round.tgeBps / 10000n))}, the rest vests</dd>` : ""}
-        ${m.vest && m.tokensClaimed && q.allocated > 0n ? `<dt>Vested so far</dt><dd>${esc(tokens(m.vest[0]))}, released ${esc(tokens(m.vest[1]))}</dd>` : ""}
+        ${m.vest && m.tokensClaimed && q.allocated > 0n ? `<dt>Vested</dt><dd>${esc(tokens(m.vest[0]))}, released ${esc(tokens(m.vest[1]))}</dd>` : ""}
       </dl>
-      ${status.filter(Boolean).map((t) => `<p>${esc(t)}</p>`).join("")}
-      ${acts.length ? `<div class="row">${acts.map((a) => button(a, true)).join("")}</div>` : ""}
-      ${f.total > 0n ? `<p class="fee-line">Network fees for this round (commit + reveal + claim): ${esc(fmtMonUsd(f.total))}</p>` : ""}
-    </div>`;
+      ${status.map((t) => `<p>${esc(t)}</p>`).join("")}
+      ${acts.length ? `<div class="btn-row">${acts.map((a) => btn(a, "btn-start")).join("")}</div>` : ""}
+      ${f.total > 0n ? `<p class="note" style="margin-top:14px">Network fees for this round (commit + reveal + claim): ${esc(fmtMonUsd(f.total))}</p>` : ""}`, "collect");
   }
 
   function bidsHtml() {
     if (!s.clearing.settled || !s.revealed?.length) return "";
     const P = s.clearing.clearingPrice;
-    const rows = [...s.revealed].sort((a, b) => (b.args.price > a.args.price ? 1 : b.args.price < a.args.price ? -1 : 0)).map((r) => {
+    const mine = me()?.toLowerCase();
+    const rows = [...s.revealed].sort((a, b) => (b.args.price > a.args.price ? 1 : b.args.price < a.args.price ? -1 : 0)).map((r, i) => {
       const p = r.args.price;
       const fill = p > P ? "full" : p < P ? "none" : s.clearing.oversubscribed ? "pro-rata" : "full";
-      return `<tr><td>${esc(short(r.args.bidder))}</td><td>${esc(perToken(p))}</td><td>${esc(tokens(r.args.amount))}</td><td>${fill}</td></tr>`;
+      return `<tr class="${r.args.bidder.toLowerCase() === mine ? "is-me" : ""}"><td class="rank">${i + 1}</td><td class="mono">${esc(short(r.args.bidder))}</td>
+        <td class="right">${esc(perToken(p))}</td><td class="right">${esc(tokens(r.args.amount))}</td>
+        <td>${fill === "none" ? `<span class="note">refunded</span>` : `<span class="chip ${fill === "full" ? "chip-purple" : ""}">${fill}</span>`}</td>
+        <td class="right">${fill === "none" ? "—" : esc(perToken(P))}</td></tr>`;
     }).join("");
-    return `<div class="card"><h2>Revealed bids</h2>
-      <p class="hint">Post-clear transparency is intentional: revealed bids are public once the round settles.</p>
-      <table class="bids"><thead><tr><th>Bidder</th><th>Max price</th><th>Amount</th><th>Fill</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    return panel("", "High scores", `
+      <p class="note">Every bid is public once the round settles; that transparency is intentional. Every winner pays the same price.</p>
+      <div class="table-scroll"><table class="hiscore">
+        <thead><tr><th>#</th><th>Bidder</th><th class="right">Max price</th><th class="right">Amount</th><th>Fill</th><th class="right">Pays / token</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`, "revealed bids");
   }
 
+  let renderedPhase = null;
   function render() {
     if (!s) return;
     patch("#p-head", headHtml());
+    const ph = phase();
+    if (renderedPhase && ph !== renderedPhase) $("#p-head .lamps")?.classList.add("wipe");
+    renderedPhase = ph;
+    patch("#p-status", statusHtml());
     patch("#p-commit", commitShell());
     if ($("#allow-box")) patch("#allow-box", allowHtml());
     if ($("#bid-form")) { patch("#bid-derived", derivedHtml(readForm())); patch("#bid-prepared", preparedHtml()); }
     patch("#p-reveal", revealHtml());
+    patch("#p-called", calledHtml());
     patch("#p-public", publicHtml());
     patch("#p-result", resultHtml());
     patch("#p-bids", bidsHtml());
@@ -457,7 +562,10 @@ export function renderRound(el, app, roundIdRaw) {
     if (!s || dead) return;
     const ph = phaseOf(s, chainNow());
     const c = $("#countdown");
-    if (c && ph.nextAt) c.textContent = fmtCountdown(ph.nextAt - chainNow());
+    if (c && ph.nextAt) {
+      c.textContent = fmtCountdown(ph.nextAt - chainNow());
+      c.classList.toggle("urgent", ph.phase === PHASE.Reveal && ph.nextAt - chainNow() < 300);
+    }
     if (lastPhase && ph.phase !== lastPhase && !busy) refresh();
     lastPhase = ph.phase;
   }, 1000);

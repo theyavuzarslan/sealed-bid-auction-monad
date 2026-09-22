@@ -8,7 +8,7 @@ Read `AGENTS.md`, `08-ui-notes.md` and `10-decisions.md` #22 first. Ship togethe
 ## Changes
 - The bid form has two inputs: **Max price per token** (MON, decimal; snaps to the round's `tickSize`) and **Token amount** (decimal).
 - Convert both to 18-decimal integers. `price` = MON wei per 1e18 token units; `amount` = token units.
-- Show the **max spend** = `ceil(price × amount / 1e18)`, rounded **up** to match the contract. Block the commit if `maxSpend < minBidSize` or `maxSpend ≥ deposit`, and say which.
+- Show the **max spend** = `ceil(price × amount / 1e18)`, rounded **up** to match the contract. Block the commit if `ceil(reservePrice × amount / 1e18) < minBidSize` (the minimum bid is measured at the reserve price, as in the contract) or `maxSpend ≥ deposit`, and say which.
 - Under the form, in these words: *"You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size."*
 - The preimage keeps its shape: `keccak256(abi.encode(price, amount, salt, msg.sender))`. Rename `quantity` to `amount` everywhere, including the stored bid and the reveal screen.
 - After settlement: show the clearing price, your allocation, what you paid and your refund. If the LP is not yet seeded, show a **Seed liquidity** button (anyone can call `seedLP`) instead of Claim.

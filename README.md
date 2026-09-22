@@ -10,6 +10,7 @@ Status: draft
 - Bidders commit a hash plus a uniform collateral deposit, reveal later, and everyone who clears pays the same price; non-revealers are slashed [src: Monad Sealed-Bid Auction Engine.md].
 - Clearing is Zama-style: a bid is a price per token plus a token amount; winners pay the clearing price, bids at the clearing price share pro-rata, and overpayment is refunded [src: https://docs.zama.org/auction/how-it-works]. It replaced the original EasyAuction fork on 22 Sep (decision 22).
 - Use case 1 (primary): memecoin **Fair Launch** for the Social, Attention & Culture track. Use case 2 (conditional): vault **Exit-Priority Auction** for the Onchain Finance & Trading track [src: Monad Sealed-Bid Auction Engine.md].
+- The web app is called **Even** ("Nobody gets a head start"): a two-player arcade cabinet in Monad's colours where the bonding curve is Player 1 and the sealed-bid round is Player 2. Code in `web/`, design system in [DESIGN.md](DESIGN.md), product record in [PRODUCT.md](PRODUCT.md).
 - Privacy comes from commit-reveal alone today; Monad's BTX encrypted mempool is a research scheme, not a live feature, and is treated as a future upgrade path (see [12-open-questions.md](12-open-questions.md)).
 
 ## Files
@@ -21,12 +22,14 @@ Status: draft
 | [03-architecture.md](03-architecture.md) | Components, how they connect, architecture diagram, external services, Arbitrum portability. |
 | [04-flows.md](04-flows.md) | Bidder, creator, clearing, exit-auction and demo flows, each with a sequence diagram and failure cases. |
 | [05-data-model.md](05-data-model.md) | Entities (Auction, Commitment, Bid, Deposit, Fill, LP seed) with fields and relations. |
-| [06-api.md](06-api.md) | Contract interface surface derived from the PRD phases; HTTP API marked TODO. |
+| [06-api.md](06-api.md) | The engine's implemented contract interface, views and events, and the indexer's HTTP API. |
 | [07-tech-stack.md](07-tech-stack.md) | Layer-by-layer choices, why, and the alternative passed on. |
-| [08-ui-notes.md](08-ui-notes.md) | Screen-by-screen notes for creator, bidder and demo dashboards; HTML snippets TODO. |
+| [08-ui-notes.md](08-ui-notes.md) | Screen-by-screen notes for creator, bidder and demo dashboards, each pointing to the file that builds it. |
 | [09-resources.md](09-resources.md) | All links grouped by category. |
 | [10-decisions.md](10-decisions.md) | Decisions in decision / rationale / trade-off format. |
 | [11-roadmap.md](11-roadmap.md) | Task table in time blocks from 22 Sep to 13 Oct with priority and demo-required flag. |
 | [12-open-questions.md](12-open-questions.md) | Unanswered questions, source contradictions, risks, assumptions. |
+
+Also at the root: [DESIGN.md](DESIGN.md) (Even's design system), [PRODUCT.md](PRODUCT.md) (product record for design work), [AGENTS.md](AGENTS.md) (agent brief), [AUDIT.md](AUDIT.md) (two internal reviews and their fixes).
 
 Related files: all of the above.

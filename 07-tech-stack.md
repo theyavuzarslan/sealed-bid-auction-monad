@@ -12,10 +12,10 @@ Status: draft
 | Collateral | Uniform capped deposit (a16z OverCollateralizedAuction pattern) | A bid-proportional deposit leaks the bid [src: Monad Sealed-Bid Auction Engine.md] | CREATE2 vaults + state proofs — not a three-week build [src: Monad Sealed-Bid Auction Engine.md] |
 | Reveal enforcement | Slashing of non-revealers | Makes reveal refusal costly rather than free [src: Monad Sealed-Bid Auction Engine.md] | No penalty — losers would never reveal |
 | Contract language | Solidity | Monad is EVM; the team's existing code is Solidity | Vyper — no advantage for this build |
-| Contract tooling | TODO: not found in source (Foundry likely, given fork + fuzz needs) | — | Hardhat |
-| Frontend | TODO: not found in source | Vibe-coded freely per PRD [src: Monad Sealed-Bid Auction Engine.md] | — |
-| Wallet | TODO: not found in source | — | — |
-| Indexer | TODO: not found in source; event decoding is vibe-code territory [src: Monad Sealed-Bid Auction Engine.md] | — | — |
+| Contract tooling | Foundry 1.8.3, solc 0.8.28, via-IR; fuzz and Monad-fork tests [src: contracts/foundry.toml] | Fork tests against real Uniswap v3 and GoPlus on Monad; differential fuzzing of the clearing | Hardhat |
+| Frontend | "Even": static HTML, CSS and ES modules, no build step, no framework; design system in [DESIGN.md](DESIGN.md), product record in [PRODUCT.md](PRODUCT.md) [src: web/] | Serves from any static host; hand-rolled ABI coder and keccak keep the money path small and testable (`web/selftest.mjs`, `web/e2e.mjs`) | React/Vite — a build step and a dependency tree for three screens |
+| Wallet | Any injected EIP-1193 wallet (`window.ethereum`); reads fall back to the network's RPC [src: web/js/wallet.js, web/js/net.js] | No SDK dependency | wagmi/viem — needs a bundler |
+| Indexer | Node built-ins only: decodes the engine's 13 events and serves a read-only JSON API; also produces the fee report [src: indexer/README.md] | No database or framework to run at a hackathon | The Graph / Ponder — hosted setup time |
 | DEX for LP seed | Multiple, through one adapter interface: Uniswap v3 first, PancakeSwap v3 second [src: user, 22 Sep] | Creator chooses venues; Uniswap v3 has verified Monad addresses [src: https://developers.uniswap.org/docs/protocols/v3/deployments/v3-monad-deployments] | Kuru — order book, no lockable LP position; Uniswap v4 — deferred, hooks add review surface |
 | LP lock | GoPlus `UniV3LPLocker` `0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d` [src: https://docs.gopluslabs.io/page/goplus-safetoken-locker] | Verified on Monad [src: on-chain, Monad RPC, 22 Sep]; locks v3 position NFTs; creator keeps trading fees as `collector` | Burning the LP — free, but loses fee income and a verifiable lock |
 | Demo harness | Custom sniper bot + bonding curve baseline + vault-run simulator [src: Monad Sealed-Bid Auction Engine.md] | The head-to-head is the pitch for the Culture track | — |

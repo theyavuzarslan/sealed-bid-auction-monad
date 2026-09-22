@@ -16,7 +16,7 @@ export function renderCreator(el, app) {
   const net = network();
   const d = cfg.creatorDefaults;
   if (!eng) {
-    el.innerHTML = `<section class="wrap"><div class="card"><p class="err">No AuctionEngine address for ${esc(net.label)}. Set it in config.js or in the Network panel on the home page.</p></div></section>`;
+    el.innerHTML = `<section class="page page-narrow"><div class="panel"><div class="panel-in"><h1 class="panel-title">No engine</h1><p class="err">No AuctionEngine address for ${esc(net.label)}. Set it in config.js or under Cabinet settings at the bottom of the page.</p></div></div></section>`;
     return { cleanup() {}, onAccount() {} };
   }
 
@@ -27,96 +27,94 @@ export function renderCreator(el, app) {
   let busy = false;
   let dead = false;
 
+  const P = (tone, title, body, extra = "") =>
+    `<section class="panel ${tone}" ${extra}><div class="panel-in"><h2 class="panel-title">${title}</h2>${body}</div></section>`;
+
   el.innerHTML = `
-  <section class="wrap">
-    <h1>Open a launch</h1>
-    <p class="lede">Launch to your community at one fair price. Everyone who wins pays the same clearing price, whatever block they bid in.</p>
-    <p class="taglines"><span>Snipe-resistant: submission timing no longer determines price</span><span>Privacy via commit-reveal</span></p>
-
-    <div class="card">
-      <h2>Preset</h2>
-      <div class="preset-row">
-        <button type="button" class="preset-card selected" data-preset="Degen"><strong>Degen</strong>
-          <span>Open to everyone. Liquidity is required and locked permanently. Unsold supply is burned.</span></button>
-        <button type="button" class="preset-card" data-preset="Raise"><strong>Raise</strong>
-          <span>Optional allowlist, optional liquidity locked for a period you choose, optional vesting. Unsold supply returns to you.</span></button>
-      </div>
+  <section class="page">
+    <div class="section-head" style="margin-bottom:32px">
+      <h1 style="font:400 clamp(3rem,8vw,5.6rem)/0.85 var(--f-display)">Host a launch</h1>
+      <p style="color:var(--purple-glow)">Launch to your community at one fair price. Every winner pays the same clearing price, whatever block they bid in, and the pool opens at that price.</p>
     </div>
+    <div class="grid-app">
+      <form id="open-form" class="col" autocomplete="off">
+        ${P("", "Choose a cartridge", `
+          <div class="cartridges">
+            <button type="button" class="cartridge selected" data-preset="Degen" aria-pressed="true"><strong>Degen</strong>
+              <span>Open to everyone. A pool is required and locked permanently; you collect its trading fees. Unsold supply is burned.</span></button>
+            <button type="button" class="cartridge" data-preset="Raise" aria-pressed="false"><strong>Raise</strong>
+              <span>Optional allowlist, optional pool locked for a period you choose, optional vesting. Unsold supply returns to you.</span></button>
+          </div>`)}
 
-    <form id="open-form" autocomplete="off">
-      <div class="card">
-        <h2>Token and sale</h2>
-        <label>Token address<input id="c-token" value="${esc(net.deployment.token ?? "")}" placeholder="0x…"></label>
-        <p class="hint" id="token-info"></p>
-        <div class="grid2">
-          <label>Tokens for sale<input id="c-sell" inputmode="decimal" value="1000000"></label>
-          <label>Uniform deposit (MON)<input id="c-deposit" inputmode="decimal" value="1"></label>
-          <label>Minimum bid at the reserve price (MON)<input id="c-minbid" inputmode="decimal" value="0.01"></label>
-          <label>Tick size (MON per token)<input id="c-tick" inputmode="decimal" value="0.0000001"></label>
-          <label>Reserve price (MON per token)<input id="c-reserve" inputmode="decimal" value="0.0000001"></label>
-        </div>
-        <p class="hint">Every bidder locks the same deposit, so it caps the largest bid. A bid must be worth at least the minimum bid at the reserve price, and its max spend must stay below the deposit.</p>
-        <div class="grid2">
-          <label>Commit window (minutes)<input id="c-commit" inputmode="numeric" value="60"></label>
-          <label>Reveal window (minutes)<input id="c-reveal" inputmode="numeric" value="60"></label>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Liquidity</h2>
-        <label class="check raise-only"><input type="checkbox" id="c-lp-on" checked> Seed a DEX pool after the sale</label>
-        <div id="lp-fields">
-          <label>Share of tokens sold and MON raised that goes to the pool (%)<input id="c-lpshare" inputmode="decimal" value="${esc(d.lpSharePct)}"></label>
-          <p class="hint">The pool opens at the clearing price. You deposit a reserve of the same share of the sale supply up front; what is not used follows the unsold-supply rule.</p>
-          <h3>DEX split</h3>
-          <div id="splits"></div>
-          <button type="button" class="btn" id="add-split">Add a DEX</button>
-          <div class="grid2">
-            <label>Lock fee tier (GoPlus)
-              <select id="c-feetier">${LOCK_FEE_TIERS.map((t) => `<option value="${t.id}" ${t.id === d.lockFeeTier ? "selected" : ""}>${esc(t.label)}</option>`).join("")}</select></label>
-            <label class="raise-only">Liquidity lock after seeding (days, at least ${MIN_RAISE_LOCK_DAYS})<input id="c-lockdays" inputmode="numeric" value="${esc(d.lockDays)}"></label>
+        ${P("", "Token and sale", `
+          <label>Token address<input id="c-token" value="${esc(net.deployment.token ?? "")}" placeholder="0x…"></label>
+          <p class="field-hint" id="token-info" style="margin-top:8px"></p>
+          <div class="fields">
+            <label>Tokens for sale<input id="c-sell" inputmode="decimal" value="1000000"></label>
+            <label>Deposit per bidder (MON)<input id="c-deposit" inputmode="decimal" value="1"></label>
+            <label>Minimum bid at the reserve (MON)<input id="c-minbid" inputmode="decimal" value="0.01"></label>
+            <label>Tick size (MON / token)<input id="c-tick" inputmode="decimal" value="0.0000001"></label>
+            <label>Reserve price (MON / token)<input id="c-reserve" inputmode="decimal" value="0.0000001"></label>
           </div>
-          <p class="hint degen-only">Degen liquidity is locked permanently. You collect the trading fees.</p>
-        </div>
-      </div>
+          <p class="field-hint">Every bidder locks the same deposit, so it caps the largest bid and gives nothing away. A bid must be worth at least the minimum at the reserve price, and its max spend must stay below the deposit.</p>
+          <div class="fields">
+            <label>Commit window (minutes)<input id="c-commit" inputmode="numeric" value="60"></label>
+            <label>Reveal window (minutes)<input id="c-reveal" inputmode="numeric" value="60"></label>
+          </div>`)}
 
-      <div class="card raise-only">
-        <h2>Allowlist</h2>
-        <label class="check"><input type="checkbox" id="c-allow-on"> Only allowlisted wallets can bid</label>
-        <div id="allow-fields" class="hidden">
-          <label>Addresses (CSV, one per line or comma separated)<textarea id="c-allow-csv" rows="5" placeholder="0x…"></textarea></label>
-          <input type="file" id="c-allow-file" accept=".csv,.txt,text/csv,text/plain">
-          <div class="row"><button type="button" class="btn" id="build-tree">Build tree</button>
-            <button type="button" class="btn" id="dl-tree" disabled>Download tree JSON</button></div>
-          <p id="tree-info" class="hint"></p>
-          <label>Allowlist URI (where you host the tree JSON; bidders' browsers fetch it)<input id="c-allow-uri" placeholder="https://… or ipfs://…"></label>
-        </div>
-      </div>
+        ${P("", "Pool", `
+          <label class="check raise-only"><input type="checkbox" id="c-lp-on" checked> Seed a DEX pool after the sale</label>
+          <div id="lp-fields">
+            <div class="fields" style="margin-top:12px">
+              <label>Share of tokens sold and MON raised for the pool (%)<input id="c-lpshare" inputmode="decimal" value="${esc(d.lpSharePct)}"></label>
+            </div>
+            <p class="field-hint">The pool opens at the clearing price. You deposit a reserve of the same share of the sale supply up front; what the pool does not use follows the unsold-supply rule.</p>
+            <h3 class="subhead">DEX split</h3>
+            <div id="splits"></div>
+            <button type="button" class="btn btn-sm" id="add-split">Add a DEX</button>
+            <div class="fields" style="margin-top:18px">
+              <label>Lock fee tier (GoPlus)
+                <select id="c-feetier">${LOCK_FEE_TIERS.map((t) => `<option value="${t.id}" ${t.id === d.lockFeeTier ? "selected" : ""}>${esc(t.label)}</option>`).join("")}</select></label>
+              <label class="raise-only">Pool lock after seeding (days, at least ${MIN_RAISE_LOCK_DAYS})<input id="c-lockdays" inputmode="numeric" value="${esc(d.lockDays)}"></label>
+            </div>
+            <p class="field-hint degen-only">Degen pools are locked permanently with GoPlus. You collect the trading fees.</p>
+          </div>`)}
 
-      <div class="card raise-only">
-        <h2>Vesting</h2>
-        <label class="check"><input type="checkbox" id="c-vest-on"> Vest bought tokens</label>
-        <div id="vest-fields" class="grid2 hidden">
-          <label>Paid at claim (%)<input id="c-tge" inputmode="decimal" value="${esc(d.tgePct)}"></label>
-          <label>Cliff after settlement (days)<input id="c-cliff" inputmode="decimal" value="${esc(d.cliffDays)}"></label>
-          <label>Linear vesting after the cliff (days)<input id="c-vestdays" inputmode="decimal" value="${esc(d.vestDays)}"></label>
-        </div>
-      </div>
+        ${P("raise-only", "Allowlist", `
+          <label class="check"><input type="checkbox" id="c-allow-on"> Only allowlisted wallets can bid</label>
+          <div id="allow-fields" class="hidden" style="margin-top:14px">
+            <label>Addresses (one per line or comma separated)<textarea id="c-allow-csv" rows="5" placeholder="0x…"></textarea></label>
+            <p style="margin:10px 0"><input type="file" id="c-allow-file" accept=".csv,.txt,text/csv,text/plain" aria-label="Load addresses from a file"></p>
+            <div class="btn-row"><button type="button" class="btn btn-sm" id="build-tree">Build tree</button>
+              <button type="button" class="btn btn-sm" id="dl-tree" disabled>Download tree JSON</button></div>
+            <p id="tree-info" class="field-hint" style="margin-top:10px"></p>
+            <label>Allowlist URI (where you host the tree; bidders' browsers fetch it)<input id="c-allow-uri" placeholder="https://… or ipfs://…"></label>
+          </div>`)}
 
-      <div class="card">
-        <h2>Lock supply and open round</h2>
-        <div id="summary"></div>
-        <div class="row">
-          <button type="button" class="btn" id="approve">Approve</button>
-          <button type="button" class="btn primary" id="open">Lock supply and open round</button>
-        </div>
-        <p class="msg" id="msg" role="status"></p>
-      </div>
-    </form>
+        ${P("raise-only", "Vesting", `
+          <label class="check"><input type="checkbox" id="c-vest-on"> Vest bought tokens</label>
+          <div id="vest-fields" class="fields hidden" style="margin-top:14px">
+            <label>Delivered at claim (%)<input id="c-tge" inputmode="decimal" value="${esc(d.tgePct)}"></label>
+            <label>Cliff after settlement (days)<input id="c-cliff" inputmode="decimal" value="${esc(d.cliffDays)}"></label>
+            <label>Linear vesting after the cliff (days)<input id="c-vestdays" inputmode="decimal" value="${esc(d.vestDays)}"></label>
+          </div>`)}
+      </form>
 
-    <div class="card">
-      <h2>Your rounds</h2>
-      <div id="mine"><p class="hint">Connect a wallet to see rounds you opened.</p></div>
+      <div class="col">
+        <section class="panel panel-p2" style="position:sticky;top:96px"><div class="panel-in">
+          <h2 class="panel-title">Press start</h2>
+          <div id="summary"></div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-panel" id="approve">Approve</button>
+            <button type="button" class="btn btn-start" id="open">Lock supply and open</button>
+          </div>
+          <p class="msg" id="msg" role="status" aria-live="polite"></p>
+        </div></section>
+        <section class="panel"><div class="panel-in">
+          <h2 class="panel-title">Your rounds</h2>
+          <div id="mine"><p class="note">Connect a wallet to see rounds you opened.</p></div>
+        </div></section>
+      </div>
     </div>
   </section>`;
 
@@ -140,8 +138,8 @@ export function renderCreator(el, app) {
       <div class="split-row" data-i="${i}">
         <label>Adapter<input data-k="adapter" value="${esc(s.adapter)}" placeholder="0x…"></label>
         <label>Share (%)<input data-k="pct" value="${esc(s.pct)}" inputmode="decimal"></label>
-        <label>Pool fee tier<select data-k="fee">${DEX_FEE_TIERS.map((f) => `<option value="${f}" ${String(f) === s.fee ? "selected" : ""}>${f / 10000}%</option>`).join("")}</select></label>
-        ${splits.length > 1 ? `<button type="button" class="btn small" data-rm="${i}">Remove</button>` : ""}
+        <label>Pool fee<select data-k="fee">${DEX_FEE_TIERS.map((f) => `<option value="${f}" ${String(f) === s.fee ? "selected" : ""}>${f / 10000}%</option>`).join("")}</select></label>
+        ${splits.length > 1 ? `<button type="button" class="btn btn-sm" data-rm="${i}">Remove</button>` : "<span></span>"}
       </div>`).join("");
     $("#add-split").disabled = splits.length >= MAX_SPLITS;
   }
@@ -164,14 +162,14 @@ export function renderCreator(el, app) {
 
   // ── preset + toggles ──
   function applyPreset() {
-    el.querySelectorAll(".preset-card").forEach((b) => b.classList.toggle("selected", b.dataset.preset === preset));
+    el.querySelectorAll(".cartridge").forEach((b) => { b.classList.toggle("selected", b.dataset.preset === preset); b.setAttribute("aria-pressed", String(b.dataset.preset === preset)); });
     el.querySelectorAll(".raise-only").forEach((n) => n.classList.toggle("hidden", preset !== "Raise"));
     el.querySelectorAll(".degen-only").forEach((n) => n.classList.toggle("hidden", preset !== "Degen"));
     $("#lp-fields").classList.toggle("hidden", !(preset === "Degen" || $("#c-lp-on").checked));
     $("#allow-fields").classList.toggle("hidden", !(preset === "Raise" && $("#c-allow-on").checked));
     $("#vest-fields").classList.toggle("hidden", !(preset === "Raise" && $("#c-vest-on").checked));
   }
-  el.querySelectorAll(".preset-card").forEach((b) => b.addEventListener("click", () => { preset = b.dataset.preset; applyPreset(); update(); }));
+  el.querySelectorAll(".cartridge").forEach((b) => b.addEventListener("click", () => { preset = b.dataset.preset; applyPreset(); update(); }));
   ["#c-lp-on", "#c-allow-on", "#c-vest-on"].forEach((id) => $(id).addEventListener("change", () => { applyPreset(); update(); }));
   applyPreset();
 
@@ -224,13 +222,13 @@ export function renderCreator(el, app) {
     const t = token;
     const enough = t?.allowance != null && t.allowance >= need;
     $("#summary").innerHTML = `
-      <dl class="kv">
+      <dl class="readout">
         <dt>Tokens locked</dt><dd>${t ? esc(fmtTokens(need, t.decimals, t.symbol)) : "?"}${params.lpShareBps ? " (sale + liquidity reserve)" : ""}</dd>
         ${t?.balance != null ? `<dt>Your balance</dt><dd class="${t.balance < need ? "err" : ""}">${esc(fmtTokens(t.balance, t.decimals, t.symbol))}</dd>` : ""}
         ${t?.allowance != null ? `<dt>Approved</dt><dd>${esc(fmtTokens(t.allowance, t.decimals, t.symbol))}</dd>` : ""}
         <dt>Unsold supply</dt><dd>${preset === "Degen" ? "burned (returned to you if nothing sells)" : "returned to you"}</dd>
       </dl>
-      ${problems.length ? `<ul class="problems">${problems.map((p) => `<li class="err">${esc(p)}</li>`).join("")}</ul>` : ""}`;
+      ${problems.length ? `<ul class="problems" style="margin-bottom:16px">${problems.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}`;
     $("#approve").disabled = busy || !app.account || !t || need === 0n || enough;
     $("#approve").textContent = t ? `Approve ${formatUnits(need, t.decimals, 4)} ${t.symbol}` : "Approve";
     $("#open").disabled = busy || !app.account || problems.length > 0 || !enough;
@@ -272,10 +270,10 @@ export function renderCreator(el, app) {
 
   // ── your rounds + withdraw proceeds ──
   async function loadMine() {
-    if (!app.account) { $("#mine").innerHTML = `<p class="hint">Connect a wallet to see rounds you opened.</p>`; return; }
+    if (!app.account) { $("#mine").innerHTML = `<p class="note">Connect a wallet to see rounds you opened.</p>`; return; }
     try {
       const logs = await eng.roundsByCreator(app.account);
-      if (!logs.length) { $("#mine").innerHTML = `<p class="hint">No rounds opened from this wallet.</p>`; return; }
+      if (!logs.length) { $("#mine").innerHTML = `<p class="note">No rounds opened from this wallet yet.</p>`; return; }
       const now = chainNow();
       const rows = await Promise.all(logs.map(async (l) => {
         const id = l.args.roundId;
@@ -284,9 +282,9 @@ export function renderCreator(el, app) {
           : Number(r.revealEnd) <= now ? "clearing" : Number(r.commitEnd) <= now ? "reveal" : "commit";
         return `<tr><td><a href="#/round/${id}">#${id}</a></td><td>${r.preset === 0n ? "Degen" : "Raise"}</td><td>${esc(status)}</td>
           <td>${esc(fmtMon(avail))}</td>
-          <td>${r.lpDone && avail > 0n ? `<button type="button" class="btn small" data-withdraw="${id}">Withdraw proceeds</button>` : r.lpDone ? "" : `<span class="hint">after liquidity is seeded</span>`}</td></tr>`;
+          <td>${r.lpDone && avail > 0n ? `<button type="button" class="btn btn-start btn-sm" data-withdraw="${id}">Withdraw</button>` : r.lpDone ? "" : `<span class="note">after the pool</span>`}</td></tr>`;
       }));
-      $("#mine").innerHTML = `<table class="bids"><thead><tr><th>Round</th><th>Preset</th><th>Status</th><th>Withdrawable</th><th></th></tr></thead><tbody>${rows.reverse().join("")}</tbody></table>`;
+      $("#mine").innerHTML = `<div class="table-scroll"><table class="hiscore"><thead><tr><th>Round</th><th>Preset</th><th>Stage</th><th>Yours to withdraw</th><th></th></tr></thead><tbody>${rows.reverse().join("")}</tbody></table></div>`;
     } catch (e) {
       $("#mine").innerHTML = `<p class="err">${esc(e.message)}</p>`;
     }
