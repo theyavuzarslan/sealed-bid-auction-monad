@@ -9,3 +9,7 @@ sealed-bid-auction-docs.zip
 # subagent worktrees and bid-backup files written by local UI tests
 .claude/
 sealed-bid-round-*.json
+
+# generated per local deploy, and Impeccable working state
+contracts/deployments/local.json
+.impeccable/

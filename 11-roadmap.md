@@ -8,6 +8,8 @@ Dates: build window 1 Sep–13 Oct, judging 14–27 Oct, winners 3 Nov [src: htt
 
 **Status at 22 Sep:** Block A contracts are written and green (commit/reveal, deposit ledger, clearing core, integration engine), but three critical access-control bugs block any deploy — see [AUDIT.md](AUDIT.md). The token leg, LP seed and real-engine demo (Blocks B–C) are not done. On 22 Sep the clearing design moved to Zama-style (decision 22); run order: `tasks/fix-core.md` → `tasks/clearing.md` + `tasks/ui-bid.md` → `tasks/lp.md`. Most agent work is still uncommitted in worktrees.
 
+**Status at 24 Sep:** Blocks A–C are done, and the AgentGuard scan, threat model, BTX paragraph, two-transaction answer and fee measurement from Block D are done too (in [SUBMISSION.md](SUBMISSION.md)). The audit blockers are fixed ([AUDIT.md](AUDIT.md)). Left: the pitch deck, a public-network deploy, the demo video, and confirming whether multiple submissions are allowed. The tables below are the original plan, kept for the record.
+
 Priority: P0 = submission fails without it · P1 = needed for a strong submission · P2 = nice to have.
 
 ## Block A — 22–25 Sep: foundations

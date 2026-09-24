@@ -5,20 +5,22 @@ import {Script, console2} from "forge-std/Script.sol";
 import {AuctionEngine} from "../src/AuctionEngine.sol";
 
 /// @notice Deploy the engine to Monad.
-/// Env: DEPLOYER_PRIVATE_KEY (required), ADAPTERS (comma-separated DEX adapter addresses, required),
+/// Signer: a Foundry keystore (`--account <name>`), or DEPLOYER_PRIVATE_KEY if set.
+/// Env: ADAPTERS (comma-separated DEX adapter addresses, required),
 ///      LOCKER (default: GoPlus UniV3LPLocker on Monad), PERMANENT_LOCK_END (default 2100-01-01),
 ///      LP_GRACE_SECONDS (default 1 day).
 contract Deploy is Script {
     address constant GOPLUS_UNIV3_LOCKER = 0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d;
 
     function run() external returns (AuctionEngine engine) {
-        uint256 key = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 key = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
         address[] memory adapters = vm.envAddress("ADAPTERS", ",");
         address locker = vm.envOr("LOCKER", GOPLUS_UNIV3_LOCKER);
         uint256 lockEnd = vm.envOr("PERMANENT_LOCK_END", uint256(4102444800));
         uint256 grace = vm.envOr("LP_GRACE_SECONDS", uint256(1 days));
 
-        vm.startBroadcast(key);
+        if (key != 0) vm.startBroadcast(key);
+        else vm.startBroadcast();
         engine = new AuctionEngine(locker, adapters, lockEnd, grace);
         vm.stopBroadcast();
 

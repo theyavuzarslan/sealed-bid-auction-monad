@@ -1,6 +1,6 @@
 # Sealed-Bid Auction Engine on Monad
 
-Documentation index for the Monad Metropolis hackathon submission (deadline 13 Oct 2026).
+Documentation index for the Monad Metropolis hackathon submission (deadline 13 Oct 2026). Judges: start with [SUBMISSION.md](SUBMISSION.md), the write-up.
 
 Status: draft
 
@@ -12,6 +12,11 @@ Status: draft
 - Use case 1 (primary): memecoin **Fair Launch** for the Social, Attention & Culture track. Use case 2 (conditional): vault **Exit-Priority Auction** for the Onchain Finance & Trading track [src: Monad Sealed-Bid Auction Engine.md].
 - The web app is called **Even** ("Nobody gets a head start"): a two-player arcade cabinet in Monad's colours where the bonding curve is Player 1 and the sealed-bid round is Player 2. Code in `web/`, design system in [DESIGN.md](DESIGN.md), product record in [PRODUCT.md](PRODUCT.md).
 - Privacy comes from commit-reveal alone today; Monad's BTX encrypted mempool is a research scheme, not a live feature, and is treated as a future upgrade path (see [12-open-questions.md](12-open-questions.md)).
+
+## Security scan and fees
+
+- **AgentGuard** (`agentguard scan contracts/src`, CLI 1.1.28, 24 Sep 2026): 4 findings, none a defect. One is the intended native-MON send helper on the money path (`lib/SafeTransferLib.sol`); three are in unmodified vendored OpenZeppelin files. Triage table: [SUBMISSION.md](SUBMISSION.md#security-scan-agentguard).
+- **Fees:** the worst complete bidder journey costs 558,301 gas, $0.0014 on Monad mainnet at 102 gwei and MON $0.0252 (24 Sep 2026), against a $0.01 target. Table: [SUBMISSION.md](SUBMISSION.md#measured-cost).
 
 ## Files
 
