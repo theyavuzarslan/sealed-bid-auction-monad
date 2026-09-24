@@ -3,246 +3,457 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bank Run, Twice</title>
+<title>Bank Run, Twice · Even</title>
+<meta name="theme-color" content="#200052">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Schibsted+Grotesk:wght@400;500;600;700&family=Silkscreen&display=swap">
 <style>
+  /* Even, "The Two-Player Cabinet": tokens copied from web/styles.css (rules in DESIGN.md).
+     Self-contained on purpose: this page is served on its own, next to results.js. */
   :root {
-    --ink: #f4efe6;
-    --muted: #b7ad9e;
-    --dim: #7c7468;
-    --run: #ff3b1f;
-    --run-wash: rgba(255, 59, 31, 0.12);
-    --sand: #e7d7c3;
-    --line: #ffb25a;
-    --acid: #e2ff4d;
-    --acid-wash: rgba(226, 255, 77, 0.14);
-    --left: #14100c;
-    --right: #0c0f0e;
-    --hair: rgba(244, 239, 230, 0.14);
-    --well: rgba(244, 239, 230, 0.06);
+    --cabinet-indigo: #200052;
+    --cabinet-deep: #140033;
+    --night-black: #0e100f;
+    --monad-purple: #6e54ff;
+    --purple-lamp: #8270ff;
+    --purple-glow: #b5a8ff;
+    --berry: #a0055d;
+    --berry-lamp: #e0358f;
+    --marquee-white: #fbfaf9;
+    --bezel-grey: #edebe8;
+    --ink: #17142b;
+    --ink-soft: #4a4566;
+    --win-lime: #c6f24e;
+    --screen-line: #2d1a66;
+    --screen-dim: #6d5fb0;
+    --screen-label: #8b7fd0;
+
+    --t-micro: 0.625rem;
+    --t-label-sm: 0.6875rem;
+    --t-label: 0.75rem;
+    --t-small: 0.875rem;
+    --t-body-sm: 0.9375rem;
+    --t-body: 1.0625rem;
+    --t-lead: 1.1875rem;
+    --t-title-sm: 1.5rem;
+    --t-title: 1.75rem;
+    --t-panel: 2rem;
+    --t-score: 2.6rem;
+
+    --f-display: "Jersey 10", "Silkscreen", ui-monospace, monospace;
+    --f-label: "Silkscreen", ui-monospace, monospace;
+    --f-body: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --f-code: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --px: 4px;
+    --notch: 8px;
+    color-scheme: dark;
   }
 
-  * { box-sizing: border-box; }
-  html, body { margin: 0; min-height: 100%; background: var(--left); color: var(--ink); }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: var(--night-black); }
   body {
-    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
-    font-variant-numeric: tabular-nums;
+    margin: 0; min-height: 100vh;
+    font: 400 var(--t-body)/1.55 var(--f-body);
+    color: var(--marquee-white);
+    background-color: var(--cabinet-indigo);
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 16px 16px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
+  p { margin: 0; }
+  h1, h2 { margin: 0; font-weight: 400; }
+  button { font: inherit; }
+  code { font-family: var(--f-code); font-size: 0.9em; }
+  a { color: var(--purple-glow); text-underline-offset: 3px; }
 
-  #progress {
-    position: fixed; z-index: 3; left: 0; top: 0;
-    height: 3px; width: 100%;
-    transform-origin: left center; transform: scaleX(0);
-    background: linear-gradient(90deg, var(--run) 0 50%, var(--acid) 50% 100%);
-    pointer-events: none;
-  }
+  :focus-visible { outline: 3px solid var(--win-lime); outline-offset: 2px; }
+  .panel-in :focus-visible { outline-color: var(--ink); }
 
-  main { display: grid; grid-template-columns: 1fr 1fr; min-height: 100dvh; }
-  section {
-    min-width: 0;
-    display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) 120px auto;
-    gap: 14px;
-    padding: clamp(16px, 2.4vh, 28px) clamp(16px, 2vw, 36px) 64px;
+  .skip {
+    position: absolute; left: -999px; top: 8px; z-index: 10;
+    background: var(--win-lime); color: var(--ink); padding: 8px 12px; font-family: var(--f-label);
   }
-  #fifo {
-    background: radial-gradient(880px 460px at 18% 28%, rgba(255, 59, 31, 0.1), transparent 68%), var(--left);
-  }
-  #auction {
-    border-left: 1px solid var(--hair);
-    background: radial-gradient(760px 440px at 50% 36%, rgba(226, 255, 77, 0.05), transparent 70%), var(--right);
-  }
+  .skip:focus { left: 8px; }
 
-  header {
-    display: grid; grid-template-columns: 1fr auto; column-gap: 16px; align-items: end;
-    padding-bottom: 12px; border-bottom: 1px solid var(--hair);
+  /* ── Marquee bar ─────────────────────────────────────────────────── */
+  .marquee { background: var(--night-black); border-bottom: 4px solid var(--cabinet-deep); }
+  .marquee-in {
+    max-width: 1180px; margin: 0 auto; padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px 28px; flex-wrap: wrap;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--marquee-white); }
+  .logo-plate {
+    background: var(--monad-purple); padding: 2px 12px 4px;
+    font: 400 var(--t-panel)/1 var(--f-display); letter-spacing: 0.04em;
+    box-shadow: 4px 4px 0 var(--berry);
+  }
+  .logo-sub { font: 400 var(--t-micro)/1.2 var(--f-label); color: var(--purple-glow); text-transform: uppercase; }
+  .logo:hover .logo-plate { box-shadow: 4px 4px 0 var(--berry-lamp); }
+  .marquee-back {
+    margin-left: auto;
+    font: 400 var(--t-label)/1 var(--f-label); text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--purple-glow); text-decoration: none; padding: 8px 0; border-bottom: 3px solid transparent;
+  }
+  .marquee-back:hover { color: var(--marquee-white); border-bottom-color: var(--monad-purple); }
+
+  /* ── Buttons: arcade buttons that press down ─────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font: 400 var(--t-small)/1.1 var(--f-label); text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 13px 20px; border: 0; border-radius: var(--px); cursor: pointer;
+    background: var(--marquee-white); color: var(--ink);
+    box-shadow: 3px 3px 0 var(--cabinet-deep);
+    transition: background-color 120ms, transform 80ms, box-shadow 80ms;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--cabinet-deep); }
+  .btn-start { background: var(--monad-purple); color: var(--marquee-white); box-shadow: 3px 3px 0 var(--cabinet-deep); }
+  .btn-start:hover { background: var(--purple-lamp); }
+  .btn-sm { font-size: var(--t-label-sm); padding: 9px 14px; }
+
+  /* ── Page and headline ───────────────────────────────────────────── */
+  .page { max-width: 1180px; margin: 0 auto; padding: 40px 20px 72px; }
+  .hero-head {
+    display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px 32px;
+    align-items: end; margin-bottom: 32px;
   }
   .kicker {
-    margin: 0;
-    font-family: Syne, "Avenir Next", Futura, sans-serif; font-weight: 500;
-    font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--line);
+    font: 400 var(--t-label)/1.3 var(--f-label); text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--berry-lamp); margin-bottom: 10px;
   }
-  #auction .kicker { color: #c9d2c6; }
-  h1 {
-    margin: 6px 0 0;
-    font-family: "Instrument Serif", "Iowan Old Style", Palatino, serif; font-weight: 400;
-    font-size: clamp(32px, 4.4vh, 54px); line-height: 0.95; letter-spacing: -0.02em;
+  .hero-head h1 { font: 400 clamp(3.4rem, 9vw, 6.4rem)/0.84 var(--f-display); letter-spacing: 0.005em; }
+  .hero-head h1 em { font-style: normal; color: var(--purple-glow); }
+  .hero-sub { font-size: var(--t-lead); line-height: 1.5; max-width: 40ch; }
+  .replay-label {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px;
+    font-size: var(--t-small); color: var(--purple-glow);
   }
-  .source { margin: 8px 0 0; font-size: 11px; color: var(--dim); line-height: 1.4; }
-  .phase {
-    margin: 0; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--muted); text-align: right; white-space: nowrap;
+  .chip {
+    display: inline-block; font: 400 var(--t-micro)/1 var(--f-label); text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 6px 8px; background: var(--night-black); color: var(--marquee-white);
+    box-shadow: inset 0 0 0 2px var(--screen-dim);
   }
-  .phase b { display: block; color: var(--ink); font-weight: 500; font-size: 14px; letter-spacing: 0.06em; }
 
-  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  .stat { min-width: 0; padding: 10px 12px; background: var(--well); }
+  /* ── The cabinet: two-player screen ──────────────────────────────── */
+  .cabinet { background: var(--night-black); padding: 14px; box-shadow: 8px 8px 0 var(--cabinet-deep); }
+  .cabinet-top {
+    display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding: 2px 4px 14px;
+    font: 400 var(--t-label-sm)/1.2 var(--f-label); text-transform: uppercase; letter-spacing: 0.06em; color: var(--purple-glow);
+  }
+  .cabinet-top .vs-1 { color: var(--berry-lamp); }
+  .meter { flex: 1 1 8rem; height: 8px; background: var(--screen-line); overflow: hidden; }
+  #progress {
+    height: 100%; width: 100%; background: var(--monad-purple);
+    transform-origin: left center; transform: scaleX(0); pointer-events: none;
+  }
+
+  .screen {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: repeat(6, auto); column-gap: 4px; row-gap: 0;
+    background: var(--night-black);
+  }
+  .player {
+    min-width: 0; background: var(--cabinet-deep); padding: 20px 22px 22px;
+    display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 18px;
+  }
+
+  .player-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .player-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .player-tag { font: 400 var(--t-label)/1 var(--f-label); padding: 6px 8px; color: var(--marquee-white); }
+  .player-1 .player-tag { background: var(--berry); }
+  .player-2 .player-tag { background: var(--monad-purple); }
+  .player-name { font: 400 var(--t-panel)/1 var(--f-display); }
+  .player-1 .player-name { color: var(--berry-lamp); }
+  .player-2 .player-name { color: var(--purple-glow); }
+  .phase {
+    text-align: right; white-space: nowrap;
+    font: 400 var(--t-micro)/1.2 var(--f-label); text-transform: uppercase; letter-spacing: 0.06em; color: var(--screen-label);
+  }
+  .phase b { display: block; margin-top: 2px; font: 400 var(--t-title)/0.9 var(--f-display); letter-spacing: 0.02em; color: var(--marquee-white); }
+
+  .title-block .kicker { margin-bottom: 6px; }
+  .player-1 .kicker { color: var(--berry-lamp); }
+  .player-2 .kicker { color: var(--purple-glow); }
+  .title-block h2 { font: 400 clamp(2rem, 4vw, 3rem)/0.95 var(--f-display); }
+  .source { margin-top: 10px; font-size: var(--t-small); line-height: 1.5; color: var(--purple-glow); max-width: 62ch; }
+
+  /* Scoreboard cells: wells on the screen. Amounts in Schibsted Grotesk (Readable Money Rule). */
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; align-content: start; }
+  .stat { min-width: 0; padding: 10px 12px 12px; background: var(--night-black); }
   .stat span {
-    display: block; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block; min-height: 2.4em;
+    font: 400 var(--t-micro)/1.2 var(--f-label); text-transform: uppercase; letter-spacing: 0.05em; color: var(--purple-glow);
   }
   .stat b {
-    display: block; margin-top: 4px;
-    font-family: "Instrument Serif", "Iowan Old Style", Palatino, serif; font-weight: 400;
-    font-size: clamp(24px, 3.4vh, 38px); line-height: 1; letter-spacing: -0.02em;
-    white-space: nowrap;
+    display: block; margin-top: 4px; white-space: nowrap;
+    font: 700 var(--t-title-sm)/1 var(--f-body); color: var(--marquee-white);
   }
-  .stat small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); white-space: nowrap; }
-  .stat.hot b { color: var(--run); }
-  .stat.good b { color: var(--acid); }
+  .stat small { display: block; margin-top: 6px; font-size: var(--t-label); line-height: 1.35; color: var(--screen-label); }
+  .player-1 .stat.hot b { color: var(--berry-lamp); }
+  .player-2 .stat.good b { color: var(--purple-glow); }
+  @media (min-width: 1180px), (min-width: 620px) and (max-width: 899px) {
+    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
 
-  .pane { position: relative; min-height: 0; overflow: hidden; }
+  .pane { position: relative; min-width: 0; }
   .pane-label {
-    margin: 0 0 8px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim);
+    margin: 0 0 10px;
+    font: 400 var(--t-micro)/1.3 var(--f-label); text-transform: uppercase; letter-spacing: 0.05em; color: var(--screen-label);
   }
 
-  /* FIFO queue */
-  .queue { display: flex; flex-direction: column; gap: 5px; }
-  .qrow {
-    display: grid; grid-template-columns: 3.5ch minmax(0, 1fr) 11ch; gap: 10px; align-items: center;
-    font-size: clamp(12px, 1.6vh, 14px); color: var(--sand);
-    transition: opacity 300ms linear;
+  /* 2P phase lamps: the round's four windows. Lit = purple; no lime here (one lamp per viewport). */
+  .lamps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0 0 14px; padding: 0; list-style: none; }
+  .lamp {
+    padding: 8px 4px 7px; text-align: center; background: var(--night-black); color: var(--screen-dim);
+    font: 400 var(--t-micro)/1.15 var(--f-label); text-transform: uppercase; letter-spacing: 0.02em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .qrow.joined { color: var(--ink); }
-  .qrow.joined .qlabel { color: var(--run); }
-  .qrow.fresh { animation: rise 260ms ease-out; }
-  .qbar { position: relative; height: 12px; background: rgba(244, 239, 230, 0.08); }
-  .qbar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--sand); }
-  .qrow.joined .qbar { outline: 1px solid rgba(255, 59, 31, 0.5); }
-  .qnum { text-align: right; color: var(--muted); }
-  .qrow.stuck .qnum { color: var(--run); }
+  .lamp[data-state="past"] { background: var(--screen-line); color: var(--purple-glow); }
+  .lamp[data-state="lit"] { background: var(--monad-purple); color: var(--marquee-white); }
+
+  /* Rows: holder label, bar, amount */
+  .queue, .book { display: flex; flex-direction: column; gap: 4px; }
+  .queue { min-height: calc(12 * 22px + 11 * 4px); }
+  .book { margin-bottom: 28px; } /* room for the capacity label under the last bid */
+  .qrow, .brow {
+    display: grid; gap: 8px; align-items: center; min-height: 22px;
+    font: 600 var(--t-small)/1.2 var(--f-body); color: var(--marquee-white);
+  }
+  .qrow { grid-template-columns: 2.4rem minmax(0, 1fr) 7.2rem; }
+  .brow { grid-template-columns: 2.4rem 3.6rem minmax(0, 1fr) 6.6rem; }
+  .qlabel, .brow > span:first-child { font: 400 var(--t-label-sm)/1 var(--f-label); color: var(--purple-glow); }
+  .qrow.joined .qlabel { color: var(--berry-lamp); }
+  .qrow.fresh, .brow.fresh { animation: step-in 240ms steps(3, end) both; }
+  .qbar { position: relative; height: 12px; background: var(--screen-line); }
+  .qbar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bezel-grey); }
+  .qrow.joined .qbar { box-shadow: 0 0 0 2px var(--berry); }
+  .qnum { text-align: right; font-variant-numeric: tabular-nums; color: var(--purple-glow); white-space: nowrap; }
+  .qrow.stuck .qnum { color: var(--berry-lamp); }
   .qrow.out { opacity: 0.38; }
 
-  /* Auction book */
-  .book { display: flex; flex-direction: column; gap: 5px; position: relative; }
-  .brow {
-    display: grid; grid-template-columns: 3.5ch 7ch minmax(0, 1fr) 13ch; gap: 10px; align-items: center;
-    font-size: clamp(12px, 1.6vh, 14px); color: var(--sand);
+  .bdisc { text-align: right; color: var(--purple-glow); white-space: nowrap; }
+  .bbar { position: relative; height: 12px; min-width: 0; }
+  .bbar .seg { position: absolute; top: 0; bottom: 0; background: var(--screen-line); }
+  .bbar .fill { position: absolute; top: 0; bottom: 0; background: var(--purple-lamp); width: 0; }
+  .bnum { text-align: right; color: var(--screen-dim); white-space: nowrap; }
+  .brow.win .bnum { color: var(--marquee-white); }
+  .brow.sealed .bdisc, .brow.sealed .bnum { color: var(--screen-dim); }
+  .sealed-chip {
+    display: inline-block; font: 400 var(--t-micro)/1 var(--f-label); text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--screen-dim); padding: 1px 0;
   }
-  .brow.fresh { animation: rise 220ms ease-out; }
-  .bdisc { text-align: right; color: var(--muted); }
-  .bbar { position: relative; height: 12px; }
-  .bbar .seg { position: absolute; top: 0; bottom: 0; background: rgba(244, 239, 230, 0.16); transition: width 380ms ease-out, left 380ms ease-out; }
-  .bbar .fill { position: absolute; top: 0; bottom: 0; background: var(--acid); width: 0; transition: width 420ms ease-out; }
-  .bnum { text-align: right; color: var(--dim); }
-  .brow.win .bnum { color: var(--acid); }
-  .brow.sealed .bdisc, .brow.sealed .bnum { color: var(--dim); }
-  .sealed-chip { display: inline-block; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
   #capLine {
     position: absolute; top: 0; height: 0; width: 0;
-    border-left: 1px dashed var(--acid); opacity: 0; transition: opacity 250ms linear;
+    border-left: 2px dashed var(--purple-glow); opacity: 0; transition: opacity 250ms linear;
     pointer-events: none;
   }
   #capLine span {
     position: absolute; bottom: -18px; left: 6px; white-space: nowrap;
-    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acid);
+    font: 400 var(--t-micro)/1 var(--f-label); text-transform: uppercase; letter-spacing: 0.05em; color: var(--purple-glow);
   }
+  #capLine.flip span { left: auto; right: 6px; }
 
-  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes step-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
-  .spark { position: relative; min-height: 0; }
-  .spark { display: flex; flex-direction: column; }
-  .spark svg { width: 100%; flex: 1; min-height: 0; display: block; overflow: visible; }
+  /* Sparklines in a screen well */
+  .spark { background: var(--night-black); padding: 10px 12px 12px; position: relative; min-width: 0; }
+  .spark svg { width: 100%; height: 104px; display: block; overflow: visible; }
   .spark path, .spark line { fill: none; vector-effect: non-scaling-stroke; }
-  .spark .base { stroke: rgba(244, 239, 230, 0.18); stroke-width: 1; }
-  .spark .run { stroke: var(--run); stroke-width: 2.25; }
-  .spark .acid { stroke: var(--acid); stroke-width: 2.25; }
-  .spark .tag { position: absolute; top: 0; right: 0; font-size: 11px; color: var(--muted); }
+  .spark .base { stroke: var(--screen-line); stroke-width: 2; }
+  .spark .run { stroke: var(--berry-lamp); stroke-width: 2.5; }
+  .spark .acid { stroke: var(--purple-lamp); stroke-width: 2.5; }
 
-  footer { font-size: 12px; color: var(--muted); line-height: 1.45; min-height: 3.2em; }
-  footer b { color: var(--ink); font-weight: 500; }
-  #fifo footer b.hot { color: var(--run); }
-  #auction footer b.good { color: var(--acid); }
+  .player-foot { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 16px; }
+  .note { flex: 1 1 14rem; font-size: var(--t-body-sm); line-height: 1.5; color: var(--marquee-white); min-height: 4.5em; }
+  .note b { font-weight: 700; color: var(--marquee-white); }
+  #fifo .note b.hot { color: var(--berry-lamp); }
+  #auction .note b.good { color: var(--purple-glow); }
 
-  #controls { position: fixed; z-index: 4; right: 24px; bottom: 14px; display: flex; gap: 8px; }
-  button {
-    background: #0c0f0e; color: var(--ink); border: 1px solid var(--hair);
-    font-family: Syne, "Avenir Next", Futura, sans-serif; font-size: 12px;
-    letter-spacing: 0.18em; text-transform: uppercase; padding: 8px 16px; cursor: pointer;
+  /* Result banners: reserved space, lit on the last frame. Lime only on 2P (the Lamp Rule). */
+  .banner {
+    flex: none; visibility: hidden;
+    font: 400 var(--t-title)/1 var(--f-display); letter-spacing: 0.04em; text-align: center;
+    padding: 6px 14px 8px; box-shadow: 4px 4px 0 var(--night-black); white-space: nowrap;
   }
-  button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .banner small { display: block; margin-top: 2px; font: 400 var(--t-micro)/1.3 var(--f-label); letter-spacing: 0.04em; text-transform: uppercase; }
+  .player-1 .banner { background: var(--berry); color: var(--marquee-white); }
+  .player-2 .banner { background: var(--win-lime); color: var(--ink); }
+  .banner.on { visibility: visible; animation: step-in 300ms steps(4, end) both; }
+
+  /* ── Bezel panel: off-white, notched corners, hard offset shadow ─── */
+  .panel { margin-top: 40px; filter: drop-shadow(6px 6px 0 var(--cabinet-deep)); }
+  .panel-in {
+    background: var(--marquee-white); color: var(--ink); padding: 26px;
+    clip-path: polygon(
+      var(--notch) 0, calc(100% - var(--notch)) 0, calc(100% - var(--notch)) var(--notch), 100% var(--notch),
+      100% calc(100% - var(--notch)), calc(100% - var(--notch)) calc(100% - var(--notch)), calc(100% - var(--notch)) 100%,
+      var(--notch) 100%, var(--notch) calc(100% - var(--notch)), 0 calc(100% - var(--notch)), 0 var(--notch), var(--notch) var(--notch)
+    );
+  }
+  .panel-title { font: 400 var(--t-panel)/0.95 var(--f-display); color: var(--ink); margin-bottom: 14px; }
+  .readout { display: grid; grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr); margin: 0 0 16px; }
+  .readout dt, .readout dd { margin: 0; padding: 9px 0; border-bottom: 2px solid var(--bezel-grey); }
+  .readout dt { font: 400 var(--t-label-sm)/1.6 var(--f-label); text-transform: uppercase; color: var(--ink-soft); padding-right: 16px; }
+  .readout dd { overflow-wrap: anywhere; font-size: var(--t-body-sm); }
+  .readout code { color: var(--ink); }
+  .claims { font: 400 var(--t-label-sm)/1.6 var(--f-label); text-transform: uppercase; color: var(--ink-soft); }
+
+  /* No data yet */
   #missing {
-    position: fixed; inset: 0; display: none; place-items: center; padding: 24px;
-    background: var(--left); color: var(--muted); text-align: center; line-height: 1.6;
+    position: fixed; inset: 0; z-index: 20; display: none; place-items: center; padding: 16px;
+    background-color: var(--cabinet-indigo);
   }
-  #missing code { color: var(--ink); }
+  #missing .panel { margin: 0; max-width: 34rem; }
+  #missing p { line-height: 1.6; }
   body.no-data #missing { display: grid; }
 
-  @media (max-width: 900px) {
-    main { grid-template-columns: 1fr; }
-    section { min-height: 100dvh; }
-    #auction { border-left: 0; border-top: 1px solid var(--hair); }
-    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    #controls { right: 16px; }
+  @media (max-width: 899px) {
+    .screen { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; row-gap: 4px; }
+    .player { grid-row: auto; grid-template-rows: none; }
+    .hero-head { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .marquee-in { padding: 12px 16px; }
+    .logo-plate { font-size: var(--t-title); }
+    .page { padding: 28px 16px 56px; }
+    .cabinet { padding: 8px; box-shadow: 6px 6px 0 var(--cabinet-deep); }
+    .player { padding: 16px 14px 18px; }
+    .panel-in { padding: 20px 18px; }
+    .readout { grid-template-columns: minmax(0, 1fr); }
+    .readout dt { border-bottom: 0; padding-bottom: 0; }
+  }
+  @media (max-width: 420px) {
+    .logo-sub { display: none; }
+    .qrow { grid-template-columns: 2rem minmax(0, 1fr) 6.4rem; }
+    .brow { grid-template-columns: 2rem 3.3rem minmax(0, 1fr) 5.8rem; gap: 6px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .qrow.fresh, .brow.fresh { animation: none; }
-    .bbar .seg, .bbar .fill { transition: none; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
-  <div id="progress"></div>
-  <main>
-    <section id="fifo" aria-label="FIFO redemption queue, modelled">
-      <header>
-        <div>
-          <p class="kicker">FIFO redemption queue · model</p>
-          <h1>First come, first paid</h1>
-          <p class="source">Model, not on-chain: same vault, same buffer refills, paid at par in arrival order.
-            Queue price = 1 / 1.01<sup>wait in rounds</sup>. A stayer joins the queue once that discount passes their threshold.</p>
-        </div>
-        <p class="phase">Round<b id="fifoRound">—</b></p>
-      </header>
-      <div class="stats">
-        <div class="stat"><span>In queue</span><b id="fQueue">—</b><small id="fQueueAssets">&nbsp;</small></div>
-        <div class="stat hot"><span>Peg deviation</span><b id="fDepeg">—</b><small>queued claim vs par</small></div>
-        <div class="stat hot"><span>Cascade</span><b id="fCascade">0</b><small>stayers who ran</small></div>
-        <div class="stat hot"><span>Latecomers paid</span><b id="fLate">—</b><small id="fLateSub">&nbsp;</small></div>
+  <a class="skip" href="#cabinet">Skip to the replay</a>
+  <header class="marquee">
+    <div class="marquee-in">
+      <a class="logo" href="../../web/" aria-label="Even, back to the app">
+        <span class="logo-plate" aria-hidden="true">EVEN</span>
+        <span class="logo-sub">Exit-priority<br>auction demo</span>
+      </a>
+      <a class="marquee-back" href="../../web/">Back to the app</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="hero-head">
+      <div>
+        <p class="kicker">Vault bank run · replay</p>
+        <h1>Bank run, <em>twice</em></h1>
       </div>
-      <div class="pane">
-        <p class="pane-label">Queue, front first · paid so far</p>
-        <div class="queue" id="queue"></div>
+      <div>
+        <p class="hero-sub">Eight holders want out of the same vault. 1P waits in a FIFO redemption queue; 2P bids in the exit-priority auction.</p>
+        <p class="replay-label"><span class="chip">Local run</span> A replay of an anvil run, not live data.</p>
       </div>
-      <div class="spark">
-        <p class="pane-label">Peg deviation by round</p>
-        <svg id="fSpark" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    </div>
+
+    <section class="cabinet" id="cabinet" aria-label="Two-player replay">
+      <div class="cabinet-top">
+        <span><span class="vs-1">1P FIFO queue</span> vs 2P Exit auction</span>
+        <div class="meter" aria-hidden="true"><div id="progress"></div></div>
+        <button id="replay" class="btn btn-start btn-sm" type="button">Replay</button>
       </div>
-      <footer id="fifoNote">&nbsp;</footer>
+
+      <div class="screen">
+        <section id="fifo" class="player player-1" aria-label="FIFO redemption queue, modelled">
+          <header class="player-head">
+            <div class="player-id"><span class="player-tag">1P</span><span class="player-name">FIFO queue</span></div>
+            <p class="phase">Round<b id="fifoRound">—</b></p>
+          </header>
+          <div class="title-block">
+            <p class="kicker">FIFO redemption queue · model</p>
+            <h2>First come, first paid</h2>
+            <p class="source">Model, not on-chain: same vault, same buffer refills, paid at par in arrival order.
+              Queue price = 1 / 1.01<sup>wait in rounds</sup>. A stayer joins the queue once that discount passes their threshold.</p>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>In queue</span><b id="fQueue">—</b><small id="fQueueAssets">&nbsp;</small></div>
+            <div class="stat hot"><span>Peg deviation</span><b id="fDepeg">—</b><small>queued claim vs par</small></div>
+            <div class="stat hot"><span>Cascade</span><b id="fCascade">0</b><small>stayers who ran</small></div>
+            <div class="stat hot"><span>Latecomers paid</span><b id="fLate">—</b><small id="fLateSub">&nbsp;</small></div>
+          </div>
+          <div class="pane">
+            <p class="pane-label">Queue, front first · paid so far</p>
+            <div class="queue" id="queue"></div>
+          </div>
+          <div class="spark">
+            <p class="pane-label">Peg deviation by round</p>
+            <svg id="fSpark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
+          <div class="player-foot">
+            <p class="note" id="fifoNote">&nbsp;</p>
+            <p class="banner" id="fBanner" aria-hidden="true">Game over<small id="fBannerSub">&nbsp;</small></p>
+          </div>
+        </section>
+
+        <section id="auction" class="player player-2" aria-label="Exit-Priority auction on anvil">
+          <header class="player-head">
+            <div class="player-id"><span class="player-tag">2P</span><span class="player-name">Exit auction</span></div>
+            <p class="phase"><span id="aPhase">Round</span><b id="aRound">—</b></p>
+          </header>
+          <div class="title-block">
+            <p class="kicker">Exit-Priority auction · on anvil</p>
+            <h2>Highest discount exits first</h2>
+            <p class="source" id="aSource">&nbsp;</p>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>Exit capacity</span><b id="aCap">—</b><small>WMON of idle buffer</small></div>
+            <div class="stat"><span>Clearing discount</span><b id="aP">—</b><small>paid by every exit</small></div>
+            <div class="stat good"><span>Accrued to stayers</span><b id="aAccrued">+0</b><small>WMON, S1–S4</small></div>
+            <div class="stat good"><span>Share price</span><b id="aPps">1.0000</b><small>WMON per share</small></div>
+          </div>
+          <div class="pane">
+            <ol class="lamps" id="aLamps" aria-hidden="true">
+              <li class="lamp">Commit</li><li class="lamp">Reveal</li><li class="lamp">Clearing</li><li class="lamp">Claims</li>
+            </ol>
+            <p class="pane-label">Sealed bids, highest discount first · filled share of the bid</p>
+            <div class="book" id="book"></div>
+            <div id="capLine"><span>capacity</span></div>
+          </div>
+          <div class="spark">
+            <p class="pane-label">Share price by round</p>
+            <svg id="aSpark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
+          <div class="player-foot">
+            <p class="note" id="auctionNote">&nbsp;</p>
+            <p class="banner" id="aBanner" aria-hidden="true">All out<small id="aBannerSub">&nbsp;</small></p>
+          </div>
+        </section>
+      </div>
     </section>
 
-    <section id="auction" aria-label="Exit-Priority auction on anvil">
-      <header>
-        <div>
-          <p class="kicker">Exit-Priority auction · on anvil</p>
-          <h1>Highest discount exits first</h1>
-          <p class="source" id="aSource">&nbsp;</p>
-        </div>
-        <p class="phase"><span id="aPhase">Round</span><b id="aRound">—</b></p>
-      </header>
-      <div class="stats">
-        <div class="stat"><span>Exit capacity</span><b id="aCap">—</b><small>WMON of idle buffer</small></div>
-        <div class="stat"><span>Clearing discount</span><b id="aP">—</b><small>paid by every exit</small></div>
-        <div class="stat good"><span>Accrued to stayers</span><b id="aAccrued">+0</b><small>WMON, S1–S4</small></div>
-        <div class="stat good"><span>Share price</span><b id="aPps">1.0000</b><small>WMON per share</small></div>
+    <section class="panel" aria-labelledby="sourceTitle">
+      <div class="panel-in">
+        <h2 class="panel-title" id="sourceTitle">Where the numbers come from</h2>
+        <dl class="readout">
+          <dt>2P, auction</dt><dd id="metaSource">ExitAuction + DemoVault on anvil</dd>
+          <dt>1P, FIFO</dt><dd>A model over the same vault and buffer refills, not on-chain.</dd>
+          <dt>Replay</dt><dd>A local anvil run, not live data. Run <code>demo/exit/run.sh</code> to play it again, then reload.</dd>
+        </dl>
+        <p class="claims">Snipe-resistant: submission timing no longer determines price · Privacy via commit-reveal</p>
       </div>
-      <div class="pane">
-        <p class="pane-label">Sealed bids, highest discount first · filled share of the bid</p>
-        <div class="book" id="book"></div>
-        <div id="capLine"><span>capacity</span></div>
-      </div>
-      <div class="spark">
-        <p class="pane-label">Share price by round</p>
-        <svg id="aSpark" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-      </div>
-      <footer id="auctionNote">&nbsp;</footer>
     </section>
   </main>
-  <div id="controls"><button id="replay" type="button">Replay</button></div>
-  <div id="missing"><p>No results yet. Run <code>demo/exit/run.sh</code> to play the bank run on anvil,<br>then reload this page.</p></div>
+
+  <div id="missing">
+    <div class="panel"><div class="panel-in">
+      <h2 class="panel-title">Insert coin</h2>
+      <p>No results yet. Run <code>demo/exit/run.sh</code> to play the bank run on anvil,<br>then reload this page.</p>
+    </div></div>
+  </div>
 
 <script src="results.js" onerror="void 0"></script>
 <script>
@@ -303,6 +514,7 @@
 
     $("aSource").textContent = "ExitAuction + DemoVault, " + R + " rounds on anvil (chain " + data.meta.chainId +
       "), numbers read from chain. Privacy via commit-reveal; post-clear transparency is intentional.";
+    if (data.meta.source) $("metaSource").textContent = data.meta.source + " (chain " + data.meta.chainId + ", " + R + " rounds).";
 
     // First round each exiter leaves the auction completely.
     var auctionExitRound = {};
@@ -374,6 +586,18 @@
         sparkPath(aValues, 1, ppsMax, progress) + '"/>';
     }
 
+    // 2P phase lamps (-1 = all dark) and the two result banners.
+    var lamps = Array.prototype.slice.call(document.querySelectorAll("#aLamps .lamp"));
+    function setLamps(n) {
+      lamps.forEach(function (l, i) { l.setAttribute("data-state", i < n ? "past" : i === n ? "lit" : "off"); });
+    }
+    function setBanners(on) {
+      $("fBanner").classList.toggle("on", on);
+      $("aBanner").classList.toggle("on", on);
+    }
+    $("fBannerSub").textContent = fifo.late.length + " got nothing";
+    $("aBannerSub").textContent = "in " + R + " rounds";
+
     // ─── Rendering per frame ────────────────────────────────────────────
     var lastRoundDrawn = -1;
 
@@ -425,7 +649,9 @@
         var paneBox = book.parentNode.getBoundingClientRect();
         var barBox = firstBar.getBoundingClientRect();
         var lastBar = book.lastElementChild.getBoundingClientRect();
-        cap.style.left = (barBox.left - paneBox.left + barBox.width * Math.min(r.capShares, scale) / scale) + "px";
+        var capX = barBox.left - paneBox.left + barBox.width * Math.min(r.capShares, scale) / scale;
+        cap.style.left = capX + "px";
+        cap.classList.toggle("flip", capX > paneBox.width / 2); // label on the side with room
         cap.style.top = (barBox.top - paneBox.top - 4) + "px";
         cap.style.height = (lastBar.bottom - barBox.top + 8) + "px";
         cap.style.opacity = r.over ? 1 : 0.5;
@@ -444,6 +670,8 @@
         $("fifoRound").textContent = "0 / " + R;
         $("aRound").textContent = "0 / " + R;
         $("aPhase").textContent = "Round";
+        setLamps(-1);
+        setBanners(false);
         $("fQueue").textContent = exiters.length;
         $("fQueueAssets").textContent = fmt(exiters.length * wmon(exiters[0].deposit)) + " WMON waiting";
         $("fDepeg").textContent = "—";
@@ -484,7 +712,9 @@
 
       // Auction pane
       $("aRound").textContent = r.k + " / " + R;
-      $("aPhase").textContent = f < 0.22 ? "Commit window" : f < 0.5 ? "Reveal window" : f < 0.62 ? "Clearing" : "Claims";
+      var phaseIdx = f < 0.22 ? 0 : f < 0.5 ? 1 : f < 0.62 ? 2 : 3;
+      $("aPhase").textContent = ["Commit window", "Reveal window", "Clearing", "Claims"][phaseIdx];
+      setLamps(phaseIdx);
       $("aCap").textContent = fmt(r.capAssets);
       $("aP").textContent = f >= 0.5 ? pct(r.P) : (prevR ? pct(prevR.P) : "—");
       var claimed = ease((f - 0.62) / 0.3);
@@ -500,6 +730,7 @@
         : winners.length + " holder" + (winners.length === 1 ? "" : "s") + " exit at <b class=\"good\">" + pct(r.P) + "</b> off. The discount stays in the vault; unfilled shares go back.";
       if (isLast) aNote = "Every exiter is out after " + R + " rounds; H8 left in round " + (auctionExitRound.H8 || "—") + ". S1–S4 stayed and are <b class=\"good\">+" + fmt(accNow) + " WMON</b>: the discounts the exiters paid.";
       $("auctionNote").innerHTML = aNote;
+      setBanners(isLast);
 
       drawSparks(idx + (f < 0.3 ? 0 : ease((f - 0.3) / 0.6)));
       if (idx !== lastRoundDrawn) lastRoundDrawn = idx;

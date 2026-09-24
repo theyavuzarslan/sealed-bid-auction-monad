@@ -57,7 +57,7 @@ The screens below were first derived from the PRD's flows [src: Monad Sealed-Bid
 - Right (auction): rounds clearing at a widening discount, orderly exits, "accrued to stayers" counter rising.
 
 ```html
-<!-- Built outside the web app: demo/exit/index.html replays demo/exit/results.json from demo/exit/run.sh. -->
+<!-- Built outside the web app, in the Even cabinet style: demo/exit/index.html replays demo/exit/results.json from demo/exit/run.sh (1P FIFO queue, a model; 2P exit auction, read from chain). -->
 ```
 
 ## Screen 6 — Exit-Priority holder page (conditional)
