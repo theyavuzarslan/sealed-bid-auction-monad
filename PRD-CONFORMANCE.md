@@ -1,6 +1,6 @@
 # PRD conformance
 
-Every promise in the PRD (`Monad Sealed-Bid Auction Engine.md`), checked against the contracts and the tests that prove it. Checked 25 Sep 2026: 96 contract tests and 19 Monad-fork tests pass; the fuzz tests pass at 10,000 runs.
+Every promise in the PRD (`Monad Sealed-Bid Auction Engine.md`), checked against the contracts and the tests that prove it. Checked 25 Sep 2026: 102 contract tests and 19 Monad-fork tests pass; the fuzz tests pass at 10,000 runs.
 
 Status: settled
 
@@ -40,6 +40,7 @@ Legend: **Meets** = does what the PRD says. **Meets, differently** = reaches the
 | Locked LP | Meets. GoPlus `UniV3LPLocker`: permanent for Degen (engine is the owner), creator-chosen and at least 30 days for Raise; the creator collects fees | `_seedOne` | `test_PRD_Bug7_PoolFirst_AtTheClearingPrice_Locked`, `test_Fork_Locker_TakesApprovedNFT_AnyFutureEndTime`, `test_RaiseLockTooShortRejected` |
 | Preset Degen: short window, no allowlist, no vesting, auto-LP | Meets. Allowlist, vesting and a timed lock are rejected; LP is required. Window length is the creator's choice; the Host page defaults to 10-minute windows for Degen and one day for Raise | `_validate` | `test_OpenRules` |
 | Preset Raise: long window, allowlist, vesting, optional LP | Meets | `_validate`, `claimVested` | `test_Raise_Allowlist`, `test_Raise_UnsoldReturnedAndVesting` |
+| Creator can make the token on the spot (not in the PRD; closes the one-click gap with nad.fun) | Added 25 Sep | `src/launch/TokenFactory.sol`: fixed supply minted once to the caller; the caller, not the factory, opens the round | `TokenFactoryTest` (4), `web/e2e.mjs` factory launch |
 | No insider price | Meets. The creator bids like anyone and pays the same price; nothing in the engine lets anyone buy outside the auction | — | `test_PRD_UniformPrice_EveryWinnerPaysTheClearingPrice` |
 
 ## Use case 2: vault exit priority
@@ -59,7 +60,7 @@ Legend: **Meets** = does what the PRD says. **Meets, differently** = reaches the
 | 1 | Commit without a salt | Salt is in the preimage; the web app draws it from a CSPRNG | `test_PRD_Bug1_SaltIsPartOfTheCommitment` |
 | 2 | Commit not bound to `msg.sender` | Sender is in the preimage | `test_PRD_Bug2_CopiedCommitmentCannotBeReplayed`, `test_PRD_Bug2_RevealCannotBeFrontRun` |
 | 3 | Slashing accounting on non-reveal | O(1) burn of `(commits − reveals) × deposit`, per-round balance | `test_PRD_Bug3_NonRevealerLosesExactlyTheDeposit`, `testFuzz_LifecycleConservesEverything`, `testFuzz_Interleavings` |
-| 4 | Off-by-one at the marginal bid | Pro-rata rounds down, the sold amount has a lower bound, dust is swept | `testFuzz_MatchesReference`, `testFuzz_EqualBidsAtClearingPriceGetEqualShares`, `test_Example_ExactlyCovered_NoProRata` |
+| 4 | Off-by-one at the marginal bid | Pro-rata rounds down, the sold amount has a lower bound, dust is swept | `testFuzz_MatchesReference`, `testFuzz_RevealWithHint_AnyHintSameBook` (any reveal hint builds the same book), `testFuzz_EqualBidsAtClearingPriceGetEqualShares`, `test_Example_ExactlyCovered_NoProRata` |
 | 5 | Reentrancy on refund and claim | One lock across every state-changing call | `test_Security_ReentrantClaimBlocked`, `test_Claim_ReentrancyBlocked` |
 | 6 | Gas DoS via dust commits | Commits never touch the book; only revealed bids worth at least the minimum add levels; settlement resumes across transactions | `test_RevealRules`, `test_L3_CheapHighPriceLevelsRejected`, `test_SettleInSteps_SameResult` |
 | 7 | Sandwichable LP seed | Pool seeded at the clearing price before any token leaves; strict adapter reprices a pre-made pool or refuses | `test_PRD_Bug7_PoolFirst_AtTheClearingPrice_Locked`, `test_Fork_Grief_*` (9 fork tests) |
@@ -79,6 +80,6 @@ Legend: **Meets** = does what the PRD says. **Meets, differently** = reaches the
 
 - **Vault allowlist missing.** The PRD lists it as configurable; `ExitAuction` had none. Added as an optional deployment setting with a test. While adding it, the new test caught a shadowing mistake of mine (a return variable named like the new setting, which made the root read as zero); fixed before commit.
 - **Preset windows.** The Host page defaulted every preset to 60-minute windows; it now follows the PRD's preset table (Degen 10 minutes, Raise one day) unless the creator has typed their own.
-- **Test count overstated.** `AuditRegressions` inherited the engine suite, so 21 engine tests ran twice and the published count (105) was 21 too high. The shared setup now lives in `EngineBase`; each test runs once, and every published count says 96 plus 19 fork tests.
+- **Test count overstated.** `AuditRegressions` inherited the engine suite, so 21 engine tests ran twice and the published count (105) was 21 too high. The shared setup now lives in `EngineBase`; each test runs once, and every published count says 96 plus 19 fork tests (102 after the token factory and hint tests were added the same day).
 
 Related files: [SUBMISSION.md](SUBMISSION.md) · [10-decisions.md](10-decisions.md) · [AUDIT.md](AUDIT.md) · [12-open-questions.md](12-open-questions.md) · `contracts/test/PrdConformance.t.sol`

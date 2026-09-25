@@ -300,5 +300,19 @@ check("single-address tree: root = leaf, empty proof",
   check("bid form reports bad input", rm.parseBidInput({ priceText: "abc", amountText: "1" }, round, 18).error.startsWith("Price"), true);
 }
 
+// ── token factory (contracts/src/launch/TokenFactory.sol) ──
+{
+  const eng = await import("./js/engine.js");
+  // cast calldata "create(string,string,uint256)" "Monad Cat" "MCAT" 1000000000000000000000000000
+  check("factory create calldata matches cast",
+    eng.createTokenTx("0x0165878a594ca255338adfa4d48449f69242eb8f", "Monad Cat", "MCAT", 10n ** 27n).data,
+    "0x3ca6d100000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000033b2e3c9fd0803ce800000000000000000000000000000000000000000000000000000000000000000000094d6f6e616420436174000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044d43415400000000000000000000000000000000000000000000000000000000");
+  const ok = eng.newTokenProblems("Monad Cat", "MCAT", "1000000000");
+  check("new token form: valid input", `${ok.problems.length}/${ok.supply}`, `0/${10n ** 27n}`);
+  check("new token form: empty name, long symbol, zero supply", eng.newTokenProblems("", "THIRTEENCHARS", "0").problems.length, 3);
+  check("new token form: supply above uint96 rejected", eng.newTokenProblems("A", "B", "80000000000").problems.length, 1);
+  check("new token form: decimals rejected", eng.newTokenProblems("A", "B", "1.5").problems.length, 1);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

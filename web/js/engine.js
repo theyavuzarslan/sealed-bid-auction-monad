@@ -16,6 +16,43 @@ export const ERC20_ABI = [
 ];
 export const erc20Iface = makeInterface(ERC20_ABI);
 
+// TokenFactory (contracts/src/launch/TokenFactory.sol): fixed-supply launch tokens minted to the caller.
+export const FACTORY_ABI = [
+  { type: "function", name: "create", inputs: [{ name: "name", type: "string" }, { name: "symbol", type: "string" }, { name: "supply", type: "uint256" }], outputs: [{ name: "token", type: "address" }], stateMutability: "nonpayable" },
+  { type: "event", name: "TokenCreated", anonymous: false, inputs: [
+    { name: "token", type: "address", indexed: true }, { name: "creator", type: "address", indexed: true },
+    { name: "name", type: "string", indexed: false }, { name: "symbol", type: "string", indexed: false }, { name: "supply", type: "uint256", indexed: false }] },
+];
+export const factoryIface = makeInterface(FACTORY_ABI);
+export const FACTORY_LIMITS = { nameBytes: 32, symbolBytes: 12, maxSupply: (1n << 96n) - 1n };
+
+export function createTokenTx(factory, name, symbol, supply) {
+  return { to: factory, data: factoryIface.encodeFunction("create", [name, symbol, supply]), value: 0n };
+}
+
+// The token a factory receipt created, or null.
+export function createdToken(receipt, factory) {
+  for (const l of receipt.logs || []) {
+    if (l.address.toLowerCase() !== factory.toLowerCase()) continue;
+    const ev = factoryIface.decodeLog(l);
+    if (ev?.event === "TokenCreated") return ev.args.token;
+  }
+  return null;
+}
+
+// Problems with a new-token form, in words a creator can act on. Supply is in whole tokens (18 decimals).
+export function newTokenProblems(name, symbol, supplyWhole) {
+  const out = [];
+  const bytes = (s) => new TextEncoder().encode(s).length;
+  if (!name.trim() || bytes(name) > FACTORY_LIMITS.nameBytes) out.push(`Token name: 1 to ${FACTORY_LIMITS.nameBytes} characters.`);
+  if (!symbol.trim() || bytes(symbol) > FACTORY_LIMITS.symbolBytes) out.push(`Symbol: 1 to ${FACTORY_LIMITS.symbolBytes} characters.`);
+  let supply = null;
+  try { supply = /^\d+$/.test(supplyWhole.trim()) ? BigInt(supplyWhole.trim()) * 10n ** 18n : null; } catch { supply = null; }
+  if (supply == null || supply === 0n) out.push("Total supply: a whole number of tokens above zero.");
+  else if (supply > FACTORY_LIMITS.maxSupply) out.push("Total supply: at most 79 billion tokens.");
+  return { problems: out, supply };
+}
+
 export const NO_HINT = (1n << 256n) - 1n;
 export const PRESET = { Degen: 0n, Raise: 1n };
 export const ZERO32 = "0x" + "00".repeat(32);

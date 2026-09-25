@@ -63,7 +63,7 @@ abstract contract EngineBase is Test {
     uint256 constant LOCK_END = 4102444800; // 1 Jan 2100
     uint256 constant GRACE = 1 days;
 
-    function setUp() public {
+    function setUp() public virtual {
         vm.warp(1_800_000_000);
         token = new MockToken();
         npm = new MockPositionManager();
@@ -634,5 +634,60 @@ contract AuctionEngineTest is EngineBase {
     function _mulDivUp(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 x = a * b;
         return x == 0 ? 0 : (x - 1) / 1e18 + 1;
+    }
+
+    // ─── Reveal hints ───────────────────────────────────────────────────
+
+    /// A hint only saves gas: a good hint, a stale one, one below the price, or garbage all build the
+    /// same book as a plain reveal. Round A reveals plainly, round B with fuzzed hints; the clearing
+    /// result and every allocation must match.
+    function testFuzz_RevealWithHint_AnyHintSameBook(uint256 seed) public {
+        uint256 ra = _open(_params(AuctionEngine.Preset.Degen));
+        uint256 rb = _open(_params(AuctionEngine.Preset.Degen));
+        address[5] memory who = [alice, bob, carol, dave, eve];
+        uint96[5] memory price;
+        uint96[5] memory amount;
+        for (uint256 i; i < 5; ++i) {
+            price[i] = uint96((1 + uint256(keccak256(abi.encode(seed, "p", i))) % 9) * TICK);
+            amount[i] = uint96((10 + uint256(keccak256(abi.encode(seed, "a", i))) % 500) * 1e18);
+            _commit(ra, who[i], price[i], amount[i]);
+            _commit(rb, who[i], price[i], amount[i]);
+        }
+        _toReveal(ra);
+        for (uint256 i; i < 5; ++i) {
+            _reveal(ra, who[i], price[i], amount[i]);
+            uint256 kind = uint256(keccak256(abi.encode(seed, "h", i))) % 4;
+            uint256 hint = kind == 0 ? engine.findHint(rb, price[i]) // the right hint
+                : kind == 1 ? uint256(price[i]) - TICK // at or below the price: ignored
+                : kind == 2 ? uint256(keccak256(abi.encode(seed, i))) // not a level: ignored
+                : NONE; // no hint
+            vm.prank(who[i]);
+            engine.revealWithHint(rb, price[i], amount[i], bytes32(uint256(uint160(who[i]))), hint);
+        }
+        _toSettle(ra);
+        engine.settle(ra, 100);
+        engine.settle(rb, 100);
+        (, uint256 pa, uint256 sa,, bool oa, uint256 qa, uint256 la) = engine.clearingOf(ra);
+        (, uint256 pb, uint256 sb,, bool ob, uint256 qb, uint256 lb) = engine.clearingOf(rb);
+        assertEq(pa, pb);
+        assertEq(sa, sb);
+        assertEq(oa, ob);
+        assertEq(qa, qb);
+        assertEq(la, lb);
+        for (uint256 i; i < 5; ++i) {
+            (uint256 aa, uint256 paidA,) = engine.quote(ra, who[i]);
+            (uint256 ab, uint256 paidB,) = engine.quote(rb, who[i]);
+            assertEq(aa, ab);
+            assertEq(paidA, paidB);
+        }
+    }
+
+    function test_SplitsOf_ReturnsTheCreatorsSplit() public {
+        uint256 r = _open(_params(AuctionEngine.Preset.Degen));
+        AuctionEngine.DexSplit[] memory s = engine.splitsOf(r);
+        assertEq(s.length, 1);
+        assertEq(s[0].adapter, address(adapter));
+        assertEq(s[0].bps, 10_000);
+        assertEq(s[0].fee, 3000);
     }
 }

@@ -85,7 +85,7 @@ Sources for steps 2–6: [src: Monad Sealed-Bid Auction Engine.md]. Step 1 and t
 | Service | Used for | Status |
 | --- | --- | --- |
 | Monad RPC / testnet | Deploy, transact | TODO: which RPC, testnet vs mainnet for demo |
-| DEXs on Monad | LP seeding through adapters | Decided: multiple DEXs (#23). Uniswap v3 first — factory `0x204faca1764b154221e35c0d20abb3c525710498`, NonfungiblePositionManager `0x7197e214c0b767cfb76fb734ab638e2c192f4e53`, WMON `0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A` [src: https://developers.uniswap.org/docs/protocols/v3/deployments/v3-monad-deployments]. PancakeSwap v3 second. Kuru excluded |
+| DEXs on Monad | LP seeding through adapters | Decided: multiple DEXs (#23). Uniswap v3 first — factory `0x204faca1764b154221e35c0d20abb3c525710498`, NonfungiblePositionManager `0x7197e214c0b767cfb76fb734ab638e2c192f4e53`, WMON `0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A` [src: https://developers.uniswap.org/docs/protocols/v3/deployments/v3-monad-deployments]. PancakeSwap v3 second, not built (decision 23). Kuru excluded |
 | GoPlus SafeToken Locker | Locks the LP position | `UniV3LPLocker` `0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d`, `TokenLocker` `0xF17A08A7d41F53B24AD07Eb322CBBdA2ebdeC04b` [src: https://docs.gopluslabs.io/page/goplus-safetoken-locker]; code and lock functions verified on Monad [src: on-chain, Monad RPC, 22 Sep] |
 | nad.fun bonding curve | Demo baseline for the sniper head-to-head [src: Monad Sealed-Bid Auction Engine.md] | TODO: use live nad.fun or a local fork |
 | Target vault for Exit-Priority | One vault, one asset [src: Monad Sealed-Bid Auction Engine.md] | Our own demo ERC-4626 over WMON (decision 31) |

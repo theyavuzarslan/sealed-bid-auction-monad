@@ -22,6 +22,7 @@ export default {
         adapter: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
         positionManager: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
         locker: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        tokenFactory: "0x0165878A594ca255338adfa4d48449f69242Eb8F", // deployer nonce 6
       },
     },
     monad: {
@@ -37,6 +38,7 @@ export default {
         adapter: null, // TODO: Uniswap v3 adapter address after deploy
         positionManager: null,
         locker: "0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d", // GoPlus UniV3LPLocker (decision 24)
+        tokenFactory: null, // TODO: after mainnet deploy (Deploy.s.sol writes it)
       },
     },
   },

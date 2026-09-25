@@ -79,6 +79,7 @@ Source of truth: `contracts/src/AuctionEngine.sol` with `SealingLayer.sol`, `Dep
 | `ProceedsWithdrawn` | roundId, amount |
 
 ### Also implemented
+- `TokenFactory.create(name, symbol, supply) → token` (`src/launch/TokenFactory.sol`): a fixed-supply `LaunchToken` (OpenZeppelin ERC20, no owner or mint) minted to the caller; emits `TokenCreated(token, creator, name, symbol, supply)`. Reverts `bad name` (1–32 bytes), `bad symbol` (1–12 bytes), `bad supply` (1 to 2^96−1). The caller then approves the engine and calls `openRound`, so the round's creator is the person.
 - `UniswapV3Adapter` (fork-tested against Uniswap v3 and the GoPlus locker on Monad mainnet, 19 tests).
 - `ExitAuction` and `DemoVault` for Exit-Priority (decisions 31, 34). Its `Config` takes an optional `allowlistRoot` (zero = every holder may bid), fixed at deployment, per the PRD's Vault preset.
 

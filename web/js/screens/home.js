@@ -210,7 +210,7 @@ export function renderHome(el, { scrollTo } = {}) {
       <p>The contracts behind every button, tested and reviewed. Details are in the repository's audit file.</p>
     </div>
     <div class="certs">
-      <div class="cert"><strong>96</strong><span>contract tests; the fuzz tests also run clean at 10,000 runs each</span></div>
+      <div class="cert"><strong>102</strong><span>contract tests; the fuzz tests also run clean at 10,000 runs each</span></div>
       <div class="cert"><strong>2</strong><span>security reviews with a proof of concept per finding, each fixed or documented</span></div>
       <div class="cert"><strong>19</strong><span>tests against real Uniswap v3 and the GoPlus locker on a Monad mainnet fork</span></div>
       <div class="cert"><strong>${demo.transactions}</strong><span>real transactions behind the head-to-head replay above</span></div>

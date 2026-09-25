@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {AuctionEngine} from "../src/AuctionEngine.sol";
+import {TokenFactory} from "../src/launch/TokenFactory.sol";
 import {MockToken, MockPositionManager, MockAdapter, MockLocker} from "../test/mocks/Mocks.sol";
 
 /// @notice Local stack for anvil: mock token, mock DEX adapter and mock locker, plus the real engine.
@@ -24,6 +25,7 @@ contract DeployLocal is Script {
         adapters[0] = address(adapter);
         AuctionEngine engine = new AuctionEngine(address(locker), adapters, 4102444800, 1 days);
         token.mint(deployer, 100_000_000e18);
+        TokenFactory factory = new TokenFactory(); // last, so the addresses above keep their nonces
         vm.stopBroadcast();
 
         string memory json = vm.serializeAddress("local", "auctionEngine", address(engine));
@@ -31,6 +33,7 @@ contract DeployLocal is Script {
         json = vm.serializeAddress("local", "adapter", address(adapter));
         json = vm.serializeAddress("local", "positionManager", address(npm));
         json = vm.serializeAddress("local", "locker", address(locker));
+        json = vm.serializeAddress("local", "tokenFactory", address(factory));
         vm.writeJson(json, "deployments/local.json");
         console2.log("AuctionEngine", address(engine));
         console2.log("Token", address(token));

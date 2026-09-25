@@ -22,7 +22,7 @@ Priority: P0 = submission fails without it · P1 = needed for a strong submissio
 | Write sealing layer: `commit`, `reveal`, hash with salt + sender [src: Monad Sealed-Bid Auction Engine.md] | Hand | P0 | Yes |
 | Write deposit ledger + `slashUnrevealed`; enforce `locked == fill + refund + slash` invariant | Hand | P0 | Yes |
 | Unit tests: bugs #1, #2, #4, #6, #8 [src: Monad Sealed-Bid Auction Engine.md] | Vibe + Hand review | P0 | No |
-| ~~Choose DEX + LP-lock target on Monad~~ **Done 22 Sep:** Uniswap v3 + PancakeSwap v3 adapters, GoPlus SafeToken Locker | — | P0 | Yes |
+| ~~Choose DEX + LP-lock target on Monad~~ **Done 22 Sep:** Uniswap v3 adapter (built) and PancakeSwap v3 (planned, not built), GoPlus SafeToken Locker | — | P0 | Yes |
 | Confirm Metropolis multiple-submission rule on hackathon.monad.xyz | — | P1 | No |
 
 ## Block B — 26 Sep–1 Oct: Fair Launch end to end

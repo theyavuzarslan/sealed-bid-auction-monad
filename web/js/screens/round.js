@@ -18,6 +18,8 @@ import {
 } from "../round-model.js";
 import { downloadText } from "../ui/dom.js";
 import { staircase } from "../ui/pixel.js";
+import { buildRevealIcs, revealIcsFilename } from "../ui/reminder.js";
+import { drawShareCard, canvasToPng, shareText, xIntentUrl } from "../ui/sharecard.js";
 import { esc, short, fmtCountdown, fmtMon, fmtMonUsd, fmtTokens, fmtTime, fmtPct, plural } from "../format.js";
 
 export function renderRound(el, app, roundIdRaw) {
@@ -35,7 +37,11 @@ export function renderRound(el, app, roundIdRaw) {
   let prepared = null; // sealed bid not yet committed
   let busy = false;
   let dead = false;
+  let notify = { status: "idle" }; // reveal reminder: idle | scheduled | unsupported | denied | dismissed | shown
+  let notifyTimer = null;
+  let share = null; // { key, status: drawing | ready | error, url, blob, error }
   const me = () => app.account;
+  const roundUrl = () => `${location.origin}${location.pathname}#/round/${roundId}`;
   const ctx = () => ({ chainId: net.chainId, engine: eng.address, roundId, bidder: me() });
 
   el.innerHTML = `
@@ -157,7 +163,7 @@ export function renderRound(el, app, roundIdRaw) {
       return panel("panel-p1", "Coin in", `
         <div class="ticket"><p class="ticket-line">Sealed</p><p>${esc(sealedCopy())}</p>
           <p class="note">Come back when the reveal window opens (${esc(fmtTime(s.round.commitEnd))}), or your deposit is burned.</p></div>
-        ${loadBid(ctx()) ? `<div class="btn-row" style="margin-top:16px"><button class="btn btn-panel" type="button" data-act="backup">Download backup file</button></div>` : ""}`, "committed");
+        ${reminderHtml()}`, "committed");
     }
     return panel("panel-p1", "Insert coin", `
       <p>Everyone locks the same ${esc(fmtMon(s.round.depositAmount))}, so your deposit gives nothing away. Your price and amount are sealed as a hash.</p>
@@ -171,6 +177,76 @@ export function renderRound(el, app, roundIdRaw) {
       <div id="bid-derived"></div>
       <p class="note">You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size.</p>
       <div id="bid-prepared"></div>`, "commit");
+  }
+
+  // Reveal reminders: a forgotten reveal burns the whole deposit.
+  function reminderHtml() {
+    const NOTE = {
+      scheduled: ["ok", "A browser notification is set for when the reveal window opens. It only fires while this page stays open, so add the calendar file too."],
+      shown: ["ok", "The reveal window is open."],
+      unsupported: ["warn", "This browser cannot show notifications. Add the reveal window to your calendar instead."],
+      denied: ["warn", "Notifications are blocked for this site. Add the reveal window to your calendar instead."],
+      dismissed: ["warn", "Notifications were not allowed. Add the reveal window to your calendar instead."],
+    }[notify.status];
+    return `<div class="reminders">
+        <p class="note">Set a reminder for the reveal window:</p>
+        <div class="btn-row">
+          <button class="btn btn-panel" type="button" data-act="calendar">Add to calendar</button>
+          <button class="btn btn-panel" type="button" data-act="notify">${notify.status === "scheduled" ? "Notification set" : "Notify me"}</button>
+          ${loadBid(ctx()) ? `<button class="btn btn-panel" type="button" data-act="backup">Download backup file</button>` : ""}
+        </div>
+        ${NOTE ? `<p class="${NOTE[0]} reminder-note">${esc(NOTE[1])}</p>` : ""}
+      </div>`;
+  }
+
+  function downloadCalendar() {
+    const ics = buildRevealIcs({
+      roundId, symbol: sym(), bidder: me(), chainId: net.chainId, engine: eng.address,
+      commitEnd: s.round.commitEnd, revealEnd: s.round.revealEnd, url: roundUrl(),
+    });
+    downloadText(revealIcsFilename(sym(), roundId), ics, "text/calendar;charset=utf-8");
+    say("Calendar file downloaded. Open it to add the reveal window to your calendar.", "ok");
+  }
+
+  function clearNotify() {
+    if (notifyTimer) clearTimeout(notifyTimer);
+    notifyTimer = null;
+  }
+
+  // Waits on chain time: each wake-up re-reads chainNow(), so clock syncs and long waits (setTimeout
+  // caps near 24.8 days) cannot fire it early.
+  function scheduleNotify() {
+    clearNotify();
+    const at = Number(s.round.commitEnd);
+    const wake = () => {
+      if (dead) return;
+      const left = at - chainNow();
+      if (left > 0) { notifyTimer = setTimeout(wake, Math.min(left * 1000, 2 ** 31 - 1)); return; }
+      notifyTimer = null;
+      try {
+        const n = new Notification(`Reveal your ${sym()} bid`, {
+          body: `Round ${roundId}: the reveal window is open until ${fmtTime(s.round.revealEnd)}. Reveal before it closes or the deposit is burned.`,
+          tag: `even-reveal-${net.chainId}-${roundId}`,
+        });
+        n.onclick = () => { window.focus(); n.close(); };
+      } catch { /* e.g. mobile browsers that only notify from a service worker: the page itself still updates */ }
+      notify = { status: "shown" };
+      render();
+    };
+    wake();
+  }
+
+  async function enableNotify() {
+    if (!("Notification" in globalThis)) notify = { status: "unsupported" };
+    else if (Notification.permission === "denied") notify = { status: "denied" };
+    else {
+      // Older Safari takes a callback and returns nothing; newer browsers return a promise.
+      const p = Notification.permission === "granted" ? "granted"
+        : await new Promise((ok) => { const r = Notification.requestPermission(ok); if (r?.then) r.then(ok); });
+      if (p === "granted") { notify = { status: "scheduled" }; scheduleNotify(); }
+      else notify = { status: p === "denied" ? "denied" : "dismissed" };
+    }
+    render();
   }
 
   function readForm() {
@@ -345,7 +421,74 @@ export function renderRound(el, app, roundIdRaw) {
       </dl>
       ${status.map((t) => `<p>${esc(t)}</p>`).join("")}
       ${acts.length ? `<div class="btn-row">${acts.map((a) => btn(a, "btn-start")).join("")}</div>` : ""}
-      ${f.total > 0n ? `<p class="note" style="margin-top:14px">Network fees for this round (commit + reveal + claim): ${esc(fmtMonUsd(f.total))}</p>` : ""}`, "collect");
+      ${f.total > 0n ? `<p class="note" style="margin-top:14px">Network fees for this round (commit + reveal + claim): ${esc(fmtMonUsd(f.total))}</p>` : ""}
+      ${shareHtml()}`, "collect");
+  }
+
+  // Share card (ui/sharecard.js): the settled result as a 1200×630 image, and an X post the user sends.
+  function shareData() {
+    const q = s.me.quote;
+    const P = s.clearing.clearingPrice;
+    const px = (wire) => Number(formatUnits(wireToPerToken(wire, dec()), 18));
+    const byPrice = new Map();
+    for (const r of s.revealed ?? []) byPrice.set(r.args.price, (byPrice.get(r.args.price) ?? 0n) + r.args.amount);
+    const levels = [...byPrice.entries()].sort((a, b) => (b[0] > a[0] ? 1 : b[0] < a[0] ? -1 : 0))
+      .map(([price, qty]) => ({ price: px(price), qty: Number(formatUnits(qty, dec())) }));
+    return {
+      symbol: sym(), roundId: String(roundId), price: perToken(P), won: q.allocated > 0n,
+      tokens: tokens(q.allocated), paid: fmtMon(q.paid, 18),
+      stair: levels.length ? { levels, supply: Number(formatUnits(s.round.sellAmount, dec())), clearing: px(P) } : null,
+    };
+  }
+  const shareKey = (d) => JSON.stringify([d.symbol, d.roundId, d.price, d.won, d.tokens, d.paid, d.stair?.levels.length]);
+
+  function shareHtml() {
+    if (!share || share.key !== shareKey(shareData())) {
+      return `<div class="btn-row share-open"><button class="btn btn-panel" type="button" data-act="share">Share result</button></div>`;
+    }
+    if (share.status === "drawing") return `<div class="share"><p class="note">Drawing the share card…</p></div>`;
+    if (share.status === "error") {
+      return `<div class="share"><p class="err">Could not draw the share card: ${esc(share.error)}</p>
+        <div class="btn-row"><button class="btn btn-panel" type="button" data-act="share">Try again</button></div></div>`;
+    }
+    const d = shareData();
+    return `<div class="share" role="group" aria-label="Share result">
+      <img class="share-preview" src="${esc(share.url)}" width="1200" height="630"
+        alt="Share card: ${esc(d.symbol)} launch, round ${esc(d.roundId)}. Everyone paid ${esc(d.price)} per token. ${d.won ? `Won ${esc(d.tokens)} for ${esc(d.paid)}` : "Refunded in full"}.">
+      <div class="btn-row">
+        <button class="btn btn-start" type="button" data-act="share-download">Download image</button>
+        <button class="btn btn-panel" type="button" data-act="share-x">Post on X</button>
+      </div>
+      <p class="note">X opens with the text and link filled in; you post it yourself. To add the image, download it first and attach it to the post.</p>
+    </div>`;
+  }
+
+  function dropShare() {
+    if (share?.url) URL.revokeObjectURL(share.url);
+    share = null;
+  }
+
+  async function makeShare() {
+    const d = shareData();
+    dropShare();
+    const mine = { key: shareKey(d), status: "drawing" };
+    share = mine;
+    render();
+    try {
+      const blob = await canvasToPng(await drawShareCard(document.createElement("canvas"), d));
+      if (dead || share !== mine) return;
+      share = { ...mine, status: "ready", blob, url: URL.createObjectURL(blob) };
+    } catch (e) {
+      if (dead || share !== mine) return;
+      share = { ...mine, status: "error", error: e.message };
+    }
+    render();
+    el.querySelector('[data-act="share-download"], #p-result [data-act="share"]')?.focus();
+  }
+
+  function shareFilename() {
+    const safe = sym().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24) || "token";
+    return `even-${safe}-round-${roundId}.png`;
   }
 
   function bidsHtml() {
@@ -520,6 +663,12 @@ export function renderRound(el, app, roundIdRaw) {
       render();
     },
     backup: () => { const L = loadBid(ctx()); if (L) downloadText(backupFilename(ctx()), backupJson(ctx(), L)); },
+    calendar: () => downloadCalendar(),
+    notify: () => enableNotify().then(() => el.querySelector('[data-act="notify"]')?.focus()),
+    share: () => makeShare(),
+    // downloadText wraps its payload in a Blob, and a Blob accepts a Blob part.
+    "share-download": () => { if (share?.blob) downloadText(shareFilename(), share.blob, "image/png"); },
+    "share-x": () => { window.open(xIntentUrl(shareText(shareData()), roundUrl()), "_blank", "noopener"); },
     reveal: () => run("Revealing", reveal),
     recover: () => run("Recovering", recover),
   };
@@ -573,7 +722,7 @@ export function renderRound(el, app, roundIdRaw) {
   refresh();
 
   return {
-    cleanup() { dead = true; clearInterval(tick); clearInterval(poll); },
-    onAccount() { prepared = null; allow = { status: "none" }; cache.clear(); refresh(); },
+    cleanup() { dead = true; clearInterval(tick); clearInterval(poll); clearNotify(); dropShare(); },
+    onAccount() { prepared = null; allow = { status: "none" }; clearNotify(); notify = { status: "idle" }; dropShare(); cache.clear(); refresh(); },
   };
 }

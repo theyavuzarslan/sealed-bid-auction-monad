@@ -510,3 +510,12 @@ li.step p { font-size: var(--t-body-sm); color: var(--marquee-white); margin: 0;
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .banner { opacity: 1; transform: none; }
 }
+
+/* Reveal reminders (Coin in panel) and the share card (result panel) */
+.reminders { margin-top: 18px; }
+.reminders > .note { margin-bottom: 10px; }
+.reminder-note { margin: 12px 0 0; font-size: var(--t-body-sm); }
+.share-open { margin-top: 16px; }
+.share { margin-top: 18px; display: grid; gap: 14px; }
+.share p { margin: 0; }
+.share-preview { width: 100%; height: auto; aspect-ratio: 1200 / 630; background: var(--cabinet-indigo); box-shadow: 4px 4px 0 var(--cabinet-indigo); }

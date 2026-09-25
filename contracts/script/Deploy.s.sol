@@ -3,8 +3,9 @@ pragma solidity ^0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {AuctionEngine} from "../src/AuctionEngine.sol";
+import {TokenFactory} from "../src/launch/TokenFactory.sol";
 
-/// @notice Deploy the engine to Monad.
+/// @notice Deploy the engine and the launch-token factory to Monad.
 /// Signer: a Foundry keystore (`--account <name>`), or DEPLOYER_PRIVATE_KEY if set.
 /// Env: ADAPTERS (comma-separated DEX adapter addresses, required),
 ///      LOCKER (default: GoPlus UniV3LPLocker on Monad), PERMANENT_LOCK_END (default 2100-01-01),
@@ -22,11 +23,13 @@ contract Deploy is Script {
         if (key != 0) vm.startBroadcast(key);
         else vm.startBroadcast();
         engine = new AuctionEngine(locker, adapters, lockEnd, grace);
+        TokenFactory factory = new TokenFactory();
         vm.stopBroadcast();
 
         console2.log("AuctionEngine", address(engine));
         string memory json = vm.serializeAddress("deployed", "auctionEngine", address(engine));
         json = vm.serializeAddress("deployed", "locker", locker);
+        json = vm.serializeAddress("deployed", "tokenFactory", address(factory));
         vm.writeJson(json, string.concat("deployments/", vm.toString(block.chainid), ".json"));
     }
 }

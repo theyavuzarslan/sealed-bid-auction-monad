@@ -29,6 +29,7 @@ forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcas
 - `contracts/src/UniformClearing.sol` — generic clearing: a descending linked list of price levels; pro-rata at the clearing price; settlement resumable across transactions. Knows nothing about MON.
 - `contracts/src/SealingLayer.sol` + `DepositLedger.sol` — commit/reveal, allowlist proof, note event, uniform deposits, O(1) burn of unrevealed deposits, per-round `roundBalance`.
 - `contracts/src/AuctionEngine.sol` — the launch product: presets, payments and refunds, LP seeding through allow-listed adapters, GoPlus lock, unsold disposal, vesting, the grace escape.
+- `contracts/src/launch/TokenFactory.sol` — fixed-supply launch tokens (no owner, no mint) minted to the caller, who then opens the round. Not on the money path.
 - `contracts/test/mocks/Mocks.sol` — token, position manager, adapter and locker mocks, also used by `DeployLocal`.
 
 ## What is being built

@@ -50,7 +50,7 @@ The site does two jobs equally (owner, 23 Sep): a pitch that makes judges and th
 ## Evidence on Hand
 
 - `demo/results.json`: the head-to-head numbers above, from 73 real transactions on anvil.
-- Contracts tested: 96 unit/fuzz tests (11 of them check the PRD's promises directly), 10,000-run fuzzing of clearing and accounting, 19 fork tests against real Uniswap v3 and the real GoPlus locker on Monad mainnet; two independent audits with every finding resolved or documented (`AUDIT.md`).
+- Contracts tested: 102 unit/fuzz tests (11 of them check the PRD's promises directly), 10,000-run fuzzing of clearing and accounting, 19 fork tests against real Uniswap v3 and the real GoPlus locker on Monad mainnet; two independent audits with every finding resolved or documented (`AUDIT.md`).
 - GoPlus UniV3LPLocker on Monad `0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d`, verified on-chain.
 - Bidder journey gas: 358–492k (≈0.037–0.050 MON at 102 gwei, 23 Sep).
 - **Absent — must not be fabricated:** users, launches, volume, TVL, testimonials, partnerships, endorsements from Monad or GoPlus, a mainnet deployment, MON/USD figures.

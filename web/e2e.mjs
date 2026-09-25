@@ -92,7 +92,7 @@ try {
   const local = JSON.parse(readFileSync(path.join(contractsDir, "deployments/local.json"), "utf8"));
   const chainId = Number(BigInt(await request("eth_chainId")));
   check("chain id matches config.networks.local", chainId, cfg.networks.local.chainId);
-  for (const k of ["auctionEngine", "token", "adapter", "positionManager", "locker"]) {
+  for (const k of ["auctionEngine", "token", "adapter", "positionManager", "locker", "tokenFactory"]) {
     check(`deployments/local.json ${k} matches config default`, local[k].toLowerCase(), cfg.networks.local.deployment[k].toLowerCase());
   }
 
@@ -336,6 +336,22 @@ try {
   await send(gina, engine.tx.disposeUnsold(r3));
   check("unsold supply and the unused reserve disposed", (await engine.getRound(r3)).unsoldOwed, 0n);
   await send(gina, { to: local.adapter, data: adapterIface.encodeFunction("setRevert", [false]), value: 0n });
+
+  // ── token factory: make a token, then launch it ──
+  const { createTokenTx, createdToken, newTokenProblems } = await import("./js/engine.js");
+  const nt = newTokenProblems("Monad Cat", "MCAT", "1000000000");
+  const ftRc = await send(henry, createTokenTx(local.tokenFactory, "Monad Cat", "MCAT", nt.supply));
+  const newToken = createdToken(ftRc, local.tokenFactory);
+  check("factory receipt yields the new token", /^0x[0-9a-f]{40}$/i.test(newToken ?? ""), true);
+  check("new token: symbol, decimals, whole supply to the creator",
+    `${await engine.erc20.symbol(newToken)}/${await engine.erc20.decimals(newToken)}/${await engine.erc20.balanceOf(newToken, henry)}`, `MCAT/18/${10n ** 27n}`);
+  const ntInfo = { address: newToken, decimals: 18 };
+  const ntForm = launch.buildOpenParams({ ...baseForm, sell: "1000000" }, ntInfo, Number(await now()));
+  check("open form accepts the factory token", ntForm.problems.length, 0);
+  await send(henry, engine.erc20.approveTx(newToken, engine.address, ntForm.need));
+  const ntOpen = await send(henry, engine.tx.openRound(ntForm.params));
+  const ntRound = events(engine, ntOpen, "RoundOpened")[0]?.args;
+  check("round opened on the factory token, creator is the person", `${ntRound?.token?.toLowerCase()}/${ntRound?.creator?.toLowerCase()}`, `${newToken.toLowerCase()}/${henry.toLowerCase()}`);
 } catch (e) {
   fail++;
   console.log("FAIL  e2e aborted:", e.message, e.data ? `(${revertReason(e)})` : "");

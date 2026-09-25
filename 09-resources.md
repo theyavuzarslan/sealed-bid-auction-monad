@@ -39,7 +39,7 @@ Status: draft
 | Uniswap v3 Monad deployments | https://developers.uniswap.org/docs/protocols/v3/deployments/v3-monad-deployments | Factory, NonfungiblePositionManager, SwapRouter02, WMON addresses (chain 143) |
 | GoPlus supported lockers | https://docs.gopluslabs.io/reference/supported-locker | Confirms SafeToken Locker on Monad |
 | GoPlus SafeToken Locker app | https://lock.gopluslabs.io/ | Locker UI; lock detail pages |
-| PancakeSwap V3 (Monad) | https://www.coingecko.com/en/exchanges/pancakeswap-v3-monad | Second adapter target |
+| PancakeSwap V3 (Monad) | https://www.coingecko.com/en/exchanges/pancakeswap-v3-monad | Second adapter target (not built) |
 
 ## Competitive landscape
 

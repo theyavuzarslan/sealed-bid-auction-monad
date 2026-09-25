@@ -8,6 +8,7 @@ import { formatUnits } from "../bid.js";
 import { parseAddressList, buildTree, rootOf } from "../merkle.js";
 import { buildOpenParams, DEX_FEE_TIERS, LOCK_FEE_TIERS, MAX_SPLITS, MIN_RAISE_LOCK_DAYS } from "../launch.js";
 import { isAddress } from "../hex.js";
+import { createTokenTx, createdToken, newTokenProblems } from "../engine.js";
 import { downloadText } from "../ui/dom.js";
 import { esc, fmtMon, fmtTokens } from "../format.js";
 
@@ -47,6 +48,18 @@ export function renderCreator(el, app) {
           </div>`)}
 
         ${P("", "Token and sale", `
+          <label class="check"><input type="checkbox" id="c-new-on"${net.deployment.tokenFactory ? "" : " disabled"}> Make a new token for this launch</label>
+          <p class="field-hint">${net.deployment.tokenFactory
+            ? "A plain token with a fixed supply, minted once to you: no owner, no mint, no fees, nothing you could use against buyers later."
+            : `No token factory on ${esc(net.label)} yet; use an existing token.`}</p>
+          <div id="new-token" class="hidden">
+            <div class="fields">
+              <label>Token name<input id="c-new-name" maxlength="32" placeholder="Monad Cat"></label>
+              <label>Symbol<input id="c-new-symbol" maxlength="12" placeholder="MCAT"></label>
+              <label>Total supply (tokens)<input id="c-new-supply" inputmode="numeric" value="1000000000"></label>
+            </div>
+            <div class="btn-row" style="margin-bottom:16px"><button class="btn btn-start" id="c-new-create" type="button">Create token</button></div>
+          </div>
           <label>Token address<input id="c-token" value="${esc(net.deployment.token ?? "")}" placeholder="0x…"></label>
           <p class="field-hint" id="token-info" style="margin-top:8px"></p>
           <div class="fields">
@@ -223,6 +236,22 @@ export function renderCreator(el, app) {
     update();
   }
   $("#c-token").addEventListener("change", loadToken);
+
+  // ── new token (TokenFactory) ──
+  $("#c-new-on").addEventListener("change", () => $("#new-token").classList.toggle("hidden", !$("#c-new-on").checked));
+  $("#c-new-create").addEventListener("click", () => run("Creating token", async () => {
+    const factory = net.deployment.tokenFactory;
+    const name = val("#c-new-name"), symbol = val("#c-new-symbol").trim().toUpperCase();
+    const { problems, supply } = newTokenProblems(name, symbol, val("#c-new-supply"));
+    if (problems.length) throw new Error(problems.join(" "));
+    const rc = await sendTx(app.account, createTokenTx(factory, name.trim(), symbol, supply));
+    const addr = createdToken(rc, factory);
+    if (!addr) throw new Error("Token created, but its address was not in the receipt. Check the transaction.");
+    $("#c-token").value = addr;
+    $("#c-new-on").checked = false;
+    $("#new-token").classList.add("hidden");
+    return `${symbol} created at ${addr}, all ${val("#c-new-supply")} tokens in your wallet. Next: approve, then press start.`;
+  }));
 
   function update() {
     const { params, problems, need } = buildOpenParams(formValues(), token, chainNow());

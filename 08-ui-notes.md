@@ -14,7 +14,7 @@ The screens below were first derived from the PRD's flows [src: Monad Sealed-Bid
 - Copy guidance: lead with the community line, not the mechanism [src: Monad Sealed-Bid Auction Engine.md].
 
 ```html
-<!-- Built: web/js/screens/creator.js, route #/host ("Host a launch": Degen/Raise cartridges, pool split, allowlist, vesting). -->
+<!-- Built: web/js/screens/creator.js, route #/host ("Host a launch": Degen/Raise cartridges, optional new token via TokenFactory, pool split, allowlist, vesting). -->
 ```
 
 ## Screen 2 — Bidder: round page
@@ -36,7 +36,7 @@ The screens below were first derived from the PRD's flows [src: Monad Sealed-Bid
 - Post-clear transparency is intentional: revealed bids may be listed after settlement [src: Monad Sealed-Bid Auction Engine.md].
 
 ```html
-<!-- Built: web/js/screens/round.js ("Continue?" reveal, "Results" with the called price, "Anyone can press" public actions, "You won"/"Refund" claim, bids board). -->
+<!-- Built: web/js/screens/round.js ("Continue?" reveal with calendar-file and notification reminders, "Results" with the called price and demand staircase, "Anyone can press" public actions, "You won"/"Refund" claim with a shareable result card, bids board). -->
 ```
 
 ## Screen 4 — Demo: sniper head-to-head
