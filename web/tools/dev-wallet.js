@@ -6,6 +6,8 @@
 (function () {
   const idx = new URLSearchParams(location.search).get("devwallet");
   if (idx === null) return;
+  // Only on a page served from this machine: a deployed site must never swap in a fake wallet.
+  if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return;
   const RPC = "http://127.0.0.1:8545";
   let id = 0;
   let account = null;

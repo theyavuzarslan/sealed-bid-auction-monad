@@ -13,3 +13,4 @@ sealed-bid-round-*.json
 # generated per local deploy, and Impeccable working state
 contracts/deployments/local.json
 .impeccable/
+.vercel

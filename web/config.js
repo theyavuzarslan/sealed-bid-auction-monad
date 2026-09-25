@@ -6,7 +6,8 @@
 // that loads, so serving the repo root (page at /web/) picks up a fresh local.json automatically.
 // The Network panel on the home page accepts a pasted local.json as a per-browser override.
 export default {
-  defaultNetwork: "local",
+  // Local anvil when the page is served from this machine, Monad everywhere else (e.g. on Vercel).
+  defaultNetwork: typeof location !== "undefined" && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ? "local" : "monad",
   networks: {
     local: {
       label: "Local anvil",
@@ -28,7 +29,7 @@ export default {
     monad: {
       label: "Monad",
       chainId: 143,
-      rpcUrl: null, // TODO: public read RPC; null = read through the connected wallet
+      rpcUrl: "https://rpc.monad.xyz", // public read RPC (CORS open); writes still go through the wallet
       fromBlock: 0, // TODO: set to the engine's deploy block so log scans stay short
       logChunk: null, // TODO: set if the RPC caps eth_getLogs block ranges
       deploymentUrls: [],

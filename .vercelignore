@@ -1,0 +1,10 @@
+# Serve only the web app and the vault demo page; the rest of the repo stays out of the deployment.
+/*
+!/vercel.json
+!/web
+/web/*.mjs
+/web/tools/*.mjs
+!/demo
+/demo/*
+!/demo/exit
+/demo/exit/run.sh
