@@ -39,7 +39,8 @@ contract ReentrantBidder {
     }
 }
 
-contract AuctionEngineTest is Test {
+/// State, setup and helpers shared by the engine suites, so each suite runs only its own tests.
+abstract contract EngineBase is Test {
     address constant BURN = 0x000000000000000000000000000000000000dEaD;
     uint256 constant NONE = type(uint256).max;
 
@@ -144,6 +145,9 @@ contract AuctionEngineTest is Test {
         _reveal(r, eve, 0.002 ether, 500e18);
     }
 
+}
+
+contract AuctionEngineTest is EngineBase {
     // ─── Full lifecycle ─────────────────────────────────────────────────
 
     function test_Degen_OversubscribedLifecycle() public {

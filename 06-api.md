@@ -80,7 +80,7 @@ Source of truth: `contracts/src/AuctionEngine.sol` with `SealingLayer.sol`, `Dep
 
 ### Also implemented
 - `UniswapV3Adapter` (fork-tested against Uniswap v3 and the GoPlus locker on Monad mainnet, 19 tests).
-- `ExitAuction` and `DemoVault` for Exit-Priority (decisions 31, 34).
+- `ExitAuction` and `DemoVault` for Exit-Priority (decisions 31, 34). Its `Config` takes an optional `allowlistRoot` (zero = every holder may bid), fixed at deployment, per the PRD's Vault preset.
 
 ## Contract interface (original proposal, superseded)
 

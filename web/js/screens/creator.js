@@ -58,8 +58,8 @@ export function renderCreator(el, app) {
           </div>
           <p class="field-hint">Every bidder locks the same deposit, so it caps the largest bid and gives nothing away. A bid must be worth at least the minimum at the reserve price, and its max spend must stay below the deposit.</p>
           <div class="fields">
-            <label>Commit window (minutes)<input id="c-commit" inputmode="numeric" value="60"></label>
-            <label>Reveal window (minutes)<input id="c-reveal" inputmode="numeric" value="60"></label>
+            <label>Commit window (minutes)<input id="c-commit" inputmode="numeric" value="10"></label>
+            <label>Reveal window (minutes)<input id="c-reveal" inputmode="numeric" value="10"></label>
           </div>`)}
 
         ${P("", "Pool", `
@@ -169,7 +169,14 @@ export function renderCreator(el, app) {
     $("#allow-fields").classList.toggle("hidden", !(preset === "Raise" && $("#c-allow-on").checked));
     $("#vest-fields").classList.toggle("hidden", !(preset === "Raise" && $("#c-vest-on").checked));
   }
-  el.querySelectorAll(".cartridge").forEach((b) => b.addEventListener("click", () => { preset = b.dataset.preset; applyPreset(); update(); }));
+  // PRD preset table: Degen runs in minutes, Raise over hours to days. Only untouched windows follow the preset.
+  const WINDOWS = { Degen: "10", Raise: "1440" };
+  el.querySelectorAll(".cartridge").forEach((b) => b.addEventListener("click", () => {
+    const was = WINDOWS[preset];
+    preset = b.dataset.preset;
+    for (const id of ["#c-commit", "#c-reveal"]) if ($(id).value === was) $(id).value = WINDOWS[preset];
+    applyPreset(); update();
+  }));
   ["#c-lp-on", "#c-allow-on", "#c-vest-on"].forEach((id) => $(id).addEventListener("change", () => { applyPreset(); update(); }));
   applyPreset();
 

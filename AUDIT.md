@@ -40,7 +40,7 @@ Run by a separate agent on a copy of `6ddfb1c`, with a proof of concept for ever
 
 Still open: M5 (hash domain separation, low). Known limit: an LP position so small that GoPlus's 0.40% fee rounds to zero cannot be locked; such a round ends in `abandonLP`.
 
-Current state: 105 contract tests, 4 fuzz suites clean at 10,000 runs, 19 fork tests against real Uniswap v3 and GoPlus on Monad mainnet.
+Current state (25 Sep): 96 contract tests, each run once, plus 19 fork tests. (The earlier figure of 105 counted 21 engine tests twice, because `AuditRegressions` inherited the engine suite; the shared helpers now live in `EngineBase`.) Fuzz tests are clean at 10,000 runs; the fork tests run against real Uniswap v3 and GoPlus on Monad mainnet.
 
 
 ## Where the repo stands

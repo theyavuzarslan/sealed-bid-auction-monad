@@ -43,7 +43,8 @@ contract DemoVaultTest is Test {
                 tickBps: 5,
                 minExitShares: 1e21,
                 maxExitSharesPerRound: type(uint128).max,
-                roundGapBlocks: 1
+                roundGapBlocks: 1,
+                allowlistRoot: bytes32(0)
             })
         );
     }

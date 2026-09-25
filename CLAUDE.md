@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository state
 
-Hackathon build for Monad Metropolis (submission 13 Oct 2026). The PRD is `Monad Sealed-Bid Auction Engine.md`; the 13 numbered docs plus `README.md` are the synthesized spec, `AUDIT.md` the security findings and their status, `SUBMISSION.md` the judge-facing write-up. The web app is "Even"; its design system is `DESIGN.md` and its product record `PRODUCT.md`. The parent `/Users/0xatakan/CLAUDE.md` is an open-slide guide and does not apply here.
+Hackathon build for Monad Metropolis (submission 13 Oct 2026). The PRD is `Monad Sealed-Bid Auction Engine.md`; the 13 numbered docs plus `README.md` are the synthesized spec, `AUDIT.md` the security findings and their status, `SUBMISSION.md` the judge-facing write-up, `PRD-CONFORMANCE.md` the PRD-to-code-and-tests matrix (`contracts/test/PrdConformance.t.sol`). The web app is "Even"; its design system is `DESIGN.md` and its product record `PRODUCT.md`. The parent `/Users/0xatakan/CLAUDE.md` is an open-slide guide and does not apply here.
 
 Everything is built on `master` in this directory. The herdr multi-agent setup (`run.sh`, `setup.sh`, the `sba-agents/` worktrees, `agent/*` branches) is retired; the branches are kept only as history. `archive/master-stray` holds stray files found untracked on master.
 

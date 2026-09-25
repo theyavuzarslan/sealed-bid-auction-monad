@@ -42,6 +42,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
         uint96 minExitShares; // minimum shares per bid (dust-spam defense, bug #6)
         uint128 maxExitSharesPerRound;
         uint64 roundGapBlocks; // N: blocks between a round's settlement and the next open
+        bytes32 allowlistRoot; // Merkle root of holders who may bid; zero = every holder (PRD Vault preset)
     }
 
     struct ExitRound {
@@ -74,6 +75,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
     uint96 public immutable minExitShares;
     uint128 public immutable maxExitSharesPerRound;
     uint64 public immutable roundGapBlocks;
+    bytes32 public immutable allowlistRoot;
 
     uint256 public roundCount;
     /// @notice Shares of settled rounds not yet redeemed: an upper bound on what winners can still claim.
@@ -111,6 +113,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
         minExitShares = c.minExitShares;
         maxExitSharesPerRound = c.maxExitSharesPerRound;
         roundGapBlocks = c.roundGapBlocks;
+        allowlistRoot = c.allowlistRoot;
     }
 
     // ─── Open ────────────────────────────────────────────────────────────
@@ -143,16 +146,16 @@ contract ExitAuction is SealingLayer, UniformClearing {
 
     // ─── Commit / reveal hooks ──────────────────────────────────────────
 
-    /// @dev Exit rounds have no allowlist: the root is zero, so `commit` ignores the proof.
+    /// @dev One allowlist for every round, fixed at deployment; a zero root lets every holder bid.
     function _sealTerms(uint256 roundId)
         internal
         view
         override
-        returns (uint256 deposit, uint256 commitEnd, uint256 revealEnd, bytes32 allowlistRoot)
+        returns (uint256 deposit, uint256 commitEnd, uint256 revealEnd, bytes32 root)
     {
         ExitRound storage r = _rounds[roundId];
         require(r.commitEnd != 0, "unknown round");
-        return (depositAmount, r.commitEnd, r.revealEnd, bytes32(0));
+        return (depositAmount, r.commitEnd, r.revealEnd, allowlistRoot);
     }
 
     /// @dev price = discount in bps, amount = shares. Pulls the shares last; a bidder without them

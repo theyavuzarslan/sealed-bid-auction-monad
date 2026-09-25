@@ -7,6 +7,7 @@ import {DemoVault} from "../src/exit/DemoVault.sol";
 import {IERC20} from "../src/vendor/openzeppelin/token/ERC20/IERC20.sol";
 import {Math} from "../src/vendor/openzeppelin/utils/math/Math.sol";
 import {MockWMON} from "./mocks/MockWMON.sol";
+import {MerkleProofLib} from "../src/lib/MerkleProofLib.sol";
 
 contract ReentrantExiter {
     ExitAuction public auction;
@@ -86,6 +87,7 @@ abstract contract ExitBase is Test {
     DemoVault vault;
     ExitAuction auction;
     address strategist = makeAddr("strategist");
+    bytes32 allowRoot; // zero: open to every holder
 
     function _deploy(uint128 maxPerRound) internal {
         vm.warp(1_800_000_000);
@@ -101,7 +103,8 @@ abstract contract ExitBase is Test {
                 tickBps: TICK,
                 minExitShares: MIN_EXIT,
                 maxExitSharesPerRound: maxPerRound,
-                roundGapBlocks: GAP
+                roundGapBlocks: GAP,
+                allowlistRoot: allowRoot
             })
         );
         vault.setExitAuction(address(auction));
@@ -779,5 +782,44 @@ contract ExitAuctionFuzzTest is ExitBase {
         assertEq(tvlBefore - vault.totalAssets(), sumPayout, "only payouts leave the vault");
         assertEq(auction.pendingExitShares(), 0);
         assertEq(auction.reservedShares(), 0);
+    }
+}
+
+/// PRD preset table, Vault row: "Allowlist: Configurable". A root fixed at deployment limits who may
+/// bid; holders off the list cannot commit, and a proof works only for its own address.
+contract ExitAllowlistTest is ExitBase {
+    address alice = makeAddr("alice");
+    address bob = makeAddr("bob");
+    address carol = makeAddr("carol");
+
+    function setUp() public {
+        bytes32 la = MerkleProofLib.leafOf(alice);
+        bytes32 lb = MerkleProofLib.leafOf(bob);
+        allowRoot = la < lb ? keccak256(abi.encode(la, lb)) : keccak256(abi.encode(lb, la));
+        _deploy(type(uint128).max);
+        _join(alice, 10_000 ether);
+        _join(bob, 10_000 ether);
+        _join(carol, 10_000 ether);
+    }
+
+    function test_Allowlist_OnlyListedHoldersBid() public {
+        assertEq(auction.allowlistRoot(), allowRoot);
+        uint256 r = auction.openExitRound();
+        bytes32[] memory proofAlice = new bytes32[](1);
+        proofAlice[0] = MerkleProofLib.leafOf(bob);
+        bytes32[] memory proofBob = new bytes32[](1);
+        proofBob[0] = MerkleProofLib.leafOf(alice);
+
+        vm.prank(alice);
+        auction.commit{value: DEPOSIT}(r, bytes32(uint256(1)), proofAlice, "");
+        vm.prank(bob);
+        auction.commit{value: DEPOSIT}(r, bytes32(uint256(2)), proofBob, "");
+
+        vm.prank(carol);
+        vm.expectRevert("not on allowlist");
+        auction.commit{value: DEPOSIT}(r, bytes32(uint256(3)), proofAlice, "");
+        vm.prank(carol);
+        vm.expectRevert("not on allowlist");
+        auction.commit{value: DEPOSIT}(r, bytes32(uint256(3)), new bytes32[](0), "");
     }
 }

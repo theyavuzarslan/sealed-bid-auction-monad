@@ -1,6 +1,6 @@
 # Sealed-Bid Auction Engine on Monad
 
-Documentation index for the Monad Metropolis hackathon submission (deadline 13 Oct 2026). Judges: start with [SUBMISSION.md](SUBMISSION.md), the write-up.
+Documentation index for the Monad Metropolis hackathon submission (deadline 13 Oct 2026). Judges: start with [SUBMISSION.md](SUBMISSION.md), the write-up; [PRD-CONFORMANCE.md](PRD-CONFORMANCE.md) checks every PRD promise against code and tests.
 
 Status: draft
 

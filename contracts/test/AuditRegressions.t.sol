@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0
 pragma solidity ^0.8.24;
 
-import {AuctionEngineTest} from "./AuctionEngine.t.sol";
+import {EngineBase} from "./AuctionEngine.t.sol";
 import {AuctionEngine} from "../src/AuctionEngine.sol";
 import {MockToken, MockPositionManager} from "./mocks/Mocks.sol";
 
@@ -114,7 +114,7 @@ contract CPMMAdapter {
 
 /// Regression tests for the second, independent review of the rewritten contracts.
 /// Each started as a proof of concept that demonstrated the attack; each now asserts it fails.
-contract AuditRegressions is AuctionEngineTest {
+contract AuditRegressions is EngineBase {
     function _ammRound() internal returns (CPMMAdapter amm, uint256 r) {
         amm = new CPMMAdapter(npm);
         address[] memory adapters = new address[](1);

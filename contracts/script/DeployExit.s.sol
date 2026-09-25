@@ -27,7 +27,8 @@ contract DeployExit is Script {
             tickBps: 5,
             minExitShares: 1e21, // 1 WMON of shares at the starting price
             maxExitSharesPerRound: 12_000e21,
-            roundGapBlocks: 5
+            roundGapBlocks: 5,
+            allowlistRoot: bytes32(0)
         });
     }
 
