@@ -14,3 +14,4 @@ sealed-bid-round-*.json
 contracts/deployments/local.json
 .impeccable/
 .vercel
+contracts/deployments/*-create2-plan.json
