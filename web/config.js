@@ -29,9 +29,11 @@ export default {
     monad: {
       label: "Monad",
       chainId: 143,
-      rpcUrl: "https://rpc.monad.xyz", // public read RPC (CORS open); writes still go through the wallet
+      // Public read RPC; writes still go through the wallet. rpc1 is used because it serves eth_getLogs over any
+      // range (probed 26 Sep: full history in < 1 s, CORS open). rpc.monad.xyz caps log queries at 100 blocks.
+      rpcUrl: "https://rpc1.monad.xyz",
       fromBlock: 0, // TODO: set to the engine's deploy block so log scans stay short
-      logChunk: null, // TODO: set if the RPC caps eth_getLogs block ranges
+      logChunk: null, // rpc1 needs none; set e.g. 100 for rpc.monad.xyz
       deploymentUrls: [],
       deployment: {
         auctionEngine: null, // TODO: after mainnet deploy

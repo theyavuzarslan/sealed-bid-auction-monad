@@ -110,6 +110,13 @@ The engine address lands in `contracts/deployments/143.json`; put it in `web/con
 
 **Alternative for a wallet that can only call contracts** (for example the OKX Agentic Wallet, which supports Monad but sends no contract-creation transaction): `forge script script/Create2Plan.s.sol --fork-url https://rpc.monad.xyz` writes three calls to the standard CREATE2 deployer (`0x4e59b44847b379578588920cA78FbF26c0B4956C`, live on Monad) and simulates them on a mainnet fork. The addresses are fixed in advance (salt `even-v1`, 26 Sep build): `UniswapV3Adapter` `0xeE55938A4787a2E7B688CE51E0B1Bf7eAcbD02D1`, `AuctionEngine` `0xEADd8925E24b21a104023F19015232faeFE98E7f`, `TokenFactory` `0xF70D2632E4e383dD35866F43D03CAC6A6bDf4cFE`. Any code change changes them; rerun the plan before deploying.
 
+**After deploying** (the site reads through `https://rpc1.monad.xyz`, which serves `eth_getLogs` over any range; `rpc.monad.xyz` caps it at 100 blocks, about 30 seconds of Monad):
+
+1. In `web/config.js` under `monad.deployment`, set `auctionEngine`, `adapter`, `tokenFactory` and `positionManager` (`0x7197E214c0b767cFB76Fb734ab638E2c192F4E53`).
+2. Set `monad.fromBlock` to the engine's deploy block, so log scans start there.
+3. Push to `master`: Vercel redeploys `https://even-monad.vercel.app` automatically.
+4. Open one small real round from the Host page, bid from two wallets, and settle, seed and claim it; put its round link here.
+
 ## Demo video (script, about 2 minutes)
 
 1. **0:00–0:20 — the replay.** Landing page: the two-player cabinet plays. The bot wins the curve; Even calls a draw at 0.220. No narration beyond the captions.
