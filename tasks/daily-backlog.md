@@ -29,3 +29,4 @@ Status: settled
 ## Log
 
 <!-- One line per run: date — item — commit — notes. -->
+2026-10-04 — Write-up for a VC-heavy panel — ab79b48 — first screen restructured in SUBMISSION.md; passkey vendoring skipped (npm/esbuild bundling refused by the run's permission classifier); all suites pass (102 contract, 11 demo, 19 indexer, 119 self, 89 e2e, 35 reminder).
