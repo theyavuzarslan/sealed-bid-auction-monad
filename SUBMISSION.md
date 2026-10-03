@@ -44,6 +44,7 @@ flowchart LR
 | Engine: sealing, deposit ledger, clearing, LP seeding, presets | `contracts/src/` | 102 contract tests pass, each run once, including 11 that check the PRD's promises one by one ([PRD-CONFORMANCE.md](PRD-CONFORMANCE.md)); the fuzz tests also run clean at 10,000 runs each (`FOUNDRY_PROFILE=deep`) |
 | Uniswap v3 adapter + GoPlus lock | `contracts/src/adapters/` | 19 tests against real Uniswap v3 and the GoPlus locker on a Monad mainnet fork |
 | Exit-priority auction + demo vault | `contracts/src/exit/`, `demo/exit/` | 29 of the 102 tests (exit auction, allowlist and vault); replayed vault-run demo page |
+| Passkey sign-in | `web/js/passkey-wallet.js` | Face ID / Touch ID makes a standard Monad account with Mera (Category Labs): no extension, works on phones, phrase exportable to MetaMask. A full round (create token, open, commit, recover the bid from its note, reveal, settle, seed, claim) ran with a passkey-derived account on a local chain |
 | Token factory | `contracts/src/launch/` | Make a fixed-supply token (no owner, no mint, no fees) and launch it from the same page, as on a launchpad; 4 tests, plus an end-to-end launch |
 | Web app "Even" | `web/` | Create token → commit → reveal → settle → seed → claim run end to end through the UI on a local chain; reveal reminders (calendar file, notification) and a shareable result card; 119 self-tests + 89 end-to-end tests |
 | Indexer + fee report | `indexer/` | Decodes all 13 events, read-only JSON API |

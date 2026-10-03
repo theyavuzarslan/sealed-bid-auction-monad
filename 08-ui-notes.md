@@ -6,6 +6,10 @@ Status: draft
 
 The screens below were first derived from the PRD's flows [src: Monad Sealed-Bid Auction Engine.md]; screens 1–4 are now built as the "Even" web app in `web/` (static HTML/CSS/ES modules), styled by the Two-Player Cabinet design system in [DESIGN.md](DESIGN.md). Each screen names its source file instead of pasting markup, so the doc cannot drift from the code.
 
+## Sign-in
+
+Header: "Connect wallet" (injected wallet) and "Passkey" (Mera). The passkey panel creates or opens a passkey account, then shows its address and balance, a funding note, "Back up recovery phrase" and "Sign out" [src: web/js/main.js, web/js/passkey-wallet.js].
+
 ## Screen 1 — Creator: open a launch
 
 - Preset picker: Degen / Raise [src: Monad Sealed-Bid Auction Engine.md].

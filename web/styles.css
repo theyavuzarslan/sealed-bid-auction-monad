@@ -519,3 +519,12 @@ li.step p { font-size: var(--t-body-sm); color: var(--marquee-white); margin: 0;
 .share { margin-top: 18px; display: grid; gap: 14px; }
 .share p { margin: 0; }
 .share-preview { width: 100%; height: auto; aspect-ratio: 1200 / 630; background: var(--cabinet-indigo); box-shadow: 4px 4px 0 var(--cabinet-indigo); }
+
+/* ── Passkey sign-in (Mera) ─────────────────────────────────────────── */
+.passkey-dialog { border: 0; padding: 0; background: transparent; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); }
+.passkey-dialog::backdrop { background: rgba(20, 0, 51, 0.72); }
+.passkey-dialog .panel-in { padding: 26px; }
+.account-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.account-btn small { font: 400 var(--t-micro)/1 var(--f-label); text-transform: uppercase; color: var(--purple-glow); }
+.account-btn:hover { border-color: var(--monad-purple); }
+.phrase { padding: 12px 14px; background: var(--bezel-grey); color: var(--ink); word-spacing: 0.3em; line-height: 1.8; user-select: all; }

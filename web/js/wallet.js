@@ -1,14 +1,31 @@
-// Minimal EIP-1193 wrapper over the injected wallet (window.ethereum). No wallet library.
+// Minimal EIP-1193 wrapper over the active wallet: a passkey account (passkey-wallet.js) when the
+// visitor signed in with one, otherwise the injected wallet (window.ethereum). No wallet library.
 import { revertReason } from "./engine.js";
 import { toQuantity } from "./hex.js";
 
+let override = null; // EIP-1193 provider of a signed-in passkey account
+
+export function setProvider(p) {
+  override = p;
+}
+
+export function usingPasskey() {
+  return override != null;
+}
+
+const active = () => override ?? (typeof window !== "undefined" ? window.ethereum : undefined);
+
 export function hasWallet() {
-  return typeof window.ethereum !== "undefined";
+  return active() !== undefined;
+}
+
+export function hasInjectedWallet() {
+  return typeof window !== "undefined" && typeof window.ethereum !== "undefined";
 }
 
 const eth = (method, params = []) => {
-  if (!hasWallet()) throw new Error("No injected wallet found");
-  return window.ethereum.request({ method, params });
+  if (!hasWallet()) throw new Error("No wallet connected");
+  return active().request({ method, params });
 };
 
 export async function connectWallet() {
@@ -41,9 +58,10 @@ export async function switchChain(net) {
 }
 
 export function onWalletEvents(onAccounts, onChain) {
-  if (!hasWallet() || typeof window.ethereum.on !== "function") return;
-  window.ethereum.on("accountsChanged", (a) => onAccounts(a[0] ?? null));
-  window.ethereum.on("chainChanged", (c) => onChain(Number(BigInt(c))));
+  if (!hasInjectedWallet() || typeof window.ethereum.on !== "function") return;
+  // A passkey account ignores the extension's events: it is the active wallet until sign-out.
+  window.ethereum.on("accountsChanged", (a) => { if (!override) onAccounts(a[0] ?? null); });
+  window.ethereum.on("chainChanged", (c) => { if (!override) onChain(Number(BigInt(c))); });
 }
 
 export async function signTypedData(account, typedData) {

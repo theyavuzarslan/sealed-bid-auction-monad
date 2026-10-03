@@ -1,6 +1,7 @@
 // App shell: marquee header (network + wallet), hash router, cabinet settings.
 import cfg from "../config.js";
-import { hasWallet, connectWallet, currentAccount, walletChainId, switchChain, onWalletEvents } from "./wallet.js";
+import { hasWallet, hasInjectedWallet, connectWallet, currentAccount, walletChainId, switchChain, onWalletEvents, setProvider, usingPasskey } from "./wallet.js";
+import { passkeySupported, hasStoredPasskey, connectPasskey } from "./passkey-wallet.js";
 import { network, networkName, setNetworkName, loadDeployment, setDeploymentOverride } from "./net.js";
 import { renderHome } from "./screens/home.js";
 import { renderCreator } from "./screens/creator.js";
@@ -9,6 +10,7 @@ import { commitHash } from "./bid.js";
 import { esc, short } from "./format.js";
 
 const app = { account: null, walletChainId: null };
+let passkey = null; // {address, mnemonic(), end()} while signed in with a passkey
 let screen = null;
 
 function renderHeader() {
@@ -17,12 +19,15 @@ function renderHeader() {
   const opts = Object.entries(cfg.networks)
     .map(([k, n]) => `<option value="${k}" ${k === networkName() ? "selected" : ""}>${esc(n.label)}</option>`).join("");
   let wallet;
-  if (!hasWallet()) wallet = `<span class="note" style="color:var(--purple-glow)">No browser wallet</span>`;
-  else if (!app.account) wallet = `<button class="btn btn-coin" id="connect-btn" type="button">Connect wallet</button>`;
+  const pk = passkeySupported() && net.rpcUrl ? `<button class="btn btn-ghost btn-sm" id="passkey-btn" type="button">Passkey</button>` : "";
+  if (usingPasskey()) wallet = `<button class="account account-btn" id="passkey-account" type="button" title="${esc(app.account)}">${esc(short(app.account))}<small>passkey</small></button>`;
+  else if (!hasWallet()) wallet = pk || `<span class="note" style="color:var(--purple-glow)">No browser wallet</span>`;
+  else if (!app.account) wallet = `${pk}<button class="btn btn-coin" id="connect-btn" type="button">Connect wallet</button>`;
   else if (app.walletChainId !== net.chainId) wallet = `<button class="btn btn-coin" id="switch-btn" type="button">Switch to ${esc(net.label)}</button>`;
   else wallet = `<span class="account" title="${esc(app.account)}">${esc(short(app.account))}</span>`;
   area.innerHTML = `<select id="net-select" aria-label="Network">${opts}</select>${wallet}`;
   area.querySelector("#net-select").addEventListener("change", async (e) => {
+    if (passkey) { passkey.end(); passkey = null; setProvider(null); app.account = null; } // a passkey provider is bound to one network
     setNetworkName(e.target.value);
     await loadDeployment();
     renderHeader();
@@ -41,6 +46,103 @@ function renderHeader() {
   area.querySelector("#switch-btn")?.addEventListener("click", async () => {
     try { await switchChain(net); } catch (err) { fail(err); }
   });
+  area.querySelector("#passkey-btn")?.addEventListener("click", () => openPasskey());
+  area.querySelector("#passkey-account")?.addEventListener("click", () => openPasskey());
+}
+
+// ── passkey sign-in (Mera) ──
+function passkeyDialog() {
+  let d = document.querySelector("#passkey-dialog");
+  if (!d) {
+    d = document.createElement("dialog");
+    d.id = "passkey-dialog";
+    d.className = "passkey-dialog";
+    d.setAttribute("aria-labelledby", "passkey-title");
+    d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
+    document.body.appendChild(d);
+  }
+  return d;
+}
+
+async function balanceOf(addr) {
+  try {
+    const { readRequest } = await import("./net.js");
+    return BigInt(await readRequest("eth_getBalance", [addr, "latest"]));
+  } catch { return null; }
+}
+
+async function openPasskey() {
+  const d = passkeyDialog();
+  const net = network();
+  const fmt = (wei) => (wei == null ? "?" : `${(Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 4 })} MON`);
+  const shell = (body) => `<div class="panel"><div class="panel-in">
+      <h2 class="panel-title" id="passkey-title">${passkey ? "Your passkey account" : "Sign in with a passkey"}</h2>${body}
+      <p class="msg" id="pk-msg" role="status"></p>
+      <div class="btn-row" style="margin-top:8px"><button class="btn btn-sm" type="button" data-pk="close">Close</button></div>
+    </div></div>`;
+  if (!passkey) {
+    d.innerHTML = shell(`
+      <p>Face ID, Touch ID or a security key makes you an ordinary ${esc(net.label)} account. No extension, no seed phrase to write down, and the same passkey opens it on any device it syncs to.</p>
+      <div class="btn-row">
+        <button class="btn btn-start" type="button" data-pk="create">Create a passkey account</button>
+        <button class="btn btn-panel" type="button" data-pk="signin">${hasStoredPasskey() ? "Sign in" : "I already have one"}</button>
+      </div>
+      <p class="field-hint" style="margin-top:12px">Powered by Mera from Category Labs. Your key is derived on this device and never leaves it.</p>`);
+  } else {
+    const bal = await balanceOf(passkey.address);
+    d.innerHTML = shell(`
+      <dl class="readout">
+        <dt>Address</dt><dd class="mono" style="word-break:break-all">${esc(passkey.address)}</dd>
+        <dt>Balance</dt><dd>${esc(fmt(bal))}</dd>
+      </dl>
+      <p>To bid, send MON to this address from an exchange or another wallet. The deposit and a little gas come out of it, and every refund comes back to it.</p>
+      <div class="btn-row">
+        <button class="btn btn-start btn-sm" type="button" data-pk="copy">Copy address</button>
+        <button class="btn btn-panel btn-sm" type="button" data-pk="phrase">Back up recovery phrase</button>
+        <button class="btn btn-sm" type="button" data-pk="signout">Sign out</button>
+      </div>
+      <div id="pk-phrase"></div>`);
+  }
+  const say = (t, cls = "") => { const m = d.querySelector("#pk-msg"); m.className = `msg ${cls}`; m.textContent = t; };
+  d.querySelectorAll("[data-pk]").forEach((b) => b.addEventListener("click", async () => {
+    const act = b.dataset.pk;
+    if (act === "close") return d.close();
+    if (act === "create" || act === "signin") {
+      try {
+        say(act === "create" ? "Follow your device's passkey prompt…" : "Choose your passkey…");
+        const got = await connectPasskey({ mode: act, net });
+        passkey = got;
+        setProvider(got.provider);
+        app.account = got.address.toLowerCase();
+        app.walletChainId = net.chainId;
+        renderHeader();
+        screen?.onAccount?.();
+        openPasskey();
+      } catch (err) {
+        const prf = /prf/i.test(String(err?.message ?? err?.code ?? ""));
+        say(prf ? "This browser or authenticator does not support passkey PRF. Try Safari on iOS 18+, Chrome with Google Password Manager, or a browser wallet." : (err?.name === "NotAllowedError" ? "Cancelled." : err.message), "err");
+      }
+    }
+    if (act === "copy") { try { await navigator.clipboard.writeText(passkey.address); say("Address copied.", "ok"); } catch { say(passkey.address); } }
+    if (act === "phrase") {
+      const box = d.querySelector("#pk-phrase");
+      if (box.textContent) { box.innerHTML = ""; return; }
+      box.innerHTML = `<p class="warn" style="margin-top:12px">Anyone with these words controls the account. Write them down offline; never paste them into a website or chat.</p>
+        <p class="mono phrase">${esc(passkey.mnemonic())}</p>
+        <p class="field-hint">They import into MetaMask or Rabby (first account), so your funds never depend on this site.</p>`;
+    }
+    if (act === "signout") {
+      passkey.end();
+      passkey = null;
+      setProvider(null);
+      app.account = await currentAccount().catch(() => null);
+      app.walletChainId = await walletChainId().catch(() => null);
+      renderHeader();
+      screen?.onAccount?.();
+      d.close();
+    }
+  }));
+  if (!d.open) d.showModal();
 }
 
 function renderSettings() {
