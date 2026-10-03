@@ -9,13 +9,11 @@ Status: settled
 - Work only on items in this list, top to bottom; skip an item marked `(user)` or one that needs a decision, and leave a note.
 - Do not change the money-path contracts (`contracts/src/SealingLayer.sol`, `DepositLedger.sol`, `UniformClearing.sol`, `AuctionEngine.sol`). Tests, scripts, web, indexer and docs are fine.
 - Never deploy to a public network, touch keys or wallets, change the repo's visibility, or post anywhere.
-- Every suite must pass before the push (commands in `CLAUDE.md`): `forge test` in `contracts/`, `node web/selftest.mjs`, `node web/e2e.mjs`, `node web/tools/reminder.test.mjs`, `npm test` in `indexer/`, `forge test` in `demo/`. If anything fails and can't be fixed in the run, revert the day's changes and log why instead of pushing.
+- Every suite must pass before the push (commands in `CLAUDE.md`): `forge test` in `contracts/`, `node web/selftest.mjs`, `node web/e2e.mjs`, `node web/tools/reminder.test.mjs`, `node web/tools/simple.test.mjs`, `npm test` in `indexer/`, `forge test` in `demo/`. If anything fails and can't be fixed in the run, revert the day's changes and log why instead of pushing.
 - Claim wording: "snipe-resistant: submission timing no longer determines price"; never "no sniping", "MEV-proof" or "bot-proof"; never mention an encrypted mempool as something we use.
 - Keep published numbers true (test counts in `SUBMISSION.md`, `PRODUCT.md`, `AUDIT.md`, `PRD-CONFORMANCE.md`, the Certified section in `web/js/screens/home.js`).
 
 ## Backlog
-
-> **In progress outside the daily task (4 Oct): simple launch & bid redesign.** Do not edit `web/js/screens/creator.js`, `web/js/screens/round.js`, `web/js/screens/home.js`, `web/js/launch.js`, `web/js/round-model.js`, `web/js/format.js`, `web/js/main.js` or `web/styles.css` until this note is removed; pick another item or log a skip.
 
 - [ ] **Serve the passkey libraries from the site.** _Blocked 2026-10-04: the scheduled run's permission classifier refused the npm install + esbuild bundling step; needs the user to run the build or allow it._ Vendor Mera 0.2.0, viem 2.55.13 and @scure/bip39/bip32 2.4.0 as ESM files under `web/vendor/` (build them once with a pinned bundler run, record versions and SHA-256 in `web/vendor/README.md`), point `web/js/passkey-wallet.js` at them, and remove the jsDelivr runtime load and its disclosure line in `SUBMISSION.md` "Honest limits". Re-run the `?passkeytest=1` local round (see `SUBMISSION.md`).
 - [x] **Write-up for a VC-heavy panel.** (done 2026-10-04) Restructure `SUBMISSION.md` so the first screen is: the problem in one sentence, the head-to-head table, one line on who it is for, the live link. Mechanism, tests and limits follow. Keep every number sourced.
@@ -27,6 +25,8 @@ Status: settled
 - [ ] **Pitch deck** `(user)`: wait until the user says where it should live.
 
 ## Log
+
+2026-10-04 — simple launch & bid redesign (outside the daily task) — see git log — files are open again for the daily run.
 
 <!-- One line per run: date — item — commit — notes. -->
 2026-10-04 — Write-up for a VC-heavy panel — ab79b48 — first screen restructured in SUBMISSION.md; passkey vendoring skipped (npm/esbuild bundling refused by the run's permission classifier); all suites pass (102 contract, 11 demo, 19 indexer, 119 self, 89 e2e, 35 reminder).

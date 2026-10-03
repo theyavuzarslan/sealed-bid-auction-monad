@@ -22,8 +22,16 @@ export function fmtCountdown(secondsLeft) {
   return `${m}m ${p(sec)}s`;
 }
 
+// 1234567.89 → "1,234,567.89": thousands separators on the integer part only.
+export function groupDigits(text) {
+  const [i, f] = String(text).split(".");
+  const neg = i.startsWith("-");
+  const g = (neg ? i.slice(1) : i).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (neg ? "-" : "") + g + (f ? `.${f}` : "");
+}
+
 export function fmtMon(wei, maxFrac = 6) {
-  return `${formatUnits(wei, 18, maxFrac)} MON`;
+  return `${groupDigits(formatUnits(wei, 18, maxFrac))} MON`;
 }
 
 export function fmtMonUsd(wei) {
@@ -33,7 +41,7 @@ export function fmtMonUsd(wei) {
 }
 
 export function fmtTokens(units, decimals, symbol, maxFrac = 4) {
-  return `${formatUnits(units, decimals, maxFrac)} ${symbol ?? ""}`.trim();
+  return `${groupDigits(formatUnits(units, decimals, maxFrac))} ${symbol ?? ""}`.trim();
 }
 
 export function fmtTime(sec) {

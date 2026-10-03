@@ -5,6 +5,7 @@ import { passkeySupported, hasStoredPasskey, connectPasskey } from "./passkey-wa
 import { network, networkName, setNetworkName, loadDeployment, setDeploymentOverride } from "./net.js";
 import { renderHome } from "./screens/home.js";
 import { renderCreator } from "./screens/creator.js";
+import { renderLaunchSimple } from "./screens/launch-simple.js";
 import { renderRound } from "./screens/round.js";
 import { commitHash } from "./bid.js";
 import { esc, short } from "./format.js";
@@ -197,7 +198,8 @@ function route() {
   const hash = location.hash || "#/";
   let m;
   try {
-    if (/^#\/(host|creator)$/.test(hash)) { setNav("host"); screen = renderCreator(view, app); }
+    if (/^#\/(host|launch)$/.test(hash)) { setNav("host"); screen = renderLaunchSimple(view, app); }
+    else if (/^#\/(host\/advanced|creator)$/.test(hash)) { setNav("host"); screen = renderCreator(view, app); }
     else if ((m = hash.match(/^#\/round\/(\d+)$/))) { setNav("play"); screen = renderRound(view, app, m[1]); }
     else if (hash === "#/play") { setNav("play"); screen = renderHome(view, { scrollTo: "play" }); }
     else if (hash === "#/how") { setNav("how"); screen = renderHome(view, { scrollTo: "how" }); }

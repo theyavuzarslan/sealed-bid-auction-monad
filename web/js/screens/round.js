@@ -17,6 +17,8 @@ import {
   loadRoundMeta, loadRoundState, phaseOf, PHASE, publicActions, bidderActions, parseBidInput, abandonAt, unrevealedDue,
 } from "../round-model.js";
 import { downloadText } from "../ui/dom.js";
+import { notLiveHtml } from "../ui/notlive.js";
+import { simpleBid, PRICE_MULTIPLES } from "../simple.js";
 import { staircase } from "../ui/pixel.js";
 import { buildRevealIcs, revealIcsFilename } from "../ui/reminder.js";
 import { drawShareCard, canvasToPng, shareText, xIntentUrl } from "../ui/sharecard.js";
@@ -27,7 +29,7 @@ export function renderRound(el, app, roundIdRaw) {
   const eng = getEngine();
   const net = network();
   if (!eng) {
-    el.innerHTML = `<section class="page page-narrow"><div class="panel"><div class="panel-in"><h1 class="panel-title">No engine</h1><p class="err">No AuctionEngine address for ${esc(net.label)}. Set it in config.js or under Cabinet settings at the bottom of the page.</p></div></div></section>`;
+    el.innerHTML = notLiveHtml(net, "Rounds");
     return { cleanup() {}, onAccount() {} };
   }
 
@@ -35,6 +37,8 @@ export function renderRound(el, app, roundIdRaw) {
   let meta = null;
   let allow = { status: "none" };
   let prepared = null; // sealed bid not yet committed
+  let bidMode = "simple"; // "simple": spend + highest price; "advanced": exact price and amount
+  let supplyTotal = null; // token totalSupply, for market-cap figures
   let busy = false;
   let dead = false;
   let notify = { status: "idle" }; // reveal reminder: idle | scheduled | unsupported | denied | dismissed | shown
@@ -168,14 +172,29 @@ export function renderRound(el, app, roundIdRaw) {
     return panel("panel-p1", "Insert coin", `
       <p>Everyone locks the same ${esc(fmtMon(s.round.depositAmount))}, so your deposit gives nothing away. Your price and amount are sealed as a hash.</p>
       <div id="allow-box"></div>
-      <form id="bid-form" autocomplete="off">
+      <form id="bid-form" autocomplete="off">${bidMode === "simple" ? `
+        <p class="field-hint">Floor price ${esc(perToken(s.round.reservePrice))} per token${mcap(s.round.reservePrice)}. Nobody pays less, and everyone who wins pays the same final price.</p>
+        <div class="fields">
+          <label>Spend up to (MON)<input id="f-spend" inputmode="decimal" placeholder="e.g. ${esc(formatUnits(s.round.depositAmount / 2n, 18, 4))}"></label>
+        </div>
+        <div class="seg seg-sm" aria-label="Quick amounts">
+          <button type="button" data-spend="4">¼ max</button><button type="button" data-spend="2">½ max</button><button type="button" data-spend="1">Max</button>
+        </div>
+        <p class="label-row">Highest price you'd pay</p>
+        <div class="seg" role="radiogroup" aria-label="Highest price">
+          ${PRICE_MULTIPLES.map((m) => `<button type="button" role="radio" data-mul="${m}" aria-checked="${m === 2}">${m === 1 ? "Floor" : `${m}× floor`}</button>`).join("")}
+          <button type="button" role="radio" data-mul="custom" aria-checked="false">Custom</button>
+        </div>
+        <label class="hidden" id="f-custom-wrap" style="margin-top:12px">Highest price per token (MON)<input id="f-custom" inputmode="decimal"></label>`
+        : `
         <div class="fields">
           <label>Max price per token (MON)<input id="f-price" inputmode="decimal" placeholder="${esc(formatUnits(wireToPerToken(s.round.reservePrice, dec()), 18))}"></label>
           <label>Amount (${esc(sym())})<input id="f-amount" inputmode="decimal"></label>
-        </div>
+        </div>`}
+        <p style="margin-top:12px"><button type="button" class="linklike" data-act="bid-mode">${bidMode === "simple" ? "Advanced: exact price and amount" : "Simple: spend and highest price"}</button></p>
       </form>
       <div id="bid-derived"></div>
-      <p class="note">You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size.</p>
+      ${bidMode === "simple" ? "" : `<p class="note">You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size.</p>`}
       <div id="bid-prepared"></div>`, "commit");
   }
 
@@ -250,7 +269,7 @@ export function renderRound(el, app, roundIdRaw) {
   }
 
   function readForm() {
-    const f = parseBidInput({ priceText: $("#f-price")?.value, amountText: $("#f-amount")?.value }, s.round, dec());
+    const f = bidMode === "simple" ? readSimple() : parseBidInput({ priceText: $("#f-price")?.value, amountText: $("#f-amount")?.value }, s.round, dec());
     if (f.problems) {
       if (allow.status === "missing") f.problems.push({ code: "NOT_ALLOWLISTED", message: "This wallet is not on the allowlist." });
       if (allow.status === "error" || allow.status === "loading") f.problems.push({ code: "NO_PROOF", message: "Allowlist proof not available yet." });
@@ -258,7 +277,42 @@ export function renderRound(el, app, roundIdRaw) {
     return f;
   }
 
+  // Spend + highest price → the exact (price, amount) the seal path takes.
+  function readSimple() {
+    const sel = el.querySelector('[data-mul][aria-checked="true"]')?.dataset.mul ?? "2";
+    const b = simpleBid({
+      round: s.round, spendMon: $("#f-spend")?.value,
+      priceMultiple: sel === "custom" ? null : Number(sel),
+      customPerToken: sel === "custom" ? ($("#f-custom")?.value || "0") : null,
+    }, dec());
+    if (b.empty || b.error) return { ...b, minAmount: 0n, simple: true };
+    return { ...b, simple: true, snapped: false, minAmount: 0n, maxAmount: null };
+  }
+
+  const mcap = (wire) => {
+    if (supplyTotal == null) return "";
+    const v = (BigInt(wire) * supplyTotal) / 10n ** 18n;
+    return ` (a ${fmtMon(v, 0)} market cap)`;
+  };
+
+  function simpleOutcomeHtml(f) {
+    if (f.empty) return `<p class="field-hint">Enter how much MON you're willing to spend. The most is just under the ${esc(fmtMon(s.round.depositAmount))} everyone locks.</p>`;
+    if (f.error) return `<ul class="problems"><li>${esc(f.error)}</li></ul>`;
+    const words = (p) => p.code === "BELOW_MIN_BID" ? "That's below this round's minimum bid; spend a bit more." : p.message;
+    return `
+      <div class="bid-outcome">
+        <p>You get <strong>${esc(tokens(f.amount))}</strong> if the final price ends at or below <strong>${esc(perToken(f.price))}</strong>${esc(mcap(f.price))}.</p>
+        <p>You pay the final price for each token: at most <strong>${esc(fmtMon(f.spend, 6))}</strong>. The rest of your ${esc(fmtMon(s.round.depositAmount))} deposit comes back. If the price ends above your max, all of it comes back.</p>
+        <p class="note" style="color:var(--purple-glow)">If many bids land exactly on the final price, they share what's left in proportion to size.</p>
+        ${f.capped ? `<p class="note" style="color:var(--purple-glow)">Capped just under the ${esc(fmtMon(s.round.depositAmount))} deposit.</p>` : ""}
+        ${f.wholeSale ? `<p class="note" style="color:var(--purple-glow)">That's the whole sale; you can't win more.</p>` : ""}
+      </div>
+      ${f.problems.length ? `<ul class="problems">${f.problems.map((p) => `<li>${esc(words(p))}</li>`).join("")}</ul>`
+        : `<div class="btn-row"><button class="btn btn-coin btn-lg" type="button" data-act="place">Place sealed bid · lock ${esc(fmtMon(s.round.depositAmount))}</button></div>`}`;
+  }
+
   function derivedHtml(f) {
+    if (f.simple) return simpleOutcomeHtml(f);
     const minLine = `<p class="field-hint">Smallest amount: ${esc(tokensUp(f.minAmount ?? 0n))} (the minimum bid at the reserve price).</p>`;
     if (f.empty) return `${minLine}`;
     if (f.error) return `<ul class="problems"><li>${esc(f.error)}</li></ul>`;
@@ -533,6 +587,7 @@ export function renderRound(el, app, roundIdRaw) {
       if (!meta) meta = await loadRoundMeta(eng, roundId);
       await syncClock();
       s = await loadRoundState(eng, roundId, me());
+      if (supplyTotal == null && s.round?.token) supplyTotal = await eng.erc20.totalSupply(s.round.token).catch(() => null);
       if (s.round.allowlistRoot !== ZERO32 && me() && allow.status === "none") loadAllowlist();
       render();
     } catch (e) {
@@ -654,6 +709,14 @@ export function renderRound(el, app, roundIdRaw) {
 
   const handlers = {
     seal: () => run("Sealing", seal),
+    // One press: seal (saved locally with its note before anything is sent), then commit — unless this
+    // wallet signs non-deterministically, where the backup-file step still has to come first.
+    place: () => run("Placing your sealed bid", async () => {
+      const msg = await seal();
+      if (prepared && prepared.determinism !== NONDETERMINISTIC) return commit();
+      return msg;
+    }),
+    "bid-mode": () => { bidMode = bidMode === "simple" ? "advanced" : "simple"; prepared = null; cache.delete("#p-commit"); render(); },
     commit: () => run("Committing", commit),
     "backup-prepared": () => {
       if (!prepared) return;
@@ -674,6 +737,22 @@ export function renderRound(el, app, roundIdRaw) {
   };
 
   el.addEventListener("click", (e) => {
+    const mul = e.target.closest("[data-mul]");
+    if (mul) {
+      el.querySelectorAll("[data-mul]").forEach((x) => x.setAttribute("aria-checked", String(x === mul)));
+      $("#f-custom-wrap")?.classList.toggle("hidden", mul.dataset.mul !== "custom");
+      if (prepared) { prepared = null; say(""); }
+      render();
+      return;
+    }
+    const sp = e.target.closest("[data-spend]");
+    if (sp && $("#f-spend")) {
+      const cap = s.round.depositAmount - 1n;
+      $("#f-spend").value = formatUnits(sp.dataset.spend === "1" ? cap : s.round.depositAmount / BigInt(sp.dataset.spend), 18, 6);
+      if (prepared) { prepared = null; say(""); }
+      render();
+      return;
+    }
     const b = e.target.closest("[data-act]");
     if (!b || b.disabled) return;
     e.preventDefault();
@@ -681,7 +760,7 @@ export function renderRound(el, app, roundIdRaw) {
     (handlers[id] ?? (() => runModelAction(id)))();
   });
   el.addEventListener("input", (e) => {
-    if (e.target.id === "f-price" || e.target.id === "f-amount") {
+    if (["f-price", "f-amount", "f-spend", "f-custom"].includes(e.target.id)) {
       if (prepared) { prepared = null; say(""); }
       render();
     }

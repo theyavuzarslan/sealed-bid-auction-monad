@@ -10,6 +10,7 @@ export const engineIface = makeInterface(ENGINE_ABI);
 export const ERC20_ABI = [
   { type: "function", name: "decimals", inputs: [], outputs: [{ name: "", type: "uint8" }], stateMutability: "view" },
   { type: "function", name: "symbol", inputs: [], outputs: [{ name: "", type: "string" }], stateMutability: "view" },
+  { type: "function", name: "totalSupply", inputs: [], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
   { type: "function", name: "balanceOf", inputs: [{ name: "a", type: "address" }], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
   { type: "function", name: "allowance", inputs: [{ name: "o", type: "address" }, { name: "s", type: "address" }], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
   { type: "function", name: "approve", inputs: [{ name: "s", type: "address" }, { name: "v", type: "uint256" }], outputs: [{ name: "", type: "bool" }], stateMutability: "nonpayable" },
@@ -149,6 +150,7 @@ export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }
     erc20: {
       decimals: (t) => call("decimals", [], undefined, t, erc20Iface),
       symbol: (t) => call("symbol", [], undefined, t, erc20Iface),
+      totalSupply: (t) => call("totalSupply", [], undefined, t, erc20Iface),
       balanceOf: (t, a) => call("balanceOf", [a], undefined, t, erc20Iface),
       allowance: (t, o, s) => call("allowance", [o, s], undefined, t, erc20Iface),
       approveTx: (t, spender, v) => ({ to: t, data: erc20Iface.encodeFunction("approve", [spender, v]), value: 0n }),

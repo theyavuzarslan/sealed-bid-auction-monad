@@ -10,6 +10,7 @@ import { buildOpenParams, DEX_FEE_TIERS, LOCK_FEE_TIERS, MAX_SPLITS, MIN_RAISE_L
 import { isAddress } from "../hex.js";
 import { createTokenTx, createdToken, newTokenProblems } from "../engine.js";
 import { downloadText } from "../ui/dom.js";
+import { notLiveHtml } from "../ui/notlive.js";
 import { esc, fmtMon, fmtTokens } from "../format.js";
 
 export function renderCreator(el, app) {
@@ -17,7 +18,7 @@ export function renderCreator(el, app) {
   const net = network();
   const d = cfg.creatorDefaults;
   if (!eng) {
-    el.innerHTML = `<section class="page page-narrow"><div class="panel"><div class="panel-in"><h1 class="panel-title">No engine</h1><p class="err">No AuctionEngine address for ${esc(net.label)}. Set it in config.js or under Cabinet settings at the bottom of the page.</p></div></div></section>`;
+    el.innerHTML = notLiveHtml(net, "Launches");
     return { cleanup() {}, onAccount() {} };
   }
 
@@ -34,7 +35,7 @@ export function renderCreator(el, app) {
   el.innerHTML = `
   <section class="page">
     <div class="section-head" style="margin-bottom:32px">
-      <h1 style="font:400 clamp(3rem,8vw,5.6rem)/0.85 var(--f-display)">Host a launch</h1>
+      <h1 style="font:400 clamp(3rem,8vw,5.6rem)/0.85 var(--f-display)">Advanced launch</h1>
       <p style="color:var(--purple-glow)">Launch to your community at one fair price. Every winner pays the same clearing price, whatever block they bid in, and the pool opens at that price.</p>
     </div>
     <div class="grid-app">

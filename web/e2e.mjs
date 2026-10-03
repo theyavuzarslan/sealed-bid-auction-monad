@@ -352,6 +352,30 @@ try {
   const ntOpen = await send(henry, engine.tx.openRound(ntForm.params));
   const ntRound = events(engine, ntOpen, "RoundOpened")[0]?.args;
   check("round opened on the factory token, creator is the person", `${ntRound?.token?.toLowerCase()}/${ntRound?.creator?.toLowerCase()}`, `${newToken.toLowerCase()}/${henry.toLowerCase()}`);
+
+  // ── simple launch + simple bids (web/js/simple.js), through settlement ──
+  const { simpleLaunchForm, simpleBid } = await import("./js/simple.js");
+  const sw = simpleLaunchForm({ preset: "Degen", supply: 10n ** 27n, sellPct: "50", floorMon: "10", depositMon: "2", duration: "10m", lpPct: "20", adapter: local.adapter, fee: 3000 }, 18);
+  check("wizard: no problems for a 1B supply, half on sale, 10 MON floor", sw.problems.length, 0);
+  const sForm = launch.buildOpenParams(sw.form, ntInfo, Number(await now()));
+  check("wizard form passes buildOpenParams", sForm.problems.length, 0);
+  await send(henry, engine.erc20.approveTx(newToken, engine.address, sForm.need));
+  const rs = events(engine, await send(henry, engine.tx.openRound(sForm.params)), "RoundOpened")[0].args.roundId;
+  const roundS = await engine.getRound(rs);
+  const sb1 = simpleBid({ round: roundS, spendMon: "1.9", priceMultiple: 3 }, 18);
+  const sb2 = simpleBid({ round: roundS, spendMon: "1.9", priceMultiple: 1 }, 18);
+  check("simple bids are valid", `${sb1.problems.length}/${sb2.problems.length}`, "0/0");
+  const sealS1 = await sealAndCommit(rs, roundS, alice, sb1.price, sb1.amount);
+  const sealS2 = await sealAndCommit(rs, roundS, bob, sb2.price, sb2.amount);
+  await warpTo(roundS.commitEnd);
+  await send(alice, await engine.buildReveal(rs, sealS1));
+  await send(bob, await engine.buildReveal(rs, sealS2));
+  await warpTo(roundS.revealEnd);
+  await send(gina, engine.tx.settle(rs, 100n));
+  const clrS = await engine.clearingOf(rs);
+  check("simple round settles at or above the floor", clrS.settled && clrS.clearingPrice >= roundS.reservePrice, true);
+  const qS = await engine.quote(rs, alice);
+  check("the 3× bidder pays at most what the form promised", qS.paid <= sb1.spend && qS.allocated > 0n, true);
 } catch (e) {
   fail++;
   console.log("FAIL  e2e aborted:", e.message, e.data ? `(${revertReason(e)})` : "");

@@ -12,6 +12,8 @@ Header: "Connect wallet" (injected wallet) and "Passkey" (Mera). The passkey pan
 
 ## Screen 1 — Creator: open a launch
 
+Default (`#/host`, `web/js/screens/launch-simple.js`): three steps — token (new or existing), sale (share to sell, least accepted, biggest bid, 10 min / 1 h / 1 day), pool share — and one Launch button that creates, approves and opens, resuming after a failed step. The full form is `#/host/advanced`. Bidding (`round.js`) defaults to "spend up to" plus "highest price" as a multiple of the floor, with a plain outcome card and one press to seal and commit.
+
 - Preset picker: Degen / Raise [src: Monad Sealed-Bid Auction Engine.md].
 - Inputs: token, supply to lock, commit window, reveal window, minimum bid size, uniform deposit, auto-LP toggle (Raise: allowlist upload, vesting schedule).
 - Primary action: "Lock supply and open round".

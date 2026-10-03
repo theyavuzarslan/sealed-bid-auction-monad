@@ -111,7 +111,7 @@ export function renderHome(el, { scrollTo } = {}) {
         <p class="hero-sub">Sealed bids, one clearing price. The bot that wins the bonding-curve race pays <strong>exactly what you pay</strong>, and the pool opens at that price, locked.</p>
         <div class="hero-actions">
           <a class="btn btn-coin btn-lg" href="#/play">Insert coin · bid on a launch</a>
-          <a class="btn btn-lg" href="#/host">Host a launch</a>
+          <a class="btn btn-lg" href="#/host">Launch a token</a>
           <p class="claim">Snipe-resistant: submission timing no longer determines price.</p>
         </div>
       </div>
@@ -233,7 +233,7 @@ export function renderHome(el, { scrollTo } = {}) {
           <input id="round-id" placeholder="Round number" inputmode="numeric" aria-label="Round number">
           <button class="btn btn-start" type="submit">Open</button>
         </form>
-        <p class="note" style="margin-top:14px">Hosting instead? <a href="#/host">Open a launch</a>.</p>
+        <p class="note" style="margin-top:14px">Launching a token? <a href="#/host">Start here</a>.</p>
       </div></div>
     </div>
   </section>`;
@@ -255,10 +255,10 @@ export function renderHome(el, { scrollTo } = {}) {
 
 async function loadRecent(box) {
   const eng = getEngine();
-  if (!eng) { box.innerHTML = `<p class="note">No engine address for this network yet. Set one under Cabinet settings below.</p>`; return; }
+  if (!eng) { box.innerHTML = `<p class="note">Live rounds open on ${esc(network().label)} soon. Until then, the head-to-head above is a replay of the real contracts.</p>`; return; }
   try {
     const count = Number(await eng.roundCount());
-    if (!count) { box.innerHTML = `<p class="note">No rounds yet on this engine. <a href="#/host">Host the first one</a>.</p>`; return; }
+    if (!count) { box.innerHTML = `<p class="note">No rounds yet on this engine. <a href="#/host">Launch the first one</a>.</p>`; return; }
     const ids = Array.from({ length: Math.min(count, 8) }, (_, i) => count - i);
     const rows = await Promise.all(ids.map(async (id) => {
       try {
