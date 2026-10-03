@@ -30,7 +30,7 @@ Legend: **Meets** = does what the PRD says. **Meets, differently** = reaches the
 | Configurable minimum bid size, required | Meets. Required at open, measured at the reserve price so every price level is worth at least the minimum | `AuctionEngine._validate`, `_onReveal` | `test_RevealRules`, `test_L3_CheapHighPriceLevelsRejected`, `test_L2_ImpossibleParametersRejected` |
 | Multi-transaction settlement | Meets | `settle(roundId, maxSteps)` | `test_SettleInSteps_SameResult` |
 | Volume under 2^96, prices as uint96 | Meets, and wider than required: each bid is uint96, sums are uint128/uint256, so the EasyAuction limit no longer applies | `UniformClearing` | Solidity 0.8 checked arithmetic |
-| Clearing math forked from EasyAuction | Meets, differently (decision 22). Rewritten Zama-style after the first audit; no EasyAuction code remains | `UniformClearing.sol` | [AUDIT.md](AUDIT.md) |
+| Clearing math forked from EasyAuction | Meets, differently (decision 22). Rewritten Zama-style after the first audit; no EasyAuction code remains (the reference copy in `vendor/easyauction`, never compiled, was removed on 4 Oct) | `UniformClearing.sol` | [AUDIT.md](AUDIT.md) |
 
 ## Use case 1: fair launch
 

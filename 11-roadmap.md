@@ -8,6 +8,32 @@ Dates: build window 1 Sep–13 Oct, judging 14–27 Oct, winners 3 Nov [src: htt
 
 **Status at 22 Sep:** Block A contracts are written and green (commit/reveal, deposit ledger, clearing core, integration engine), but three critical access-control bugs block any deploy — see [AUDIT.md](AUDIT.md). The token leg, LP seed and real-engine demo (Blocks B–C) are not done. On 22 Sep the clearing design moved to Zama-style (decision 22); run order: `tasks/fix-core.md` → `tasks/clearing.md` + `tasks/ui-bid.md` → `tasks/lp.md`. Most agent work is still uncommitted in worktrees.
 
+## Against the Metropolis criteria (4 Oct, 9 days left)
+
+Metropolis publishes no weighted rubric. Everything below is what the official page says, checked against the raw HTML of https://monad.xyz/developers/hackathons/metropolis on 4 Oct; the official rules and the full bounty criteria sit behind the login at hackathon.monad.xyz and were not readable here.
+
+| Published criterion | Where we stand | Gap |
+| --- | --- | --- |
+| "A working product with a public project profile: a demo, a short write-up, and a link to the code" | Working product on a local chain and on Vercel (https://even-monad.vercel.app); write-up in [SUBMISSION.md](SUBMISSION.md); video script written | Not on mainnet yet; no video; no project profile; repo is private |
+| "Judges need to be able to verify what you built during the six weeks" | Full history in git from 22 Sep; 102 contract + 19 fork tests; PRD conformance matrix | Repo must be public or judges given access. Pre-window third-party code (`vendor/easyauction`, a reference copy never compiled) removed 4 Oct |
+| "What you show on 13 Oct should have been built during the six weeks" | All contracts, web, indexer, demo written 22 Sep onwards | — |
+| Social, Attention & Culture, "Best fit for: teams who have grown a community, not only built one" | No community or real users yet | **The biggest gap.** Evidence of real people using it: one real mainnet round with real bidders, its numbers in the write-up |
+| Track examples ("markets on cultural outcomes", "how communities create and capture value") | Fair launches where a community buys its own token at one price | Write-up should lead with the community story, not the mechanism |
+| Judged per track by founders and VCs (Monad co-founders, Galaxy, Electric Capital, Nansen …) | Write-up is thorough and technical | Lead with the problem and the head-to-head numbers; keep the mechanism for later sections |
+| Sponsor bounties (titles only on the public page) | Possible fits: Mera (two Monad Foundation bounties, $2,500 each), Envio, Nansen, Privy/Dynamic | Read each bounty's criteria on the platform before claiming eligibility |
+
+Other tracks for comparison: Onchain Finance & Trading is "best fit for teams who have shipped a trading, lending, or market-making product before"; Consumer Products & Payments for "product teams who care more about a user's first five minutes"; Trust, Identity & AI for "teams comfortable with cryptography, protocol design, or agent frameworks", with passkey-native accounts as an example idea.
+
+### Plan for the last 9 days, in order
+
+| # | Task | Owner | Blocks submission? |
+| --- | --- | --- | --- |
+| 1 | Code link judges can open (make the repo public, or add judge access) | User | Yes |
+| 2 | Mainnet deploy, then one real round with real bidders; link it in SUBMISSION.md | User funds the burner; Claude runs the deploy | Yes, for credibility and the community criterion |
+| 3 | Demo video and public project profile; write-up leads with problem and numbers | User records; Claude edits the write-up | Yes |
+| 4 | Mera passkey sign-in as an extra wallet option (no extension, works on phones; two bounties) | Claude | No |
+| 5 | Pitch deck, if the profile asks for one | Claude | No |
+
 **Status at 24 Sep:** Blocks A–C are done, and the AgentGuard scan, threat model, BTX paragraph, two-transaction answer and fee measurement from Block D are done too (in [SUBMISSION.md](SUBMISSION.md)). The audit blockers are fixed ([AUDIT.md](AUDIT.md)). Left: the pitch deck, a public-network deploy, the demo video, and confirming whether multiple submissions are allowed. The tables below are the original plan, kept for the record.
 
 Priority: P0 = submission fails without it · P1 = needed for a strong submission · P2 = nice to have.
