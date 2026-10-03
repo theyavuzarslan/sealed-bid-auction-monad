@@ -15,9 +15,11 @@ Status: settled
 
 ## Backlog
 
+> **In progress outside the daily task (4 Oct): simple launch & bid redesign.** Do not edit `web/js/screens/creator.js`, `web/js/screens/round.js`, `web/js/screens/home.js`, `web/js/launch.js`, `web/js/round-model.js`, `web/js/format.js`, `web/js/main.js` or `web/styles.css` until this note is removed; pick another item or log a skip.
+
 - [ ] **Serve the passkey libraries from the site.** Vendor Mera 0.2.0, viem 2.55.13 and @scure/bip39/bip32 2.4.0 as ESM files under `web/vendor/` (build them once with a pinned bundler run, record versions and SHA-256 in `web/vendor/README.md`), point `web/js/passkey-wallet.js` at them, and remove the jsDelivr runtime load and its disclosure line in `SUBMISSION.md` "Honest limits". Re-run the `?passkeytest=1` local round (see `SUBMISSION.md`).
 - [ ] **Write-up for a VC-heavy panel.** Restructure `SUBMISSION.md` so the first screen is: the problem in one sentence, the head-to-head table, one line on who it is for, the live link. Mechanism, tests and limits follow. Keep every number sourced.
-- [ ] **Thousands separators** in token and MON amounts across the web app and the share card (`web/js/format.js`), with selftests.
+- [x] ~~**Thousands separators**~~ folded into the launch & bid redesign (4 Oct).
 - [ ] **Unit tests for the passkey provider shim** (`web/js/passkey-wallet.js` `makeProvider`): request routing, typed-data handling (EIP712Domain removed), chain-switch refusal, using a fake account object; add to `web/selftest.mjs` or a new `web/tools/passkey.test.mjs`.
 - [ ] **Demo-recording script**: one command (`demo/record-round.sh`) that starts anvil, deploys, creates a token, opens a Degen round and commits bids from several anvil accounts, then prints the URLs to open with `?devwallet=` / `?passkeytest=` for each stage, so the video can be shot in minutes.
 - [ ] **Accessibility pass** with the impeccable audit on `web/` (contrast of every text token on its surface, focus order in the passkey dialog, `aria-live` on status messages); fix what it finds.
