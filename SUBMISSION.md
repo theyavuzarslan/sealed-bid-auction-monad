@@ -1,16 +1,8 @@
 # Even — sealed-bid fair launches on Monad
 
-The judge-facing write-up for the Monad Metropolis submission (Social, Attention & Culture track): what Even is, how it works, what we measured, and what it does not claim.
+**The problem:** on a bonding curve, arrival order sets the price, so bots buy the first blocks and the community buys the top.
 
-Status: draft
-
-## In one line
-
-Your community shouldn't lose its own launch to three bots in the first block. On Even everyone bids sealed, every winner pays the same clearing price, and the pool opens at that price with its liquidity locked [src: 01-overview.md].
-
-## The problem
-
-On a bonding curve the price rises with every buy, so arrival order decides who pays what. In our replayed head-to-head (same token, same 13 players, 73 real transactions against the real contracts on a local chain) [src: demo/results.json]:
+**The result**, from our replayed head-to-head (same token, same 13 players, 73 real transactions against the real contracts on a local chain) [src: demo/results.json]:
 
 | | Bonding curve | Even |
 | --- | --- | --- |
@@ -18,6 +10,20 @@ On a bonding curve the price rises with every buy, so arrival order decides who 
 | Crowd's average price | 0.275 MON | 0.220 MON |
 | Bot's share of supply | 54.5% (blocks 1–3) | 25% |
 | Players who got nothing | 8 of 12 | 1 of 12 (bid below the clearing price, refunded in full) |
+
+**Who it is for:** memecoin communities on Monad that want their launch to go to their own buyers, and the creators who launch for them [src: PRODUCT.md].
+
+**Live:** https://even-monad.vercel.app (the pitch, the replay and the app; the engine is not on a public network yet, see [Deployment](#deployment)). Code: this repository.
+
+---
+
+The judge-facing write-up for the Monad Metropolis submission (Social, Attention & Culture track). Mechanism, evidence, cost and limits follow.
+
+Status: draft
+
+## In one line
+
+Your community shouldn't lose its own launch to three bots in the first block. On Even everyone bids sealed, every winner pays the same clearing price, and the pool opens at that price with its liquidity locked [src: 01-overview.md].
 
 Snipe-resistant: submission timing no longer determines price. The bot still takes part; it just pays what everyone pays.
 
