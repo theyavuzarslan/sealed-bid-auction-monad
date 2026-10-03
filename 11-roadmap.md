@@ -31,7 +31,7 @@ Other tracks for comparison: Onchain Finance & Trading is "best fit for teams wh
 | 1 | Code link judges can open (make the repo public, or add judge access) | User | Yes |
 | 2 | Mainnet deploy, then one real round with real bidders; link it in SUBMISSION.md | User funds the burner; Claude runs the deploy | Yes, for credibility and the community criterion |
 | 3 | Demo video and public project profile; write-up leads with problem and numbers | User records; Claude edits the write-up | Yes |
-| 4 | Mera passkey sign-in as an extra wallet option (no extension, works on phones; two bounties) | Claude | No |
+| 4 | ~~Mera passkey sign-in as an extra wallet option~~ **Done 4 Oct** (decision 36); real-device test pending | Claude, then user on a phone | No |
 | 5 | Pitch deck, if the profile asks for one | Claude | No |
 
 **Status at 24 Sep:** Blocks A–C are done, and the AgentGuard scan, threat model, BTX paragraph, two-transaction answer and fee measurement from Block D are done too (in [SUBMISSION.md](SUBMISSION.md)). The audit blockers are fixed ([AUDIT.md](AUDIT.md)). Left: the pitch deck, a public-network deploy, the demo video, and confirming whether multiple submissions are allowed. The tables below are the original plan, kept for the record.

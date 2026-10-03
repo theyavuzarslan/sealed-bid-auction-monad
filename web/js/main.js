@@ -83,10 +83,17 @@ async function openPasskey() {
   if (!passkey) {
     d.innerHTML = shell(`
       <p>Face ID, Touch ID or a security key makes you an ordinary ${esc(net.label)} account. No extension, no seed phrase to write down, and the same passkey opens it on any device it syncs to.</p>
-      <div class="btn-row">
-        <button class="btn btn-start" type="button" data-pk="create">Create a passkey account</button>
-        <button class="btn btn-panel" type="button" data-pk="signin">${hasStoredPasskey() ? "Sign in" : "I already have one"}</button>
-      </div>
+      ${hasStoredPasskey()
+        ? `<div class="btn-row">
+            <button class="btn btn-start" type="button" data-pk="signin">Sign in</button>
+            <button class="btn btn-panel" type="button" data-pk="create">Create another account</button>
+          </div>
+          <p class="field-hint" style="margin-top:10px">"Create another account" makes a new, empty address. To reach the account you already funded, use Sign in.</p>`
+        : `<div class="btn-row">
+            <button class="btn btn-start" type="button" data-pk="create">Create a passkey account</button>
+            <button class="btn btn-panel" type="button" data-pk="signin">I already have one</button>
+          </div>
+          <p class="field-hint" style="margin-top:10px">Each new passkey is a new account. Accounts belong to this site's address (${esc(location.hostname)}).</p>`}
       <p class="field-hint" style="margin-top:12px">Powered by Mera from Category Labs. Your key is derived on this device and never leaves it.</p>`);
   } else {
     const bal = await balanceOf(passkey.address);
