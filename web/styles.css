@@ -556,3 +556,17 @@ li.step p { font-size: var(--t-body-sm); color: var(--marquee-white); margin: 0;
 .seg-sm button { padding: 6px 10px; }
 .linklike { background: none; border: 0; padding: 0; color: var(--monad-purple); font: 500 var(--t-small)/1.4 var(--f-body); text-decoration: underline; cursor: pointer; }
 .linklike:hover { color: var(--berry); }
+
+/* ── Fair, in numbers ───────────────────────────────────────────────── */
+.fair-grid { display: grid; gap: 4px; background: var(--night-black); padding: 4px; }
+.fair-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 18px; background: var(--cabinet-deep); }
+.fair-row > span { color: var(--marquee-white); font-size: var(--t-body-sm); }
+.fair-headrow > span { font: 400 var(--t-label-sm)/1.2 var(--f-label); text-transform: uppercase; letter-spacing: 0.04em; color: var(--screen-label); }
+.fair-row strong { font: 400 var(--t-score)/1 var(--f-display); }
+.fair-curve { color: var(--berry-lamp); }
+.fair-even { color: var(--purple-glow); }
+.fair-note { color: var(--purple-glow); margin-top: 14px; max-width: 70ch; }
+@media (max-width: 620px) {
+  .fair-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; padding: 12px; }
+  .fair-row strong { font-size: var(--t-panel); }
+}

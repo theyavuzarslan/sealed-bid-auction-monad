@@ -1,6 +1,7 @@
 // Landing — the two-player cabinet. The head-to-head replays the real demo run
 // (js/data/demo-results.js, generated from demo/results.json), labelled as such.
 import demo from "../data/demo-results.js";
+import fair from "../data/fairness.js";
 import { engine as getEngine, network } from "../net.js";
 import { pixelIcon } from "../ui/pixel.js";
 import { esc } from "../format.js";
@@ -140,6 +141,24 @@ export function renderHome(el, { scrollTo } = {}) {
         <button class="btn btn-ghost btn-sm" id="replay" type="button">Replay</button>
       </div>
     </div>
+  </section>
+
+  <section class="section" aria-labelledby="fair-h">
+    <div class="section-head">
+      <h2 id="fair-h">Fair, in numbers</h2>
+      <p>${fair.launches} random launches, each played twice with the same ${fair.crowdSize.min}–${fair.crowdSize.max} buyers and the same sniper bot: once on a bonding curve, once on Even. Real auction contracts, run in memory.</p>
+    </div>
+    <div class="fair-grid" role="table" aria-label="Bonding curve versus Even over ${fair.launches} launches">
+      <div class="fair-row fair-headrow" role="row"><span role="columnheader">Over ${fair.launches} launches</span><span role="columnheader">1P Bonding curve</span><span role="columnheader">2P Even</span></div>
+      ${[
+        ["Bot's share of the supply (median)", `${Math.round(fair.curve.botShare.median)}%`, `${Math.round(fair.even.botShare.median)}%`],
+        ["Buyers willing to pay the fair price who got nothing", `${Math.round(fair.curve.shutOutPct)}%`, `${Math.round(fair.even.shutOutPct)}%`],
+        ["Launches where the last third to arrive got nothing", `${Math.round(fair.curve.lateThirdGotNothingPct)}%`, "0%"],
+        ["Highest price a buyer paid ÷ lowest (median)", `${fair.curve.priceSpread.median.toFixed(2)}×`, "1×"],
+        ["Launches where the bot paid less than the crowd", `${Math.round(fair.curve.botCheaperPct)}%`, "0%"],
+      ].map(([m, c, e]) => `<div class="fair-row" role="row"><span role="cell">${esc(m)}</span><strong role="cell" class="fair-curve">${esc(c)}</strong><strong role="cell" class="fair-even">${esc(e)}</strong></div>`).join("")}
+    </div>
+    <p class="note fair-note">On the curve the bot buys in the first three blocks and buyers arrive in random order, each buying while the price is under their limit. On Even everyone bids sealed and the bot bids high. Every Even winner paid the same price, to the wei of rounding. Source: <code>demo/script/FairnessStats.s.sol</code>.</p>
   </section>
 
   <section class="section" id="how" aria-labelledby="how-h">

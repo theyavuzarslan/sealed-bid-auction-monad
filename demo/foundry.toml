@@ -18,4 +18,5 @@ remappings = [
 fs_permissions = [
   { access = "read-write", path = "./.scenario" },
   { access = "read-write", path = "./results.json" },
+  { access = "read-write", path = "./fairness.json" },
 ]

@@ -27,6 +27,20 @@ Your community shouldn't lose its own launch to three bots in the first block. O
 
 Snipe-resistant: submission timing no longer determines price. The bot still takes part; it just pays what everyone pays.
 
+### Across 500 random launches
+
+The same comparison, repeated on 500 random launches: 8–24 buyers each with a random budget (8–40 MON) and price limit (0.15–0.60 MON per token), and one sniper bot (40–120 MON). Every launch is played twice with the same people. On the curve the bot buys in the first three blocks and buyers arrive in random order, each buying while the price is under their limit. On Even everyone bids sealed, the bot at a high price, on the real `AuctionEngine` [src: demo/script/FairnessStats.s.sol, demo/fairness.json].
+
+| Over 500 launches | Bonding curve | Even |
+| --- | --- | --- |
+| Bot's share of the supply (median, p10–p90) | 59% (39–72%) | 18% (11–26%) |
+| Buyers willing to pay the fair price who got nothing | 60% | 0% |
+| Launches where the last third to arrive got nothing | 80% | 0% |
+| Highest ÷ lowest price paid by buyers (median, p10–p90) | 1.79× (1.46–2.32×) | 1× (every winner pays the clearing price, to 121 wei of rounding) |
+| Launches where the bot paid less than the crowd | 100% | 0% |
+
+On this curve the crowd's average price is exactly twice the bot's whenever the curve sells out (a property of its constant-product shape and sale size: 1.74–2.00× across the runs), so that ratio is not reported as a finding. Reproduce: `cd demo && LAUNCHES=500 forge script script/FairnessStats.s.sol && node tools/fairness-summary.mjs`.
+
 ## How it works
 
 ```mermaid
