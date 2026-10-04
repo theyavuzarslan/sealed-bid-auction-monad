@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 /// @notice The price arithmetic the Uniswap v3 adapter needs: a 512-bit mulDiv, an integer square

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 /// @notice Zama-style uniform-price clearing over a book of price levels (10-decisions.md #22).

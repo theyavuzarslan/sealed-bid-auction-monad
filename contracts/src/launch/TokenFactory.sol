@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
 import {ERC20} from "../vendor/openzeppelin/token/ERC20/ERC20.sol";

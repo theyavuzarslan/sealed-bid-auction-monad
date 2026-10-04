@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 /// @notice A DEX venue for seeding launch liquidity (10-decisions.md #23).
