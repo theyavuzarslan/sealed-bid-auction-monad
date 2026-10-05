@@ -83,7 +83,8 @@ export async function connectPasskey({ mode, net }) {
   };
 }
 
-function makeProvider(viem, account, net) {
+// Exported for web/tools/passkey.test.mjs, which drives it with a fake viem and account.
+export function makeProvider(viem, account, net) {
   const chain = viem.defineChain({
     id: net.chainId,
     name: net.label,
