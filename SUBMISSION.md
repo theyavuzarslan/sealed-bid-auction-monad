@@ -116,9 +116,17 @@ Open http://127.0.0.1:8765/web/. Replay the head-to-head with `demo/run.sh`; the
 
 ## Deployment
 
-TODO: not deployed to a public network yet; engine and adapter addresses go here.
+Live on **Monad mainnet** (chain 143) since 6 Oct 2026, block 110869168 onwards:
 
-Both deploy scripts were simulated against a Monad mainnet fork on 24 Sep 2026 (the engine needs about 6.2M gas, at most about 1.3 MON at 202 gwei). To deploy, from `contracts/`, with a funded deployer imported once as a Foundry keystore (`cast wallet import deployer --interactive`), so no key sits in the shell:
+| Contract | Address | Deploy tx |
+| --- | --- | --- |
+| `AuctionEngine` | [`0x0Fa0E7Db5b2c2146D77E41579030A842492E2120`](https://monadscan.com/address/0x0Fa0E7Db5b2c2146D77E41579030A842492E2120) | [`0xd116…f304`](https://monadscan.com/tx/0xd116b9bc4d7b015cccb854a67e97c46074d1277699207c22f202d806d0a2f304) |
+| `TokenFactory` | [`0x41F968CcA0a95d4289D356c24668b1c72e645DbF`](https://monadscan.com/address/0x41F968CcA0a95d4289D356c24668b1c72e645DbF) | [`0x23f0…93c9`](https://monadscan.com/tx/0x23f00fad0cb7d5cd46c0b7ede0f9a09ef8b139328a2e4a0fd4dee81daf5a93c9) |
+| `UniswapV3Adapter` | [`0x71da6a936f1196881C236c62a084ddEB448772Ba`](https://monadscan.com/address/0x71da6a936f1196881C236c62a084ddEB448772Ba) | [`0x2df9…f2b7`](https://monadscan.com/tx/0x2df9ff331dd5a88bbb6dcbabf272ef9413c2ed060de585832a4397f5ad3df2b7) |
+
+The engine uses the existing Monad deployments of Uniswap v3 (factory `0x204FAca1764B154221e35c0d20aBb3c525710498`, position manager `0x7197E214c0b767cFB76Fb734ab638E2c192F4E53`), WMON (`0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A`) and the GoPlus `UniV3LPLocker` (`0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d`). Checked on-chain after deploy: the engine allows the adapter, its locker is GoPlus, the permanent-lock end is 1 Jan 2100 and the LP grace period is one day. All three deployments cost 0.99 MON in total (9.68M gas at 102 gwei).
+
+To redeploy (for example to a fork or another chain), from `contracts/`, with a funded deployer imported once as a Foundry keystore (`cast wallet import deployer --interactive`), so no key sits in the shell:
 
 ```bash
 forge script script/DeployAdapter.s.sol --rpc-url https://rpc.monad.xyz --account deployer --broadcast

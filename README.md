@@ -4,7 +4,7 @@
 
 - **Live app:** https://even-monad.vercel.app
 - **Demo video:** TODO: link once recorded (3 minutes max)
-- **Contracts on Monad:** TODO: addresses after deployment (see [Deploy](#deploy-to-monad))
+- **Contracts on Monad mainnet:** `AuctionEngine` [`0x0Fa0…2120`](https://monadscan.com/address/0x0Fa0E7Db5b2c2146D77E41579030A842492E2120), `TokenFactory` [`0x41F9…5DbF`](https://monadscan.com/address/0x41F968CcA0a95d4289D356c24668b1c72e645DbF), `UniswapV3Adapter` [`0x71da…72Ba`](https://monadscan.com/address/0x71da6a936f1196881C236c62a084ddEB448772Ba) ([details](SUBMISSION.md#deployment))
 - **Write-up for judges:** [SUBMISSION.md](SUBMISSION.md) · every PRD promise checked against code and tests: [PRD-CONFORMANCE.md](PRD-CONFORMANCE.md)
 
 ## The problem and who it is for

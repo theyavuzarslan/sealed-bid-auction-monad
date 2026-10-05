@@ -32,16 +32,16 @@ export default {
       // Public read RPC; writes still go through the wallet. rpc1 is used because it serves eth_getLogs over any
       // range (probed 26 Sep: full history in < 1 s, CORS open). rpc.monad.xyz caps log queries at 100 blocks.
       rpcUrl: "https://rpc1.monad.xyz",
-      fromBlock: 0, // TODO: set to the engine's deploy block so log scans stay short
+      fromBlock: 110869947, // AuctionEngine deploy block (6 Oct 2026); log scans start here
       logChunk: null, // rpc1 needs none; set e.g. 100 for rpc.monad.xyz
       deploymentUrls: [],
       deployment: {
-        auctionEngine: null, // TODO: after mainnet deploy
+        auctionEngine: "0x0Fa0E7Db5b2c2146D77E41579030A842492E2120", // deployments/143.json
         token: null, // no default token on mainnet: the creator enters theirs
-        adapter: null, // TODO: Uniswap v3 adapter address after deploy
-        positionManager: null,
+        adapter: "0x71da6a936f1196881C236c62a084ddEB448772Ba", // UniswapV3Adapter, deployments/143-adapter.json
+        positionManager: "0x7197E214c0b767cFB76Fb734ab638E2c192F4E53", // Uniswap v3 NonfungiblePositionManager
         locker: "0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d", // GoPlus UniV3LPLocker (decision 24)
-        tokenFactory: null, // TODO: after mainnet deploy (Deploy.s.sol writes it)
+        tokenFactory: "0x41F968CcA0a95d4289D356c24668b1c72e645DbF", // deployments/143.json
       },
     },
   },
