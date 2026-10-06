@@ -48,6 +48,8 @@ python3 -m http.server 8765
 
 Open http://127.0.0.1:8765/web/?devwallet=1 (the `devwallet` parameter, local only, gives the page an anvil test account so no extension is needed). Launch a token from "Launch a token", bid from another account (`?devwallet=2`), and move time forward with `cast rpc evm_increaseTime 660 --rpc-url http://127.0.0.1:8545` followed by `cast rpc evm_mine --rpc-url http://127.0.0.1:8545`.
 
+For a screen recording, `demo/record-round.sh` does all of the above in one command: it starts anvil and the web server, opens a Degen round with four sealed bids from anvil accounts 3–6, then at each Enter moves the clock to the next stage and prints the `?devwallet=` and `?passkeytest=` URLs to open (`NOWAIT=1` runs it straight through).
+
 Replays: `demo/run.sh` (bot vs crowd on a bonding curve and on Even), `demo/exit/run.sh` (vault exit auction), `cd demo && LAUNCHES=500 forge script script/FairnessStats.s.sol && node tools/fairness-summary.mjs` (fairness statistics).
 
 ## Tests
