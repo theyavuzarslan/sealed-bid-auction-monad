@@ -13,3 +13,24 @@ runs = 512
 
 [profile.deep.fuzz]
 runs = 10000
+
+# Invariant suite (test/invariant/). Kept small so the default `forge test` stays fast.
+[invariant]
+runs = 64
+depth = 64
+fail_on_revert = true
+show_metrics = true
+
+[profile.deep.invariant]
+runs = 1000
+depth = 256
+fail_on_revert = true
+show_metrics = true
+
+# Heavy scale tests (test/Scale.t.sol) run only under this profile; every other profile skips them.
+#   FOUNDRY_PROFILE=scale forge test --match-contract ScaleMockTest
+#   FOUNDRY_PROFILE=scale forge test --match-contract ScaleForkTest --fork-url https://rpc1.monad.xyz
+[profile.scale]
+verbosity = 2
+gas_limit = "18446744073709551615"
+memory_limit = 1073741824
