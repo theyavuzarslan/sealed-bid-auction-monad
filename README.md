@@ -1,3 +1,5 @@
+<p align="center"><img src="web/assets/even-logo-transparent.png" alt="Even" width="220"></p>
+
 # Even: sealed-bid fair launches on Monad
 
 **Nobody gets a head start.** Even launches a token through a sealed-bid auction: everyone bids blind, every winner pays the same clearing price, and the Uniswap pool opens at that price with its liquidity locked. A sniper bot can still take part; it just pays what everyone pays.
