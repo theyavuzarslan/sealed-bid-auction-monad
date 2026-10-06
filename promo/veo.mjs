@@ -12,9 +12,10 @@
 // standard $0.40. Google charges only for videos that are generated.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import readline from "node:readline/promises";
 
-const DIR = path.dirname(new URL(import.meta.url).pathname);
+const DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(DIR, "veo");
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 const MODELS = {
