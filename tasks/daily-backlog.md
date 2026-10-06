@@ -31,3 +31,4 @@ Status: settled
 <!-- One line per run: date — item — commit — notes. -->
 2026-10-04 — Write-up for a VC-heavy panel — ab79b48 — first screen restructured in SUBMISSION.md; passkey vendoring skipped (npm/esbuild bundling refused by the run's permission classifier); all suites pass (102 contract, 11 demo, 19 indexer, 119 self, 89 e2e, 35 reminder).
 2026-10-06 — Mainnet deploy (outside the daily task) — engine 0x0Fa0…2120, factory 0x41F9…5DbF, adapter 0x71da…72Ba wired into web/config.js, README and SUBMISSION — passkey shim tests committed.
+2026-10-06 — Unit tests for the passkey provider shim — 52ab919 — new web/tools/passkey.test.mjs (33 checks), makeProvider exported; passkey vendoring still blocked; all suites pass (102 contract, 11 demo, 19 indexer, 119 self, 94 e2e, 35 reminder, 54,571 simple, 33 passkey).
