@@ -297,10 +297,7 @@ abstract contract ScaleBase is Test {
 
             vm.prank(b.who);
             engine.revealWithHint(r, b.price, b.amount, b.salt, hint);
-            _rec(
-                "revealWithHint",
-                _txGas(abi.encodeCall(engine.revealWithHint, (r, b.price, b.amount, b.salt, hint)))
-            );
+            _rec("revealWithHint", _txGas(abi.encodeCall(engine.revealWithHint, (r, b.price, b.amount, b.salt, hint))));
         }
     }
 
@@ -393,23 +390,45 @@ abstract contract ScaleBase is Test {
 
     function _print(uint256 n, Ref memory ref, uint256 calls, uint256 step) internal view {
         console2.log("");
-        console2.log(string.concat("=== Scale: ", vm.toString(n), " bidders, ", vm.toString(ref.distinctLevels), " price levels ==="));
         console2.log(
             string.concat(
-                "P = ", vm.toString(ref.price / TICK), " ticks; winners above P ", vm.toString(ref.winners),
-                ", at P ", vm.toString(ref.atPrice), ", below P ", vm.toString(ref.losers),
-                "; oversubscribed ", ref.over ? "yes" : "no"
+                "=== Scale: ", vm.toString(n), " bidders, ", vm.toString(ref.distinctLevels), " price levels ==="
             )
         );
         console2.log(
             string.concat(
-                "settle: ", vm.toString(ref.levelsVisited), " levels visited, ", vm.toString(calls),
-                " calls of maxSteps=", vm.toString(step)
+                "P = ",
+                vm.toString(ref.price / TICK),
+                " ticks; winners above P ",
+                vm.toString(ref.winners),
+                ", at P ",
+                vm.toString(ref.atPrice),
+                ", below P ",
+                vm.toString(ref.losers),
+                "; oversubscribed ",
+                ref.over ? "yes" : "no"
+            )
+        );
+        console2.log(
+            string.concat(
+                "settle: ",
+                vm.toString(ref.levelsVisited),
+                " levels visited, ",
+                vm.toString(calls),
+                " calls of maxSteps=",
+                vm.toString(step)
             )
         );
         console2.log("tx gas = execution + 21000 intrinsic + calldata; before refunds");
         console2.log(
-            string.concat(_pad("operation", 26), _padL("n", 6), _padL("min", 11), _padL("mean", 11), _padL("max", 11), _padL("total", 13))
+            string.concat(
+                _pad("operation", 26),
+                _padL("n", 6),
+                _padL("min", 11),
+                _padL("mean", 11),
+                _padL("max", 11),
+                _padL("total", 13)
+            )
         );
         _row("commit");
         _row("reveal (no hint)");
@@ -432,14 +451,18 @@ abstract contract ScaleBase is Test {
         uint256 worst = agg[keccak256("commit")].max + noHintMax + agg[keccak256("claim (all)")].max;
         console2.log(
             string.concat(
-                "bidder journey (mean commit + hinted reveal + claim): ", vm.toString(journey), " gas = $",
+                "bidder journey (mean commit + hinted reveal + claim): ",
+                vm.toString(journey),
+                " gas = $",
                 _usd(_usdMicros(journey))
             )
         );
         console2.log(
             string.concat(
-                "bidder journey worst case (max commit + unhinted reveal + claim): ", vm.toString(worst),
-                " gas = $", _usd(_usdMicros(worst))
+                "bidder journey worst case (max commit + unhinted reveal + claim): ",
+                vm.toString(worst),
+                " gas = $",
+                _usd(_usdMicros(worst))
             )
         );
     }
