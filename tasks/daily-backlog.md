@@ -9,7 +9,7 @@ Status: settled
 - Work only on items in this list, top to bottom; skip an item marked `(user)` or one that needs a decision, and leave a note.
 - Do not change the money-path contracts (`contracts/src/SealingLayer.sol`, `DepositLedger.sol`, `UniformClearing.sol`, `AuctionEngine.sol`). Tests, scripts, web, indexer and docs are fine.
 - Never deploy to a public network, touch keys or wallets, change the repo's visibility, or post anywhere.
-- Every suite must pass before the push (commands in `CLAUDE.md`): `forge test` in `contracts/`, `node web/selftest.mjs`, `node web/e2e.mjs`, `node web/tools/reminder.test.mjs`, `node web/tools/simple.test.mjs`, `npm test` in `indexer/`, `forge test` in `demo/`. If anything fails and can't be fixed in the run, revert the day's changes and log why instead of pushing.
+- Every suite must pass before the push (commands in `CLAUDE.md`): `forge test` in `contracts/`, `node web/selftest.mjs`, `node web/e2e.mjs`, `node web/tools/reminder.test.mjs`, `node web/tools/simple.test.mjs`, `node web/tools/passkey.test.mjs`, `npm test` in `indexer/`, `forge test` in `demo/`. If anything fails and can't be fixed in the run, revert the day's changes and log why instead of pushing.
 - Claim wording: "snipe-resistant: submission timing no longer determines price"; never "no sniping", "MEV-proof" or "bot-proof"; never mention an encrypted mempool as something we use.
 - Keep published numbers true (test counts in `SUBMISSION.md`, `PRODUCT.md`, `AUDIT.md`, `PRD-CONFORMANCE.md`, the Certified section in `web/js/screens/home.js`).
 

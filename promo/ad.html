@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920">
+<title>Even promo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Schibsted+Grotesk:wght@400;500;600;700&family=Silkscreen&display=swap">
+<style>
+  html, body { margin: 0; padding: 0; background: #0E100F; overflow: hidden; }
+  canvas { display: block; width: 1920px; height: 1080px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+// Even, 30 s promo. Every pixel is a pure function of t (seconds): draw(t).
+// No rAF in the render path, no Date.now(), no Math.random().
+const W = 1920, H = 1080, DUR = 30;
+const C = {
+  indigo: '#200052', deep: '#140033', night: '#0E100F',
+  purple: '#6E54FF', lamp: '#8270FF', glow: '#B5A8FF',
+  berry: '#A0055D', berryLamp: '#E0358F',
+  white: '#FBFAF9', lime: '#C6F24E',
+  line: '#2D1A66', dim: '#6D5FB0', label: '#8B7FD0',
+  grey: '#4A4168',
+};
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+
+// ---------- math ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const R = Math.round;
+const eOut = k => 1 - Math.pow(1 - k, 3);
+const eIn = k => k * k;
+const eInOut = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const eBack = k => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+const eBounce = k => {
+  const n = 7.5625, d = 2.75;
+  if (k < 1 / d) return n * k * k;
+  if (k < 2 / d) return n * (k -= 1.5 / d) * k + 0.75;
+  if (k < 2.5 / d) return n * (k -= 2.25 / d) * k + 0.9375;
+  return n * (k -= 2.625 / d) * k + 0.984375;
+};
+
+// ---------- text ----------
+function font(f, size, w) {
+  if (f === 'j') return `${size}px "Jersey 10"`;
+  if (f === 's') return `${size}px Silkscreen`;
+  return `${w || 600} ${size}px "Schibsted Grotesk"`;
+}
+function tw(s, o) { ctx.save(); ctx.font = font(o.f || 'b', o.size || 32, o.w); const w = ctx.measureText(s).width; ctx.restore(); return w; }
+function txt(s, x, y, o = {}) {
+  ctx.save();
+  ctx.font = font(o.f || 'b', o.size || 32, o.w);
+  ctx.textAlign = o.align || 'left';
+  ctx.textBaseline = 'alphabetic';
+  if (o.alpha != null) ctx.globalAlpha *= clamp(o.alpha);
+  if (o.shadow) { ctx.fillStyle = o.shadow; const d = o.off || 6; ctx.fillText(s, R(x + d), R(y + d)); }
+  ctx.fillStyle = o.color || C.white;
+  ctx.fillText(s, R(x), R(y));
+  ctx.restore();
+}
+// typewriter that keeps the final string's alignment
+function typed(s, k, x, y, o) {
+  const n = Math.floor(s.length * clamp(k) + 1e-6);
+  if (n <= 0) return;
+  const full = tw(s, o);
+  let x0 = x;
+  if (o.align === 'center') x0 = x - full / 2; else if (o.align === 'right') x0 = x - full;
+  txt(s.slice(0, n), x0, y, { ...o, align: 'left' });
+}
+function headline(s, k, x, y, size = 96, align = 'left', alpha = 1) {
+  typed(s, k, x, y, { f: 'j', size, color: C.white, shadow: C.berry, off: 6, align, alpha });
+}
+// Silkscreen tag; " · " separators are drawn as a pixel square (glyph-safe)
+function tag(s, x, y, color, size = 28, alpha = 1, align = 'left') {
+  const parts = s.split(' · ');
+  const o = { f: 's', size, color, alpha };
+  const g = R(size * 0.5), q = Math.max(4, R(size * 0.22));
+  let total = 0; parts.forEach((p, i) => { total += tw(p, o) + (i ? g * 2 : 0); });
+  let cx = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x;
+  parts.forEach((p, i) => {
+    if (i > 0) {
+      ctx.save(); ctx.globalAlpha *= clamp(alpha); ctx.fillStyle = color;
+      ctx.fillRect(R(cx + g - q / 2), R(y - size * 0.36 - q / 2), q, q);
+      ctx.restore(); cx += g * 2;
+    }
+    txt(p, cx, y, o); cx += tw(p, o);
+  });
+  return total;
+}
+
+// ---------- shapes ----------
+function notchPath(x, y, w, h, n) {
+  ctx.beginPath();
+  ctx.moveTo(x + n, y); ctx.lineTo(x + w - n, y); ctx.lineTo(x + w - n, y + n); ctx.lineTo(x + w, y + n);
+  ctx.lineTo(x + w, y + h - n); ctx.lineTo(x + w - n, y + h - n); ctx.lineTo(x + w - n, y + h);
+  ctx.lineTo(x + n, y + h); ctx.lineTo(x + n, y + h - n); ctx.lineTo(x, y + h - n);
+  ctx.lineTo(x, y + n); ctx.lineTo(x + n, y + n); ctx.closePath();
+}
+function panel(x, y, w, h, fill, shadow, off = 8, n = 8, alpha = 1) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= clamp(alpha);
+  if (shadow) { ctx.fillStyle = shadow; notchPath(R(x + off), R(y + off), R(w), R(h), n); ctx.fill(); }
+  ctx.fillStyle = fill; notchPath(R(x), R(y), R(w), R(h), n); ctx.fill();
+  ctx.restore();
+}
+function rect(x, y, w, h, color, alpha = 1) {
+  if (alpha <= 0 || w <= 0 || h <= 0) return;
+  ctx.save(); ctx.globalAlpha *= clamp(alpha); ctx.fillStyle = color;
+  ctx.fillRect(R(x), R(y), R(x + w) - R(x), R(y + h) - R(y)); ctx.restore();
+}
+function stamp(s, cx, cy, color, k, rot, size) {
+  if (k <= 0) return;
+  const sc = lerp(1.9, 1, eOut(clamp(k)));
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot); ctx.scale(sc, sc);
+  ctx.globalAlpha *= clamp(k * 4);
+  ctx.font = font('j', size);
+  const m = ctx.measureText(s);
+  const asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
+  const bw = m.width + size * 0.5, bh = (asc + desc) + size * 0.42;
+  ctx.fillStyle = C.deep; ctx.fillRect(-bw / 2 + 12, -bh / 2 + 12, bw, bh);
+  ctx.fillStyle = 'rgba(20,0,51,0.92)'; ctx.fillRect(-bw / 2, -bh / 2, bw, bh);
+  ctx.lineWidth = 12; ctx.strokeStyle = color; ctx.strokeRect(-bw / 2 + 6, -bh / 2 + 6, bw - 12, bh - 12);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  const by = (asc - desc) / 2;
+  ctx.fillStyle = C.deep; ctx.fillText(s, 8, by + 8);
+  ctx.fillStyle = color; ctx.fillText(s, 0, by);
+  ctx.restore();
+}
+
+// ---------- sprites ----------
+const IMG = {};
+const COIN_CX = 0.5, COIN_CY = 0.5, COIN_R = 0.462;
+const coinCache = {};
+function coinCanvas(size) {
+  if (coinCache[size]) return coinCache[size];
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  g.beginPath(); g.arc(size * COIN_CX, size * COIN_CY, size * COIN_R, 0, Math.PI * 2); g.closePath(); g.clip();
+  g.fillStyle = C.deep; g.fillRect(0, 0, size, size);
+  g.drawImage(IMG.coin, 0, 0, size, size);
+  return (coinCache[size] = c);
+}
+function drawCoin(cx, cy, size, o = {}) {
+  const c = coinCanvas(size);
+  ctx.save();
+  if (o.alpha != null) ctx.globalAlpha *= clamp(o.alpha);
+  if (o.filter) ctx.filter = o.filter;
+  if (o.scale && o.scale !== 1) {
+    ctx.imageSmoothingEnabled = true;
+    const s = size * o.scale; ctx.drawImage(c, R(cx - s / 2), R(cy - s / 2), R(s), R(s));
+  } else {
+    ctx.drawImage(c, R(cx - size / 2), R(cy - size / 2));
+  }
+  ctx.restore();
+}
+let logoCanvas = null;
+function getLogo(size) {
+  if (logoCanvas && logoCanvas.width === size) return logoCanvas;
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  g.drawImage(IMG.logo, 0, 0, size, size);
+  return (logoCanvas = c);
+}
+
+// The bot: an original pixel robot (berry body, night visor, white eyes, antenna).
+const BOT = [
+  '......W......',
+  '......B......',
+  '..BBBBBBBBB..',
+  '.BBBBBBBBBBB.',
+  '.BDDDDDDDDDB.',
+  '.BDWWDDDWWDB.',
+  '.BDWWDDDWWDB.',
+  '.BDDDDDDDDDB.',
+  '.BBBBBBBBBBB.',
+  '.BBKBKBKBKBB.',
+  '..BBBBBBBBB..',
+  '....BBBBB....',
+  'B.BBBBBBBBB.B',
+  'BBBBBKKKBBBBB',
+  'B.BBBBBBBBB.B',
+  '..BBBBBBBBB..',
+  '..BB.....BB..',
+  '..BB.....BB..',
+];
+const BOT_W = 13, BOT_H = 18;
+const BOTCOL = { B: C.berryLamp, D: C.night, W: C.white, K: C.berry };
+// x,y = bottom-centre; s = integer pixel scale
+function drawBot(x, y, s, o = {}) {
+  const x0 = R(x - (BOT_W * s) / 2), y0 = R(y - BOT_H * s);
+  ctx.save();
+  if (o.alpha != null) ctx.globalAlpha *= clamp(o.alpha);
+  const sh = Math.max(2, s);
+  ctx.fillStyle = C.deep;
+  for (let r = 0; r < BOT_H; r++) for (let c = 0; c < BOT_W; c++) if (BOT[r][c] !== '.') ctx.fillRect(x0 + c * s + sh, y0 + r * s + sh, s, s);
+  for (let r = 0; r < BOT_H; r++) for (let c = 0; c < BOT_W; c++) {
+    const ch = BOT[r][c]; if (ch === '.') continue;
+    ctx.fillStyle = BOTCOL[ch]; ctx.fillRect(x0 + c * s, y0 + r * s, s, s);
+  }
+  ctx.restore();
+}
+
+// ---------- overlay: scanlines + vignette ----------
+const ov = document.createElement('canvas'); ov.width = W; ov.height = H;
+(() => {
+  const g = ov.getContext('2d');
+  g.fillStyle = 'rgba(6,0,20,0.22)';
+  for (let y = 0; y < H; y += 4) g.fillRect(0, y, W, 1);
+  const rg = g.createRadialGradient(W / 2, H / 2, H * 0.42, W / 2, H / 2, H * 1.08);
+  rg.addColorStop(0, 'rgba(0,0,0,0)'); rg.addColorStop(1, 'rgba(0,0,0,0.5)');
+  g.fillStyle = rg; g.fillRect(0, 0, W, H);
+})();
+
+function bg(col) { ctx.fillStyle = col; ctx.fillRect(0, 0, W, H); }
+
+// ============================================================
+// S1 Opener (0 – 3.5 s)
+// ============================================================
+function S1(u) {
+  bg(C.deep);
+  const size = 360, cx = 960, cyEnd = 450;
+  const kd = seg(u, 0.15, 1.15);
+  const cy = lerp(-260, cyEnd, eBounce(kd));
+  const pw = seg(u, 1.3, 1.7);
+  if (pw > 0) {
+    const glow = pw * (1 - 0.55 * seg(u, 1.8, 2.8));
+    ctx.save(); ctx.globalAlpha = glow; ctx.shadowColor = C.lime; ctx.shadowBlur = 90;
+    ctx.fillStyle = C.deep; ctx.beginPath(); ctx.arc(cx, cy, size * 0.45, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    for (const [a, b] of [[1.3, 2.1], [1.55, 2.35]]) {
+      const k = seg(u, a, b); if (k <= 0 || k >= 1) continue;
+      ctx.save(); ctx.globalAlpha = 1 - k; ctx.strokeStyle = C.lime; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(cx, cy, size * 0.47 + 150 * eOut(k), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
+  }
+  drawCoin(cx, cy, size, { filter: `brightness(${lerp(0.3, 1, eOut(pw)).toFixed(3)})` });
+  headline('Nobody gets a head start.', seg(u, 1.9, 2.6), 960, 810, 100, 'center');
+  if (Math.floor(u * 2.5) % 2 === 0) txt('INSERT COIN', 960, 975, { f: 's', size: 34, color: C.white, align: 'center' });
+}
+
+// ============================================================
+// S2 Bonding curve (3.5 – 11 s)
+// ============================================================
+const BC = { X0: 160, X1: 1180, Y0: 900, Y1: 380, XM: 1000, YM: 0.45 };
+const bcx = x => BC.X0 + (x * (BC.X1 - BC.X0)) / BC.XM;
+const bcy = p => BC.Y0 - (p * (BC.Y0 - BC.Y1)) / BC.YM;
+const price = x => 400000 / ((2000 - x) * (2000 - x));
+const FILLS = [
+  { who: 'bot', b: 1, x: 260.87, t: [1.0, 1.45] },
+  { who: 'bot', b: 2, x: 431.37, t: [1.55, 2.0] },
+  { who: 'bot', b: 3, x: 545.45, t: [2.1, 2.55] },
+  { who: 'ana', b: 5, x: 688.52, t: [3.05, 3.5] },
+  { who: 'chloe', b: 8, x: 826.98, t: [3.6, 4.05] },
+  { who: 'emi', b: 11, x: 927.61, t: [4.15, 4.6] },
+  { who: 'ines', b: 16, x: 1000, t: [4.7, 5.15] },
+];
+const CROWD = ['ana', 'ben', 'chloe', 'dev', 'emi', 'finn', 'gia', 'hugo', 'ines', 'jay', 'kai', 'lea'];
+
+function axesY(ticks, ymap, fmt, X0, X1, alpha) {
+  for (const p of ticks) {
+    const y = R(ymap(p));
+    rect(X0, y, X1 - X0, 1, C.line, alpha);
+    txt(fmt(p), X0 - 16, y + 7, { f: 'b', w: 500, size: 20, color: C.label, align: 'right', alpha });
+  }
+}
+function axesX(ticks, xmap, Y0, alpha) {
+  for (const x of ticks) {
+    const px = R(xmap(x));
+    rect(px - 1, Y0, 3, 10, C.dim, alpha);
+    txt(String(x), px, Y0 + 36, { f: 'b', w: 500, size: 20, color: C.label, align: 'center', alpha });
+  }
+}
+function curvePath(xa, xb) {
+  ctx.beginPath();
+  const n = Math.max(2, Math.ceil((xb - xa) / 4));
+  for (let i = 0; i <= n; i++) { const x = lerp(xa, xb, i / n); const px = bcx(x), py = bcy(price(x)); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+}
+function S2(u) {
+  bg(C.indigo);
+  tag('1P · BONDING CURVE', 120, 120, C.berryLamp, 28, seg(u, 0.25, 0.45));
+  headline('Every launch is a race.', seg(u, 0.3, 0.9), 120, 228, 96);
+
+  const aAx = seg(u, 0.35, 0.75);
+  axesY([0.1, 0.2, 0.3, 0.4], bcy, p => p.toFixed(1), BC.X0, BC.X1, aAx);
+  axesX([0, 250, 500, 750, 1000], bcx, BC.Y0, aAx);
+  rect(BC.X0, BC.Y0, BC.X1 - BC.X0 + 20, 3, C.dim, aAx);
+  rect(BC.X0 - 2, BC.Y1 - 10, 3, BC.Y0 - BC.Y1 + 10, C.dim, aAx);
+  txt('PRICE (MON)', BC.X0, BC.Y1 - 22, { f: 's', size: 18, color: C.label, alpha: aAx });
+  txt('TOKENS BOUGHT', BC.X1 + 20, BC.Y0 + 66, { f: 's', size: 18, color: C.label, align: 'right', alpha: aAx });
+
+  // ghost of the full curve
+  const aG = seg(u, 0.5, 0.9);
+  if (aG > 0) {
+    ctx.save(); ctx.globalAlpha = aG * 0.8; ctx.strokeStyle = C.dim; ctx.lineWidth = 3; ctx.setLineDash([10, 10]);
+    curvePath(0, 1000); ctx.stroke(); ctx.restore();
+  }
+
+  // fills
+  let head = null;
+  FILLS.forEach((f, i) => {
+    const k = seg(u, f.t[0], f.t[1]);
+    if (k <= 0) return;
+    const xa = i ? FILLS[i - 1].x : 0;
+    const xh = lerp(xa, f.x, eInOut(k));
+    const col = f.who === 'bot' ? C.berryLamp : C.lamp;
+    ctx.save();
+    curvePath(xa, xh); ctx.lineTo(bcx(xh), BC.Y0); ctx.lineTo(bcx(xa), BC.Y0); ctx.closePath();
+    ctx.globalAlpha = 0.24; ctx.fillStyle = col; ctx.fill();
+    ctx.restore();
+    // segment divider
+    rect(bcx(xa) - 1, bcy(price(xa)), 3, BC.Y0 - bcy(price(xa)), C.deep, 0.9);
+    ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 7; ctx.lineCap = 'butt';
+    curvePath(xa, xh); ctx.stroke(); ctx.restore();
+    // block tag
+    // block tag pops in at the segment end once the fill lands
+    const ka = seg(k, 0.75, 1);
+    if (ka > 0) {
+      const tx = bcx(f.x), ty = bcy(price(f.x)) - 70 + R(8 * (1 - eOut(ka)));
+      const label = 'BLOCK ' + f.b;
+      const w = tw(label, { f: 's', size: 16 }) + 18;
+      const tcx = tx - w / 2; // tag sits over the segment it labels
+      ctx.save(); ctx.globalAlpha *= ka;
+      rect(tcx - w / 2 + 3, ty - 26 + 3, w, 30, C.deep);
+      rect(tcx - w / 2, ty - 26, w, 30, f.who === 'bot' ? C.berry : C.purple);
+      txt(label, tcx, ty - 5, { f: 's', size: 16, color: C.white, align: 'center' });
+      ctx.restore();
+    }
+    if (k < 1 || i === FILLS.length - 1) head = { who: f.who, x: xh, k };
+  });
+  if (head && u < 6.0) {
+    const px = bcx(head.x), py = bcy(price(head.x));
+    const a = 1 - seg(u, 5.6, 6.0);
+    if (head.who === 'bot') drawBot(px, py - 4, 3, { alpha: a });
+    else drawCoin(px, py - 30, 48, { alpha: a });
+  }
+
+  // scoreboard
+  const aP = seg(u, 0.6, 1.0);
+  panel(1300, 330, 520, 320, C.deep, C.berry, 8, 8, aP);
+  txt('BOT PAID / TOKEN', 1340, 392, { f: 's', size: 22, color: C.label, alpha: aP });
+  txt('CROWD PAID / TOKEN', 1340, 542, { f: 's', size: 22, color: C.label, alpha: aP });
+  const kb = seg(u, 2.6, 3.0), kc = seg(u, 5.2, 5.6);
+  const vb = u < 2.6 ? '???' : (0.1375 * eOut(kb)).toFixed(4);
+  const vc = u < 5.2 ? '???' : (0.275 * eOut(kc)).toFixed(3);
+  const wb = txtVal(vb, 1340, 470, C.berryLamp, aP, u >= 2.6);
+  const wc = txtVal(vc, 1340, 620, C.glow, aP, u >= 5.2);
+
+  // crowd grid
+  txt('THE CROWD', 1300, 712, { f: 's', size: 18, color: C.label, alpha: aP });
+  const kg = seg(u, 5.75, 6.15);
+  CROWD.forEach((n, i) => {
+    const c = i % 6, r = (i / 6) | 0;
+    const cx = 1328 + c * 86, cy = 768 + r * 112;
+    const fi = FILLS.findIndex(f => f.who === n);
+    const lit = fi >= 0 && u >= FILLS[fi].t[0];
+    let filter;
+    if (lit) filter = 'none';
+    else if (kg > 0) filter = `grayscale(${kg.toFixed(3)}) brightness(${lerp(0.55, 0.42, kg).toFixed(3)})`;
+    else filter = 'brightness(0.55)';
+    drawCoin(cx, cy, 56, { alpha: aP, filter });
+    if (lit) {
+      const k = seg(u, FILLS[fi].t[0], FILLS[fi].t[0] + 0.2);
+      ctx.save(); ctx.globalAlpha = aP * k; ctx.strokeStyle = C.lime; ctx.lineWidth = 4;
+      ctx.strokeRect(cx - 33, cy - 33, 66, 66); ctx.restore();
+    }
+    txt(n, cx, cy + 52, { f: 's', size: 15, color: lit ? C.white : C.dim, align: 'center', alpha: aP });
+    if (!lit && kg > 0) {
+      ctx.save(); ctx.strokeStyle = C.berryLamp; ctx.lineWidth = 6; ctx.lineCap = 'square';
+      const e = 22 * eOut(kg);
+      ctx.beginPath(); ctx.moveTo(cx - e, cy - e); ctx.lineTo(cx + e, cy + e); ctx.moveTo(cx + e, cy - e); ctx.lineTo(cx - e, cy + e); ctx.stroke(); ctx.restore();
+    }
+  });
+  txt('8 OF 12 GOT NOTHING', 1300, 1000, { f: 's', size: 28, color: C.berryLamp, alpha: seg(u, 5.95, 6.15) });
+
+  stamp('BOT WINS', 670, 625, C.berryLamp, seg(u, 6.3, 6.5), -0.1, 190);
+}
+function txtVal(v, x, y, color, alpha, unit) {
+  txt(v, x, y, { f: 'b', w: 700, size: 72, color, alpha });
+  if (unit) { const w = tw(v, { f: 'b', w: 700, size: 72 }); txt('MON', x + w + 16, y, { f: 's', size: 24, color: C.label, alpha }); }
+}
+
+// ============================================================
+// S3 Even (11 – 21.5 s)
+// ============================================================
+const BIDS = [
+  ['BOT', 0.50, 250], ['emi', 0.50, 64], ['ines', 0.45, 62.22], ['ana', 0.40, 75], ['lea', 0.38, 52.63],
+  ['chloe', 0.35, 102.86], ['kai', 0.32, 81.25], ['gia', 0.30, 80], ['jay', 0.28, 78.57], ['finn', 0.26, 76.92],
+  ['hugo', 0.24, 66.67], ['ben', 0.22, 81.82], ['dev', 0.20, 70],
+];
+const EC = { X0: 160, X1: 1180, Y0: 900, Y1: 380, XM: 1200, YM: 0.55 };
+const ecx = x => EC.X0 + (x * (EC.X1 - EC.X0)) / EC.XM;
+const ecy = p => EC.Y0 - (p * (EC.Y0 - EC.Y1)) / EC.YM;
+const SUPPLY = 1000, CLEAR = 0.22;
+const QUEUE = ['BOT', ...CROWD];
+
+function S3(u) {
+  bg(C.indigo);
+  tag('2P · EVEN', 120, 120, C.glow, 28, seg(u, 0.25, 0.45));
+  headline('Same launch. Sealed bids.', seg(u, 0.3, 0.9), 120, 228, 96);
+
+  // ---- Phase A: sealing ----
+  const aA = 1 - seg(u, 3.2, 3.45);
+  if (aA > 0) {
+    const BX = 380, BY = 560, BW = 520, BH = 240, SX = 640;
+    const DROP0 = 0.7, STEP = 0.16, DD = 0.38;
+    const arrived = QUEUE.filter((_, i) => u >= DROP0 + i * STEP + DD).length;
+    ctx.save(); ctx.globalAlpha = aA;
+    panel(BX, BY, BW, BH, C.deep, C.purple, 10, 10, seg(u, 0.4, 0.7));
+    const aBox = seg(u, 0.4, 0.7);
+    rect(SX - 110, BY - 6, 220, 16, C.night, aBox);
+    rect(SX - 110, BY - 6, 220, 4, C.dim, aBox);
+    txt('SEALED', SX, BY + 128, { f: 'j', size: 110, color: C.glow, shadow: C.purple, off: 5, align: 'center', alpha: aBox });
+    // chips
+    for (let i = 0; i < 13; i++) {
+      const x = SX - 204 + i * 32, y = BY + 160;
+      if (i < arrived) { rect(x, y, 24, 32, C.lamp, aBox); txt('?', x + 12, y + 25, { f: 's', size: 20, color: C.white, align: 'center', alpha: aBox }); }
+      else { rect(x, y, 24, 32, C.line, aBox); }
+    }
+    // bidders
+    QUEUE.forEach((n, i) => {
+      const s0 = DROP0 + i * STEP, k = seg(u, s0, s0 + DD);
+      if (k >= 1) return;
+      const qx = SX - 6 * 70 + i * 70, qy = 400;
+      const appear = seg(u, 0.35 + i * 0.02, 0.6 + i * 0.02);
+      const x = lerp(qx, SX, eInOut(k));
+      const y = lerp(qy, BY - 10, eIn(k)) - Math.sin(Math.PI * k) * 50;
+      const sc = 1 - 0.5 * seg(k, 0.6, 1);
+      const a = appear * (1 - seg(k, 0.82, 1));
+      if (n === 'BOT') {
+        if (sc > 0.75) drawBot(x, y + 27, 3, { alpha: a }); else drawBot(x, y + 18, 2, { alpha: a });
+      } else drawCoin(x, y, 52, { alpha: a, scale: sc });
+    });
+    // counter
+    const o1 = { f: 's', size: 30 }, l1 = 'BIDS SEALED ', n1 = String(arrived);
+    const w1 = tw(l1, o1) + tw(n1, { f: 'b', w: 700, size: 44 });
+    txt(l1, SX - w1 / 2, BY + BH + 72, { ...o1, color: C.label, alpha: aBox });
+    txt(n1, SX - w1 / 2 + tw(l1, o1), BY + BH + 74, { f: 'b', w: 700, size: 44, color: C.lime, alpha: aBox });
+    // clock
+    const aC = seg(u, 0.5, 0.8);
+    panel(1300, 520, 500, 250, C.deep, C.purple, 8, 8, aC);
+    txt('BIDDING CLOSES', 1340, 584, { f: 's', size: 24, color: C.label, alpha: aC });
+    const rem = Math.ceil(600 * (1 - seg(u, 0.7, 3.05)) - 1e-6);
+    const mm = Math.floor(rem / 60), ss = String(rem % 60).padStart(2, '0');
+    txt(`${mm}:${ss}`, 1340, 720, { f: 'b', w: 700, size: 120, color: rem === 0 ? C.lime : C.white, alpha: aC });
+    txt("Nobody sees a price. Arriving first doesn't buy a better one.", 960, 1010, { f: 'b', w: 600, size: 40, align: 'center', alpha: seg(u, 1.0, 1.4) });
+    ctx.restore();
+  }
+
+  // ---- Phase B / C: reveal + clear ----
+  const aB = seg(u, 3.35, 3.65);
+  if (aB <= 0) return;
+  ctx.save(); ctx.globalAlpha = aB;
+  const blinkOn = u > 6.8 || Math.floor(u * 3) % 2 === 0;
+  const wc = tw('CONTINUE? ', { f: 's', size: 30 });
+  if (blinkOn) txt('CONTINUE? ', 120, 312, { f: 's', size: 30, color: C.lime });
+  txt('BIDS REVEALED', 120 + wc, 312, { f: 's', size: 30, color: C.white });
+
+  axesY([0.1, 0.2, 0.3, 0.4, 0.5], ecy, p => p.toFixed(1), EC.X0, EC.X1, 1);
+  axesX([0, 250, 500, 750, 1000], ecx, EC.Y0, 1);
+  rect(EC.X0, EC.Y0, EC.X1 - EC.X0 + 20, 3, C.dim);
+  rect(EC.X0 - 2, EC.Y1 - 10, 3, EC.Y0 - EC.Y1 + 10, C.dim);
+  txt('PRICE (MON)', EC.X0, EC.Y1 - 22, { f: 's', size: 18, color: C.label });
+  txt('TOKENS', EC.X1 + 20, EC.Y0 + 36, { f: 's', size: 18, color: C.label, align: 'right' });
+
+  const kC = seg(u, 6.8, 7.15);
+  const sx = R(ecx(SUPPLY));
+  const labels = [];
+  let cum = 0;
+  BIDS.forEach(([n, p, amt], i) => {
+    const x0 = ecx(cum), x1 = ecx(cum + amt); cum += amt;
+    const k = seg(u, 3.7 + i * 0.13, 3.95 + i * 0.13);
+    if (k <= 0) return;
+    const top = lerp(EC.Y0, ecy(p), eOut(k));
+    const bx = R(x0) + 2, bw = R(x1) - R(x0) - 3;
+    const base = n === 'BOT' ? C.berryLamp : C.lamp;
+    rect(bx + 5, top + 5, bw, EC.Y0 - top - 5, C.deep);
+    rect(bx, top, bw, EC.Y0 - top, base);
+    const won = p >= CLEAR;
+    if (kC > 0) {
+      if (won) {
+        const wEnd = n === 'ben' ? Math.min(bw, sx - bx) : bw;
+        rect(bx, top, wEnd, EC.Y0 - top, C.lime, kC);
+        if (n === 'ben') rect(bx + wEnd, top, bw - wEnd, EC.Y0 - top, C.grey, kC);
+      } else rect(bx, top, bw, EC.Y0 - top, C.grey, kC);
+    }
+    if (k >= 1) labels.push({ n, i, won, top, cx: bx + bw / 2 });
+  });
+  // supply line
+  const aS = seg(u, 3.55, 3.85);
+  ctx.save(); ctx.globalAlpha *= aS; ctx.fillStyle = C.white;
+  for (let y = EC.Y1 + 10; y < EC.Y0; y += 18) ctx.fillRect(sx - 1, y, 4, 10);
+  ctx.restore();
+  txt('SUPPLY 1,000', sx, EC.Y1 - 2, { f: 's', size: 16, color: C.white, align: 'center', alpha: aS });
+
+  // clearing line (under the names and sprites)
+  const kL = seg(u, 5.6, 6.2);
+  const cyL = R(ecy(CLEAR));
+  if (kL > 0) {
+    const xe = lerp(EC.X0, 1196, eOut(kL));
+    rect(EC.X0 - 4, cyL + 3, xe - EC.X0 + 4, 5, C.deep);
+    rect(EC.X0 - 4, cyL - 2, xe - EC.X0 + 4, 5, C.lime);
+  }
+  // names (at the foot of each step) and sprites (on top)
+  for (const { n, i, won, top, cx } of labels) {
+    const nameCol = kC > 0.5 && won && n !== 'ben' ? C.night : C.white;
+    txt(n, cx, EC.Y0 - 18, { f: 'b', w: 700, size: 17, color: nameCol, align: 'center', alpha: seg(u, 3.95 + i * 0.13, 4.1 + i * 0.13) });
+    if (n === 'BOT') drawBot(cx, top - 6, 2);
+    else drawCoin(cx, top - 22, 30, { filter: kC > 0 && !won ? `grayscale(${kC.toFixed(3)})` : 'none' });
+    if (n === 'dev' && kC > 0) txt('REFUND', cx, top - 48, { f: 's', size: 15, color: C.glow, align: 'center', alpha: seg(u, 7.2, 7.5) });
+  }
+  if (kL > 0) {
+    const aL = seg(u, 6.05, 6.3);
+    if (aL > 0) {
+      const lw = tw('ONE PRICE', { f: 's', size: 24 }) + 24 + tw('0.220', { f: 's', size: 24 }) + 32;
+      panel(1196, cyL - 24, lw, 48, C.lime, C.deep, 5, 4, aL);
+      tag('ONE PRICE · 0.220', 1212, cyL + 9, C.night, 24, aL);
+    }
+  }
+
+  // scoreboard
+  const aP = seg(u, 6.9, 7.2);
+  panel(1300, 330, 520, 320, C.deep, C.purple, 8, 8, aP);
+  txt('BOT PAID / TOKEN', 1340, 392, { f: 's', size: 22, color: C.label, alpha: aP });
+  txt('CROWD PAID / TOKEN', 1340, 542, { f: 's', size: 22, color: C.label, alpha: aP });
+  const k1 = seg(u, 7.1, 7.4), k2 = seg(u, 7.4, 7.7);
+  if (aP > 0) {
+    txtVal(u < 7.1 ? '???' : (0.22 * eOut(k1)).toFixed(3), 1340, 470, C.lime, aP, u >= 7.1);
+    txtVal(u < 7.4 ? '???' : (0.22 * eOut(k2)).toFixed(3), 1340, 620, C.lime, aP, u >= 7.4);
+  }
+  const aT = seg(u, 8.5, 8.8);
+  txt('11 of 12 got tokens', 1300, 790, { f: 'b', w: 700, size: 44, color: C.glow, alpha: aT });
+  txt('dev bid under the price: full refund', 1300, 836, { f: 'b', w: 500, size: 26, color: C.label, alpha: aT });
+
+  stamp('DRAW', 670, 610, C.lime, seg(u, 7.85, 8.05), -0.09, 210);
+  txt('The bot can still play. It just pays what everyone pays.', 960, 1010, { f: 'b', w: 600, size: 40, align: 'center', alpha: seg(u, 8.2, 8.5) });
+  ctx.restore();
+}
+
+// ============================================================
+// S4 Numbers (21.5 – 26.5 s)
+// ============================================================
+const ROWS = [
+  { l: "Bot's share of supply", note: '(median)', a: 59, b: 18, max: 100, fa: v => Math.round(v) + '%', fb: v => Math.round(v) + '%', a0: 0 },
+  { l: 'Willing buyers shut out', note: '', a: 60, b: 0, max: 100, fa: v => Math.round(v) + '%', fb: v => Math.round(v) + '%', a0: 0 },
+  { l: 'Highest ÷ lowest price paid', note: '', a: 1.79, b: 1, max: 2, fa: v => v.toFixed(2) + '×', fb: () => '1×', a0: 1 },
+];
+function S4(u) {
+  bg(C.indigo);
+  tag('500 SIMULATED LAUNCHES · REAL CONTRACTS', 120, 120, C.glow, 28, seg(u, 0.25, 0.45));
+  headline('Fair, in numbers.', seg(u, 0.3, 0.8), 120, 228, 96);
+  // legend
+  const aLg = seg(u, 0.5, 0.8);
+  rect(1330, 168, 28, 28, C.berryLamp, aLg); txt('BONDING CURVE', 1374, 192, { f: 's', size: 22, color: C.white, alpha: aLg });
+  rect(1330, 214, 28, 28, C.lime, aLg); txt('EVEN', 1374, 238, { f: 's', size: 22, color: C.white, alpha: aLg });
+
+  const BX = 160, BWMAX = 1100;
+  ROWS.forEach((r, i) => {
+    const L = 360 + i * 190, s = 0.5 + i * 0.5;
+    const aL = seg(u, s - 0.15, s + 0.15);
+    txt(r.l, BX, L, { f: 'b', w: 600, size: 42, color: C.white, alpha: aL });
+    if (r.note) txt(r.note, BX + tw(r.l, { f: 'b', w: 600, size: 42 }) + 14, L, { f: 'b', w: 500, size: 30, color: C.label, alpha: aL });
+    const ka = eOut(seg(u, s, s + 0.65)), kb = eOut(seg(u, s + 0.2, s + 0.85));
+    // berry (bonding curve)
+    const wa = Math.max(4, BWMAX * (r.a * ka) / r.max);
+    if (ka > 0) {
+      rect(BX + 6, L + 26, wa, 48, C.deep);
+      rect(BX, L + 20, wa, 48, C.berryLamp);
+      txt(r.fa(lerp(r.a0, r.a, ka)), BX + wa + 22, L + 62, { f: 'b', w: 700, size: 42, color: C.berryLamp });
+    }
+    // lime (Even)
+    if (kb > 0) {
+      const wb = Math.max(6, BWMAX * (r.b * kb) / r.max);
+      rect(BX + 6, L + 84, wb, 48, C.deep);
+      rect(BX, L + 78, wb, 48, C.lime);
+      txt(r.b === 1 ? r.fb() : r.fb(r.b * kb), BX + wb + 22, L + 120, { f: 'b', w: 700, size: 42, color: C.lime });
+    }
+  });
+  txt('BOT SHARE: MEDIAN OF 500 RANDOM LAUNCHES', BX, 935, { f: 's', size: 18, color: C.label, alpha: seg(u, 2.3, 2.6) });
+  typed('Snipe-resistant: submission timing no longer determines price.', seg(u, 2.7, 3.5), 960, 1012, { f: 'b', w: 600, size: 42, color: C.white, align: 'center' });
+}
+
+// ============================================================
+// S5 Closer (26.5 – 30 s)
+// ============================================================
+function S5(u) {
+  bg(C.indigo);
+  const LS = 640, PAD = 24, FW = LS + PAD * 2;
+  const fx = 150, fy = (H - FW) / 2;
+  const kp = seg(u, 0.25, 0.7);
+  if (kp > 0) {
+    const sc = lerp(0.7, 1, eBack(kp));
+    ctx.save();
+    ctx.translate(fx + FW / 2, fy + FW / 2); ctx.scale(sc, sc); ctx.translate(-(fx + FW / 2), -(fy + FW / 2));
+    ctx.globalAlpha = clamp(kp * 3);
+    panel(fx, fy, FW, FW, C.white, C.deep, 18, 16);
+    ctx.drawImage(getLogo(LS), fx + PAD, fy + PAD);
+    ctx.restore();
+  }
+  const RX = 960;
+  headline('Fair launches', seg(u, 0.55, 1.0), RX, 430, 130);
+  headline('on Monad.', seg(u, 0.9, 1.3), RX, 560, 130);
+  const aLive = seg(u, 1.45, 1.7);
+  if (aLive > 0) {
+    if (Math.floor(u * 2) % 2 === 0 || u < 1.7) rect(RX, 660, 22, 22, C.lime, aLive);
+    txt('LIVE ON MONAD MAINNET', RX + 40, 683, { f: 's', size: 36, color: C.lime, alpha: aLive });
+  }
+  txt('even-monad.vercel.app', RX, 790, { f: 'b', w: 600, size: 56, color: C.white, alpha: seg(u, 1.8, 2.1) });
+}
+
+// ============================================================
+const CUTS = [3.5, 11, 21.5, 26.5];
+function draw(t) {
+  t = clamp(t, 0, DUR - 1e-6);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.shadowBlur = 0; ctx.shadowColor = 'rgba(0,0,0,0)'; ctx.setLineDash([]);
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, W, H);
+  if (t < 3.5) S1(t);
+  else if (t < 11) S2(t - 3.5);
+  else if (t < 21.5) S3(t - 11);
+  else if (t < 26.5) S4(t - 21.5);
+  else S5(t - 26.5);
+  ctx.drawImage(ov, 0, 0);
+  let f = 0;
+  for (const b of CUTS) { const d = Math.abs(t - b); if (d < 0.25) f = Math.max(f, 1 - d / 0.25); }
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f.toFixed(4)})`; ctx.fillRect(0, 0, W, H); }
+}
+window.__seek = t => draw(t);
+
+function loadImg(src) {
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('img ' + src)); i.src = src; });
+}
+window.__ready = (async () => {
+  if (document.readyState !== 'complete') await new Promise(r => addEventListener('load', r, { once: true }));
+  const specs = [
+    ['jersey', '120px "Jersey 10"', 'Nobody gets a head start.'],
+    ['silk', '32px Silkscreen', 'INSERT COIN 1P BLOCK'],
+    ['sans700', '700 64px "Schibsted Grotesk"', '0.1375 ÷×—'],
+    ['sans600', '600 40px "Schibsted Grotesk"', "Nobody sees a price ÷×"],
+    ['sans500', '500 20px "Schibsted Grotesk"', '0.1 250'],
+  ];
+  const fonts = {};
+  for (const [k, f, s] of specs) {
+    try { const r = await document.fonts.load(f, s); fonts[k] = r.length > 0 && r.every(x => x.status === 'loaded'); }
+    catch (e) { fonts[k] = false; }
+  }
+  await document.fonts.ready;
+  const [coin, logo] = await Promise.all([loadImg('../web/assets/even-coin.png'), loadImg('../web/assets/even-logo.png')]);
+  IMG.coin = coin; IMG.logo = logo;
+  draw(0);
+  const ok = Object.values(fonts).every(Boolean) && coin.naturalWidth > 0 && logo.naturalWidth > 0;
+  return { ok, fonts, images: { coin: coin.naturalWidth, logo: logo.naturalWidth } };
+})();
+
+if (new URLSearchParams(location.search).get('play') === '1') {
+  window.__ready.then(() => {
+    const t0 = performance.now();
+    const loop = now => { draw(((now - t0) / 1000) % DUR); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+  });
+}
+</script>
+</body>
+</html>
