@@ -1,0 +1,31 @@
+Compiling 1 files with Solc 0.8.28
+Solc 0.8.28 finished in 4.04s
+Compiler run successful!
+
+Ran 1 test for test/Scale.t.sol:ScaleForkTest
+[PASS] test_Scale_Fork() (gas: 1209362550)
+Logs:
+  Monad mainnet fork at block 110896910
+  === Scale: 1000 bidders, 289 price levels ===
+  P = 89 ticks; winners above P 718, at P 2, below P 280; oversubscribed yes
+  settle: 205 levels visited, 5 calls of maxSteps=50
+  tx gas = execution + 21000 intrinsic + calldata; before refunds
+  operation                      n        min       mean        max        total
+  commit                      1000     118209     118311     152281    118311640
+  reveal (no hint)            1000     168616     346210    2554296    346210648
+  revealWithHint              1000     168993     183413     226561    183413084
+  settle (per call)              5     236870     464087     533913      2320436
+  seedLP                         1    6303142    6303142    6303142      6303142
+  claim (all)                 1000     206667     252101     303646    252101792
+  claim (above P, full)        718     269646     269753     303646    193683028
+  claim (at P, pro-rata)         2     270602     270602     270602       541204
+  claim (below P, refund)      280     206667     206705     217467     57877560
+  withdrawProceeds               1     103130     103130     103130       103130
+  sweepDust                      1     145104     145104     145104       145104
+  findHint (view, free via eth_call), max gas: 114120
+  bidder journey (mean commit + hinted reveal + claim): 553825 gas = $0.001423
+  bidder journey worst case (max commit + unhinted reveal + claim): 3010223 gas = $0.007737
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 1098.90s (1088.16s CPU time)
+
+Ran 1 test suite in 1099.56s (1098.90s CPU time): 1 tests passed, 0 failed, 0 skipped (1 total tests)

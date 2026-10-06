@@ -1,0 +1,30 @@
+Compiling 1 files with Solc 0.8.28
+Solc 0.8.28 finished in 3.93s
+Compiler run successful!
+
+Ran 1 test for test/Scale.t.sol:ScaleMockTest
+[PASS] test_Scale_1000Bidders() (gas: 1100555631)
+Logs:
+  === Scale: 1000 bidders, 289 price levels ===
+  P = 89 ticks; winners above P 718, at P 2, below P 280; oversubscribed yes
+  settle: 205 levels visited, 3 calls of maxSteps=100
+  tx gas = execution + 21000 intrinsic + calldata; before refunds
+  operation                      n        min       mean        max        total
+  commit                      1000      96329      96431     130601     96431840
+  reveal (no hint)            1000     130849     190908     831629    190908048
+  revealWithHint              1000     131226     146498     196669    146498484
+  settle (per call)              3     221088     435959     554576      1307878
+  seedLP                         1     575973     575973     575973       575973
+  claim (all)                 1000     167890     204804     253299    204804592
+  claim (above P, full)        718     219099     219146     253299    157347282
+  claim (at P, pro-rata)         2     224055     224055     224055       448110
+  claim (below P, refund)      280     167890     167890     167890     47009200
+  withdrawProceeds               1      95243      95243      95243        95243
+  sweepDust                      1     113347     113347     113347       113347
+  findHint (view, free via eth_call), max gas: 668423
+  bidder journey (mean commit + hinted reveal + claim): 447733 gas = $0.001150
+  bidder journey worst case (max commit + unhinted reveal + claim): 1215529 gas = $0.003124
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 2.29s (2.29s CPU time)
+
+Ran 1 test suite in 2.30s (2.29s CPU time): 1 tests passed, 0 failed, 0 skipped (1 total tests)

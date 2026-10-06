@@ -1,0 +1,260 @@
+
+Detector: incorrect-exp
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) has bitwise-xor operator ^ instead of the exponentiation operator **: 
+	 - inv = (3 * d) ^ 2 (src/adapters/UniV3PriceMath.sol#45)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-exponentiation
+
+Detector: reentrancy-balance
+Reentrancy in AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388):
+	External call allowing reentrancy:
+	- token.safeApprove(s.adapter,tok) (src/AuctionEngine.sol#369)
+	Balance read before the call:
+	- tokBefore = IERC20Minimal(token).balanceOf(address(this)) (src/AuctionEngine.sol#367)
+	Possible stale balance used after the call in a condition:
+	- require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent) (src/AuctionEngine.sol#374)
+		- stale variable `tokUsed`
+Reentrancy in AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388):
+	External call allowing reentrancy:
+	- (npm,nftId) = IDexAdapter(s.adapter).seed{value: mon}(token,tok,price,s.fee,address(this)) (src/AuctionEngine.sol#370)
+	Balance read before the call:
+	- tokBefore = IERC20Minimal(token).balanceOf(address(this)) (src/AuctionEngine.sol#367)
+	Possible stale balance used after the call in a condition:
+	- require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent) (src/AuctionEngine.sol#374)
+		- stale variable `tokUsed`
+Reentrancy in AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388):
+	External call allowing reentrancy:
+	- token.safeApprove(s.adapter,0) (src/AuctionEngine.sol#371)
+	Balance read before the call:
+	- tokBefore = IERC20Minimal(token).balanceOf(address(this)) (src/AuctionEngine.sol#367)
+	Possible stale balance used after the call in a condition:
+	- require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent) (src/AuctionEngine.sol#374)
+		- stale variable `tokUsed`
+Reentrancy in AuctionEngine.openRound(AuctionEngine.OpenParams) (src/AuctionEngine.sol#166-198):
+	External call allowing reentrancy:
+	- p.token.safeTransferFrom(msg.sender,address(this),need) (src/AuctionEngine.sol#195)
+	Balance read before the call:
+	- before = IERC20Minimal(p.token).balanceOf(address(this)) (src/AuctionEngine.sol#194)
+	Possible stale balance used after the call in a condition:
+	- require(bool,string)(IERC20Minimal(p.token).balanceOf(address(this)) - before == need,fee-on-transfer token) (src/AuctionEngine.sol#196)
+		- stale variable `before`
+Reentrancy in UniswapV3Adapter.seed(address,uint256,uint256,uint24,address) (src/adapters/UniswapV3Adapter.sol#134-175):
+	External call allowing reentrancy:
+	- token.safeTransferFrom(msg.sender,address(this),tokenAmount) (src/adapters/UniswapV3Adapter.sol#151)
+	Balance read before the call:
+	- tokenBase = IERC20Balance(token).balanceOf(address(this)) (src/adapters/UniswapV3Adapter.sol#149)
+	Possible stale balance used after the call in a condition:
+	- require(bool,string)(IERC20Balance(token).balanceOf(address(this)) - tokenBase == tokenAmount,fee-on-transfer token) (src/adapters/UniswapV3Adapter.sol#152)
+		- stale variable `tokenBase`
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities
+
+Detector: divide-before-multiply
+AuctionEngine._lpTargets(uint256,AuctionEngine.Round,UniformClearing.Book) (src/AuctionEngine.sol#324-333) performs a multiplication on the result of a division:
+	- lpMon = (soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS (src/AuctionEngine.sol#332)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- d = d / twos (src/adapters/UniV3PriceMath.sol#40)
+	- inv = (3 * d) ^ 2 (src/adapters/UniV3PriceMath.sol#45)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- d = d / twos (src/adapters/UniV3PriceMath.sol#40)
+	- inv *= 2 - d * inv (src/adapters/UniV3PriceMath.sol#46)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- d = d / twos (src/adapters/UniV3PriceMath.sol#40)
+	- inv *= 2 - d * inv (src/adapters/UniV3PriceMath.sol#47)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- d = d / twos (src/adapters/UniV3PriceMath.sol#40)
+	- inv *= 2 - d * inv (src/adapters/UniV3PriceMath.sol#48)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- d = d / twos (src/adapters/UniV3PriceMath.sol#40)
+	- inv *= 2 - d * inv (src/adapters/UniV3PriceMath.sol#49)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- d = d / twos (src/adapters/UniV3PriceMath.sol#40)
+	- inv *= 2 - d * inv (src/adapters/UniV3PriceMath.sol#50)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- d = d / twos (src/adapters/UniV3PriceMath.sol#40)
+	- inv *= 2 - d * inv (src/adapters/UniV3PriceMath.sol#51)
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) performs a multiplication on the result of a division:
+	- prod0 = prod0 / twos (src/adapters/UniV3PriceMath.sol#41)
+	- result = prod0 * inv (src/adapters/UniV3PriceMath.sol#52)
+UniswapV3Adapter._mintFullRange(address,address,uint24,int24,uint256,uint256,address) (src/adapters/UniswapV3Adapter.sol#210-242) performs a multiplication on the result of a division:
+	- tickUpper = (MAX_TICK / spacing) * spacing (src/adapters/UniswapV3Adapter.sol#219)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#divide-before-multiply
+
+Detector: incorrect-equality
+AuctionEngine.openRound(AuctionEngine.OpenParams) (src/AuctionEngine.sol#166-198) uses a dangerous strict equality:
+	- require(bool,string)(IERC20Minimal(p.token).balanceOf(address(this)) - before == need,fee-on-transfer token) (src/AuctionEngine.sol#196)
+UniswapV3Adapter.seed(address,uint256,uint256,uint24,address) (src/adapters/UniswapV3Adapter.sol#134-175) uses a dangerous strict equality:
+	- require(bool,string)(IERC20Balance(token).balanceOf(address(this)) - tokenBase == tokenAmount,fee-on-transfer token) (src/adapters/UniswapV3Adapter.sol#152)
+ExitAuction._exit(uint256,address) (src/exit/ExitAuction.sol#219-247) uses a dangerous strict equality:
+	- r.exitsClaimed == ledgers[roundId].reveals (src/exit/ExitAuction.sol#237)
+ExitAuction._exit(uint256,address) (src/exit/ExitAuction.sol#219-247) uses a dangerous strict equality:
+	- require(bool,string)(got == assets,redeem mismatch) (src/exit/ExitAuction.sol#242)
+UniformClearing.findHint(uint256,uint256) (src/UniformClearing.sol#162-170) uses a dangerous strict equality:
+	- hint == NONE || hint <= price (src/UniformClearing.sol#164)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Detector: uninitialized-local
+AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256).monUsed (src/AuctionEngine.sol#342) is a local variable never initialized
+AuctionEngine._validate(AuctionEngine.OpenParams).sum (src/AuctionEngine.sol#217) is a local variable never initialized
+UniswapV3Adapter._preparePool(address,address,uint24,uint160).current (src/adapters/UniswapV3Adapter.sol#183) is a local variable never initialized
+AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256).tokensUsed (src/AuctionEngine.sol#341) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+Detector: unused-return
+UniswapV3Adapter._preparePool(address,address,uint24,uint160) (src/adapters/UniswapV3Adapter.sol#178-208) ignores return value by (current,None,None,None,None,None,None) = IUniswapV3PoolLike(pool).slot0() (src/adapters/UniswapV3Adapter.sol#184)
+UniswapV3Adapter._preparePool(address,address,uint24,uint160) (src/adapters/UniswapV3Adapter.sol#178-208) ignores return value by IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee)) (src/adapters/UniswapV3Adapter.sol#197-204)
+UniswapV3Adapter._preparePool(address,address,uint24,uint160) (src/adapters/UniswapV3Adapter.sol#178-208) ignores return value by (moved,None,None,None,None,None,None) = IUniswapV3PoolLike(pool).slot0() (src/adapters/UniswapV3Adapter.sol#201)
+UniswapV3Adapter._mintFullRange(address,address,uint24,int24,uint256,uint256,address) (src/adapters/UniswapV3Adapter.sol#210-242) ignores return value by (nftId,None,None,None) = positionManager.mint(INonfungiblePositionManagerLike.MintParams({token0:token0,token1:token1,fee:fee,tickLower:- tickUpper,tickUpper:tickUpper,amount0Desired:amount0,amount1Desired:amount1,amount0Min:0,amount1Min:0,recipient:recipient,deadline:block.timestamp})) (src/adapters/UniswapV3Adapter.sol#225-239)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unused-return
+
+Detector: calls-loop
+AuctionEngine._validate(AuctionEngine.OpenParams) (src/AuctionEngine.sol#200-238) has external calls inside a loop: require(bool,string)(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee),fee tier not supported) (src/AuctionEngine.sol#220)
+	Calls stack containing the loop:
+		AuctionEngine.openRound(AuctionEngine.OpenParams)
+AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388) has external calls inside a loop: tokBefore = IERC20Minimal(token).balanceOf(address(this)) (src/AuctionEngine.sol#367)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388) has external calls inside a loop: (npm,nftId) = IDexAdapter(s.adapter).seed{value: mon}(token,tok,price,s.fee,address(this)) (src/AuctionEngine.sol#370)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388) has external calls inside a loop: tokUsed = tokBefore - IERC20Minimal(token).balanceOf(address(this)) (src/AuctionEngine.sol#372)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388) has external calls inside a loop: require(bool,string)(IERC721Minimal(npm).ownerOf(nftId) == address(this),position not received) (src/AuctionEngine.sol#375)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388) has external calls inside a loop: IERC721Minimal(npm).approve(address(locker),nftId) (src/AuctionEngine.sol#378)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388) has external calls inside a loop: lockId = locker.lock(npm,nftId,address(this),r.creator,permanentLockEnd,r.lockFeeTier) (src/AuctionEngine.sol#379-386)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256) (src/AuctionEngine.sol#362-388) has external calls inside a loop: lockId = locker.lock(npm,nftId,r.creator,r.creator,block.timestamp + r.lockDuration,r.lockFeeTier) (src/AuctionEngine.sol#379-386)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation/#calls-inside-a-loop
+
+Detector: reentrancy-benign
+Reentrancy in UniswapV3Adapter._preparePool(address,address,uint24,uint160) (src/adapters/UniswapV3Adapter.sol#178-208):
+	External calls:
+	- IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee)) (src/adapters/UniswapV3Adapter.sol#197-204)
+	State variables written after the call(s):
+	- _repricingPool = address(0) (src/adapters/UniswapV3Adapter.sol#205)
+Reentrancy in UniswapV3Adapter.seed(address,uint256,uint256,uint24,address) (src/adapters/UniswapV3Adapter.sol#134-175):
+	External calls:
+	- token.safeTransferFrom(msg.sender,address(this),tokenAmount) (src/adapters/UniswapV3Adapter.sol#151)
+	- IWMON(wmon).deposit{value: msg.value}() (src/adapters/UniswapV3Adapter.sol#153)
+	- pool = _preparePool(token0,token1,fee,target) (src/adapters/UniswapV3Adapter.sol#156)
+		- positionManager.createAndInitializePoolIfNecessary(token0,token1,fee,target) (src/adapters/UniswapV3Adapter.sol#187)
+		- IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee)) (src/adapters/UniswapV3Adapter.sol#197-204)
+	External calls sending eth:
+	- IWMON(wmon).deposit{value: msg.value}() (src/adapters/UniswapV3Adapter.sol#153)
+	State variables written after the call(s):
+	- pool = _preparePool(token0,token1,fee,target) (src/adapters/UniswapV3Adapter.sol#156)
+		- _repricingPool = pool (src/adapters/UniswapV3Adapter.sol#196)
+		- _repricingPool = address(0) (src/adapters/UniswapV3Adapter.sol#205)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+Detector: timestamp
+AuctionEngine.constructor(address,address[],uint256,uint256) (src/AuctionEngine.sol#151-162) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(permanentLockEnd_ > block.timestamp,lock end in past) (src/AuctionEngine.sol#153)
+AuctionEngine._validate(AuctionEngine.OpenParams) (src/AuctionEngine.sol#200-238) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(p.commitEnd > block.timestamp && p.revealEnd > p.commitEnd,bad windows) (src/AuctionEngine.sol#211)
+AuctionEngine._sealTerms(uint256) (src/AuctionEngine.sol#242-251) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.creator != address(0),unknown round) (src/AuctionEngine.sol#249)
+AuctionEngine._onReveal(uint256,address,uint96,uint96,uint256) (src/AuctionEngine.sol#253-263) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(price % r.tickSize == 0 && price >= r.reservePrice,price off grid or below reserve) (src/AuctionEngine.sol#255)
+	- require(bool,string)(_mulDivUp(price,amount,PRICE_SCALE) < r.depositAmount,bid exceeds deposit) (src/AuctionEngine.sol#257)
+	- require(bool,string)(_mulDivUp(r.reservePrice,amount,PRICE_SCALE) >= r.minBidSize,below minimum bid) (src/AuctionEngine.sol#260)
+AuctionEngine.settle(uint256,uint256) (src/AuctionEngine.sol#268-278) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.creator != address(0),unknown round) (src/AuctionEngine.sol#270)
+	- require(bool,string)(block.timestamp >= r.revealEnd,reveal window open) (src/AuctionEngine.sol#271)
+AuctionEngine.seedLP(uint256) (src/AuctionEngine.sol#283-295) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(! r.lpDone,LP already done) (src/AuctionEngine.sol#287)
+AuctionEngine.abandonLP(uint256) (src/AuctionEngine.sol#300-316) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(! r.lpDone,LP already done) (src/AuctionEngine.sol#304)
+	- require(bool,string)(block.timestamp >= uint256(r.settledAt) + lpGracePeriod,grace period not over) (src/AuctionEngine.sol#305)
+AuctionEngine._deliver(uint256,address) (src/AuctionEngine.sol#451-468) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.claimsOpen,claims not open) (src/AuctionEngine.sol#453)
+AuctionEngine.claimVested(uint256) (src/AuctionEngine.sol#471-482) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(v.total != 0,no vesting) (src/AuctionEngine.sol#474)
+	- require(bool,string)(amount != 0,nothing vested) (src/AuctionEngine.sol#477)
+AuctionEngine.withdrawProceeds(uint256) (src/AuctionEngine.sol#486-496) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(msg.sender == r.creator,not creator) (src/AuctionEngine.sol#488)
+	- require(bool,string)(r.lpDone,LP not done) (src/AuctionEngine.sol#489)
+AuctionEngine.sweepDust(uint256) (src/AuctionEngine.sol#499-507) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.lpDone && ! r.dustSwept,not sweepable) (src/AuctionEngine.sol#502)
+AuctionEngine._vestedAmount(AuctionEngine.Round,uint256) (src/AuctionEngine.sol#550-557) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp <= start (src/AuctionEngine.sol#553)
+	- elapsed >= r.vestDuration (src/AuctionEngine.sol#555)
+AuctionEngine._tokensOut(AuctionEngine.Round,uint256) (src/AuctionEngine.sol#559-562) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve,token accounting) (src/AuctionEngine.sol#561)
+DepositLedger.burnUnrevealed(uint256) (src/DepositLedger.sol#45-56) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp >= _revealEndOf(roundId),reveal window open) (src/DepositLedger.sol#46)
+SealingLayer.commit(uint256,bytes32,bytes32[],bytes) (src/SealingLayer.sol#28-47) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp < commitEnd,commit window closed) (src/SealingLayer.sol#34)
+SealingLayer._reveal(uint256,uint96,uint96,bytes32,uint256) (src/SealingLayer.sol#61-71) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp >= commitEnd && block.timestamp < revealEnd,reveal window closed) (src/SealingLayer.sol#63)
+ExitAuction.openExitRound() (src/exit/ExitAuction.sol#123-145) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(_books[prev].settled,previous round not settled) (src/exit/ExitAuction.sol#126)
+	- require(bool,string)(block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks,too soon) (src/exit/ExitAuction.sol#127)
+	- capacity > maxExitSharesPerRound (src/exit/ExitAuction.sol#133)
+	- require(bool,string)(capacity != 0,no exit capacity) (src/exit/ExitAuction.sol#134)
+	- idle > owed (src/exit/ExitAuction.sol#131)
+ExitAuction._sealTerms(uint256) (src/exit/ExitAuction.sol#150-159) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.commitEnd != 0,unknown round) (src/exit/ExitAuction.sol#157)
+ExitAuction.settle(uint256,uint256) (src/exit/ExitAuction.sol#175-190) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.commitEnd != 0,unknown round) (src/exit/ExitAuction.sol#177)
+	- require(bool,string)(block.timestamp >= r.revealEnd,reveal window open) (src/exit/ExitAuction.sol#178)
+ExitAuction._exit(uint256,address) (src/exit/ExitAuction.sol#219-247) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(r.allocatedTotal <= sold,over-allocated) (src/exit/ExitAuction.sol#229)
+	- require(bool,string)(r.allocatedTotal + r.returnedTotal <= r.escrowed,share accounting) (src/exit/ExitAuction.sol#230)
+	- r.exitsClaimed == ledgers[roundId].reveals (src/exit/ExitAuction.sol#237)
+	- alloc != 0 (src/exit/ExitAuction.sol#240)
+	- require(bool,string)(got == assets,redeem mismatch) (src/exit/ExitAuction.sol#242)
+	- payout != 0 (src/exit/ExitAuction.sol#243)
+	- donation != 0 (src/exit/ExitAuction.sol#244)
+	- back != 0 (src/exit/ExitAuction.sol#246)
+ExitAuction._refund(uint256,address) (src/exit/ExitAuction.sol#249-255) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(_books[roundId].settled,not settled) (src/exit/ExitAuction.sol#250)
+ExitAuction.reservedShares() (src/exit/ExitAuction.sol#275-279) uses timestamp for comparisons
+	Dangerous comparisons:
+	- id != 0 && ! _books[id].settled (src/exit/ExitAuction.sol#278)
+ExitAuction._quote(uint256,address) (src/exit/ExitAuction.sol#294-309) uses timestamp for comparisons
+	Dangerous comparisons:
+	- assets < atSettle (src/exit/ExitAuction.sol#306)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+Detector: assembly
+UniV3PriceMath.mulDiv(uint256,uint256,uint256) (src/adapters/UniV3PriceMath.sol#18-54) uses assembly
+	- INLINE ASM (src/adapters/UniV3PriceMath.sol#22-26)
+	- INLINE ASM (src/adapters/UniV3PriceMath.sol#33-37)
+	- INLINE ASM (src/adapters/UniV3PriceMath.sol#39-43)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+. analyzed (39 contracts with 102 detectors), 63 result(s) found
