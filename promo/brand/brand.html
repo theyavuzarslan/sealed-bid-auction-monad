@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Schibsted+Grotesk:wght@500;700&family=Silkscreen&display=swap">
+<style>
+  :root{--indigo:#200052;--deep:#140033;--purple:#6E54FF;--glow:#B5A8FF;--berry:#E0358F;--lime:#C6F24E;--white:#FBFAF9}
+  *{margin:0;box-sizing:border-box}
+  body{background:#000}
+  .card{position:relative;overflow:hidden;background:radial-gradient(120% 140% at 0% 50%,#2a0a6e 0%,var(--indigo) 45%,var(--deep) 100%);color:var(--white);font-family:"Schibsted Grotesk",sans-serif}
+  .card::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 4px);pointer-events:none}
+  h1{font-family:"Jersey 10",sans-serif;font-weight:400;line-height:.92;text-shadow:5px 5px 0 #A0055D}
+  .tag{font-family:Silkscreen,sans-serif;color:var(--lime);letter-spacing:.08em}
+  .tag::before{content:"";display:inline-block;width:.7em;height:.7em;background:var(--lime);margin-right:.5em;vertical-align:-.05em}
+  .sub{color:var(--glow);font-weight:500}
+  #og{width:1200px;height:630px;display:flex}
+  #og img{width:630px;height:630px;display:block}
+  #og .txt{flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px;padding:0 56px 0 44px}
+  #og h1{font-size:96px}
+  #og .sub{font-size:30px;line-height:1.3}
+  #og .tag{font-size:22px}
+  #banner{width:1500px;height:500px}
+  #banner img{position:absolute;right:70px;top:40px;width:420px;height:420px;-webkit-mask-image:radial-gradient(circle,#000 68%,transparent 74%);mask-image:radial-gradient(circle,#000 68%,transparent 74%)}
+  #banner .txt{position:absolute;left:470px;top:0;bottom:0;width:560px;display:flex;flex-direction:column;justify-content:center;gap:22px}
+  #banner h1{font-size:92px}
+  #banner .sub{font-size:28px;line-height:1.3}
+  #banner .tag{font-size:20px}
+</style></head>
+<body>
+<div class="card" id="og"><img src="../../web/assets/even-logo.png" alt="">
+  <div class="txt"><h1>Nobody gets a head start.</h1><p class="sub">Sealed-bid fair launches on Monad. Everyone who wins pays one price.</p><p class="tag">LIVE ON MONAD MAINNET</p></div></div>
+<div style="height:40px"></div>
+<div class="card" id="banner"><img src="../../web/assets/even-avatar.png" alt="">
+  <div class="txt"><h1>Nobody gets a head start.</h1><p class="sub">Sealed bids. One price. A locked pool.<br>Fair launches on Monad.</p><p class="tag">EVEN-MONAD.VERCEL.APP</p></div></div>
+</body></html>
