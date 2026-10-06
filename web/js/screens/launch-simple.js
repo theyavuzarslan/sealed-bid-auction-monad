@@ -67,7 +67,7 @@ export function renderLaunchSimple(el, app) {
             <label>Least you'll accept for them (MON)<input id="s-floor" inputmode="decimal" value="${esc(st.floorMon)}"></label>
             <label>Biggest single bid (MON)<input id="s-deposit" inputmode="decimal" value="${esc(st.depositMon)}"></label>
           </div>
-          <p class="field-hint">Every bidder locks the biggest-bid amount while bidding, so nobody can tell bids apart; they get back everything they don't spend.</p>
+          <p class="field-hint">Every bidder locks the biggest-bid amount while bidding, so nobody can tell bids apart; they get back everything they don't spend. It's also the most one wallet can bid. That spreads your supply across more people, and splitting a bid across wallets buys no better price: every winner pays the same one.</p>
           <p class="label-row">Bidding stays open for</p>
           <div class="seg" role="radiogroup" aria-label="Bidding window">
             ${Object.entries(DURATIONS).map(([k, d]) => `<button type="button" role="radio" data-duration="${k}">${esc(d.label)}</button>`).join("")}

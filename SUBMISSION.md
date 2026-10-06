@@ -85,7 +85,7 @@ Target was under $0.01; the worst case is 7× below it. Monad charges the gas li
 
 ## Honest limits
 
-- **Privacy via commit-reveal.** There is no encrypted mempool on Monad today, so none is used. What stays public: the number of bids and when they arrived, the uniform deposit (which caps bid size), the price tick, and every bid once the round settles; that post-clear transparency is intentional.
+- **Privacy via commit-reveal.** There is no encrypted mempool on Monad today, so none is used. What stays public: the number of bids and when they arrived, the uniform deposit (which caps bid size), the price tick, and every bid once the round settles; that post-clear transparency is intentional. The round page's demand meter uses only these public numbers (bids × the uniform deposit, against the whole sale at the floor price) and labels the result an upper bound [src: web/js/demand.js].
 - **The adversary is narrower than usual.** Monad forwards transactions only to the next few leaders, so the threat is the current and next few leaders, not every bot on the network [src: 03-architecture.md].
 - **Last reveal is a position.** A bidder who reveals last sees the book first. Revealing late cannot change a committed bid, only whether to reveal it, and not revealing costs the deposit.
 - **Passkey libraries load at runtime.** Mera, viem and scure come from jsDelivr at pinned versions when a visitor picks a passkey; jsDelivr's on-the-fly builds cannot carry an integrity hash, so a compromised CDN could read keys in that session. Serving them from the site itself removes this; not done yet. Passkey accounts also belong to the site's hostname: a different domain derives a different account (the exported phrase moves funds anywhere).

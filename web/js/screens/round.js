@@ -19,6 +19,7 @@ import {
 import { downloadText } from "../ui/dom.js";
 import { notLiveHtml } from "../ui/notlive.js";
 import { simpleBid, PRICE_MULTIPLES } from "../simple.js";
+import { depositCover, coverGauge, demandCopy } from "../demand.js";
 import { staircase } from "../ui/pixel.js";
 import { buildRevealIcs, revealIcsFilename } from "../ui/reminder.js";
 import { drawShareCard, canvasToPng, shareText, xIntentUrl } from "../ui/sharecard.js";
@@ -145,9 +146,10 @@ export function renderRound(el, app, roundIdRaw) {
       </div>
       <div class="coin-rack" aria-hidden="true">${coins}</div>
       <p class="note">How many bids and when they arrived are public by design. Prices stay sealed until each bidder reveals.</p>
+      ${meterHtml()}
       <dl class="readout">
         <dt>For sale</dt><dd>${esc(tokens(round.sellAmount))}</dd>
-        <dt>Deposit</dt><dd>${esc(fmtMon(round.depositAmount))} each</dd>
+        <dt>Deposit</dt><dd>${esc(fmtMon(round.depositAmount))} each, also the biggest bid per wallet</dd>
         <dt>Reserve</dt><dd>${esc(perToken(round.reservePrice))} / token</dd>
         <dt>Tick</dt><dd>${esc(perToken(round.tickSize))}</dd>
         <dt>Min bid</dt><dd>${esc(fmtMon(round.minBidSize))} at the reserve</dd>
@@ -160,6 +162,33 @@ export function renderRound(el, app, roundIdRaw) {
       </dl>`);
   }
 
+  // Demand meter (demand.js): only the public commit count × the uniform deposit, against the whole
+  // sale at the floor price. Shown while bids are sealed; after the reveal window the real book takes over.
+  function meterHtml() {
+    const ph = phase();
+    if (ph !== PHASE.Commit && ph !== PHASE.Reveal) return "";
+    const { round, ledger } = s;
+    const c = depositCover({ commits: ledger.commits, depositAmount: round.depositAmount, sellAmount: round.sellAmount, reservePrice: round.reservePrice });
+    const copy = demandCopy(c);
+    // A non-zero deposit always lights at least one cell, even when the cover rounds down to 0 bps.
+    const g = coverGauge(c.kind === "none" || c.kind === "unknown" ? 0n : (c.coverBps > 0n ? c.coverBps : 1n));
+    const cells = Array.from({ length: 20 }, (_, i) => `<i${i < g.lit ? ' class="on"' : ""}></i>`).join("");
+    const scale = g.scale === 1
+      ? `<span class="end">whole sale</span>`
+      : `<span class="at" style="left:${g.markPct}%">whole sale</span><span class="end">${g.scale}×</span>`;
+    return `<figure class="demand">
+        <figcaption class="demand-title">Demand meter</figcaption>
+        <div class="meter" aria-hidden="true">${cells}<b class="meter-mark" style="left:${g.markPct}%"></b></div>
+        <div class="meter-scale" aria-hidden="true"><span>0</span>${scale}</div>
+        <p class="demand-line">${esc(copy.before)}${copy.figure ? `<strong>${esc(copy.figure)}</strong>` : ""}${esc(copy.after)}</p>
+        ${c.kind === "unknown" ? "" : `<dl class="demand-nums"><dt>Deposits locked</dt><dd>${esc(fmtMon(c.locked))}</dd><dt>Whole sale at the floor</dt><dd>${esc(fmtMon(c.floorValue))}</dd></dl>`}
+        <p class="demand-foot">${esc(copy.foot)}</p>
+      </figure>`;
+  }
+
+  // Next to the bid form in both modes: a sealed uniform-price bid is safest at the bidder's true max.
+  const realMaxHtml = (word) => `<p class="field-hint real-max"><strong>Bid your real max.</strong> It's a ceiling, not what you pay: you pay the ${word} price everyone pays and anything above it comes back, so the safe choice is the most you'd really pay per token.</p>`;
+
   function commitShell() {
     if (phase() !== PHASE.Commit) return "";
     if (!me()) return panel("panel-p1", "Insert coin", `<p>Connect a wallet to place a sealed bid.</p>`, "commit");
@@ -171,6 +200,7 @@ export function renderRound(el, app, roundIdRaw) {
     }
     return panel("panel-p1", "Insert coin", `
       <p>Everyone locks the same ${esc(fmtMon(s.round.depositAmount))}, so your deposit gives nothing away. Your price and amount are sealed as a hash.</p>
+      <p class="note cap-note">That deposit is also the most one wallet can bid. It spreads the tokens across more people, and splitting a bid across wallets gets no better price, since every winner pays the same one.</p>
       <div id="allow-box"></div>
       <form id="bid-form" autocomplete="off">${bidMode === "simple" ? `
         <p class="field-hint">Floor price ${esc(perToken(s.round.reservePrice))} per token${mcap(s.round.reservePrice)}. Nobody pays less, and everyone who wins pays the same final price.</p>
@@ -181,6 +211,7 @@ export function renderRound(el, app, roundIdRaw) {
           <button type="button" data-spend="4">¼ max</button><button type="button" data-spend="2">½ max</button><button type="button" data-spend="1">Max</button>
         </div>
         <p class="label-row">Highest price you'd pay</p>
+        ${realMaxHtml("final")}
         <div class="seg" role="radiogroup" aria-label="Highest price">
           ${PRICE_MULTIPLES.map((m) => `<button type="button" role="radio" data-mul="${m}" aria-checked="${m === 2}">${m === 1 ? "Floor" : `${m}× floor`}</button>`).join("")}
           <button type="button" role="radio" data-mul="custom" aria-checked="false">Custom</button>
@@ -190,11 +221,12 @@ export function renderRound(el, app, roundIdRaw) {
         <div class="fields">
           <label>Max price per token (MON)<input id="f-price" inputmode="decimal" placeholder="${esc(formatUnits(wireToPerToken(s.round.reservePrice, dec()), 18))}"></label>
           <label>Amount (${esc(sym())})<input id="f-amount" inputmode="decimal"></label>
-        </div>`}
+        </div>
+        ${realMaxHtml("clearing")}`}
         <p style="margin-top:12px"><button type="button" class="linklike" data-act="bid-mode">${bidMode === "simple" ? "Advanced: exact price and amount" : "Simple: spend and highest price"}</button></p>
       </form>
       <div id="bid-derived"></div>
-      ${bidMode === "simple" ? "" : `<p class="note">You pay the clearing price for every token you win and get the difference back. If many bids land exactly on the clearing price, they share what is left in proportion to size.</p>`}
+      ${bidMode === "simple" ? "" : `<p class="note">If many bids land exactly on the clearing price, they share what is left in proportion to size.</p>`}
       <div id="bid-prepared"></div>`, "commit");
   }
 
