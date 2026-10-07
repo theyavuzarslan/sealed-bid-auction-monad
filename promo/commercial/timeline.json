@@ -1,0 +1,50 @@
+{
+  "_doc": "Shared clock for promo/commercial: the picture (index.html) and the sound (audio.py) both read this file. Times in seconds. Total 45.0 s at 30 fps.",
+  "duration": 45.0,
+  "fps": 30,
+  "scenes": [
+    { "id": "attract", "start": 0.0,  "end": 4.0,  "mood": "upbeat intro" },
+    { "id": "curve",   "start": 4.0,  "end": 15.0, "mood": "frantic race, tense" },
+    { "id": "sealed",  "start": 15.0, "end": 26.0, "mood": "music thins, drops out at lights_out, ticking" },
+    { "id": "reveal",  "start": 26.0, "end": 38.0, "mood": "rising build into reveal, bright resolved chord on DRAW" },
+    { "id": "numbers", "start": 38.0, "end": 41.5, "mood": "confident groove" },
+    { "id": "end",     "start": 41.5, "end": 45.0, "mood": "victory jingle, final note" }
+  ],
+  "events": [
+    { "t": 0.4,  "type": "blink",       "note": "INSERT COIN starts blinking" },
+    { "t": 1.0,  "type": "coin_clink",  "note": "coin drops into slot" },
+    { "t": 1.4,  "type": "sweep_start", "note": "maze lights up corridor by corridor until 3.6" },
+    { "t": 2.6,  "type": "title",       "note": "EVEN title appears" },
+
+    { "t": 4.3,  "type": "start_jingle","note": "1P · BONDING CURVE, START box opens" },
+    { "t": 5.0,  "type": "bot_go",      "note": "bot leaves, eats a pellet every 0.12 s until 8.6 (pellet_bot)" },
+    { "t": 8.4,  "type": "crowd_go",    "note": "12 coins leave late" },
+    { "t": 9.0,  "type": "pellets_crowd","note": "4 coins (ana, chloe, emi, ines) eat a few pellets, one every 0.4 s until 10.6" },
+    { "t": 11.0, "type": "greyout",     "note": "8 coins grey out one by one, every 0.2 s until 12.4" },
+    { "t": 12.8, "type": "hud",         "note": "BOT PAID 0.1375 · CROWD PAID 0.275" },
+    { "t": 13.4, "type": "stamp",       "note": "BOT WINS + 8 OF 12 GOT NOTHING, screen shake" },
+
+    { "t": 15.0, "type": "cut",         "note": "2P · EVEN cabinet" },
+    { "t": 15.4, "type": "walk",        "note": "13 players walk to the vault until 19.4" },
+    { "t": 16.0, "type": "capsules",    "note": "13 capsule drops with lock click, every 0.4 s until 20.8" },
+    { "t": 21.2, "type": "lights_out",  "note": "maze goes dark, only slot glows; NOBODY SEES A PRICE; music drops out" },
+    { "t": 21.6, "type": "ticks",       "note": "countdown, 10 ticks every 0.4 s until 25.2" },
+    { "t": 25.5, "type": "sealed",      "note": "BIDS SEALED 13" },
+
+    { "t": 26.2, "type": "continue",    "note": "CONTINUE? flashes" },
+    { "t": 27.4, "type": "vault_open",  "note": "vault opens, light pours out" },
+    { "t": 28.0, "type": "steps",       "note": "13 steps rise, one every 0.25 s until 31.0, rising pitch" },
+    { "t": 31.4, "type": "line_sweep",  "note": "lime line sweeps at 0.220 until 32.6: ONE PRICE · 0.220" },
+    { "t": 33.0, "type": "land",        "note": "everyone at/above the line lands on the same lime step" },
+    { "t": 33.8, "type": "refund",      "note": "dev's coin comes back: REFUND, 11 OF 12 GOT TOKENS" },
+    { "t": 34.6, "type": "stamp_draw",  "note": "DRAW stamp, bright resolved chord" },
+    { "t": 35.4, "type": "caption",     "note": "THE BOT CAN STILL PLAY. IT JUST PAYS WHAT EVERYONE PAYS." },
+
+    { "t": 38.4, "type": "bar",         "note": "bot share 59% -> 18%" },
+    { "t": 39.1, "type": "bar",         "note": "shut out 60% -> 0%" },
+    { "t": 39.8, "type": "bar",         "note": "price spread 1.79x -> 1x" },
+
+    { "t": 41.7, "type": "logo",        "note": "logo lands" },
+    { "t": 43.0, "type": "press_start", "note": "PRESS START blinks; final note rings to 45.0" }
+  ]
+}

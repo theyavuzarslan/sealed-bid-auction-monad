@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Even Commercial</title>
+<style>
+  html, body { margin: 0; background: #0E100F; overflow: hidden; }
+  canvas { display: block; width: 1920px; height: 1080px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script type="module">
+import { P } from './palette.js';
+import * as attract from './scene-attract.js';
+import * as curve from './scene-curve.js';
+import * as sealed from './scene-sealed.js';
+import * as reveal from './scene-reveal.js';
+import * as numbers from './scene-numbers.js';
+import * as end from './scene-end.js';
+
+const timeline = await fetch('./timeline.json').then(r => r.json());
+const MODS = { attract, curve, sealed, reveal, numbers, end };
+const W = 320, H = 180, S = 6;
+
+const lo = document.createElement('canvas');
+lo.width = W; lo.height = H;
+const g = lo.getContext('2d');
+g.imageSmoothingEnabled = false;
+
+const out = document.getElementById('c');
+const o = out.getContext('2d');
+o.imageSmoothingEnabled = false;
+
+// CRT overlay, built once: dark line every 6 output px plus a soft vignette.
+const crt = document.createElement('canvas');
+crt.width = 1920; crt.height = 1080;
+{
+  const c = crt.getContext('2d');
+  c.fillStyle = 'rgba(0,0,0,0.12)';
+  for (let y = 4; y < 1080; y += S) c.fillRect(0, y, 1920, 2);
+  const v = c.createRadialGradient(960, 540, 420, 960, 540, 1150);
+  v.addColorStop(0, 'rgba(0,0,0,0)');
+  v.addColorStop(1, 'rgba(0,0,0,0.5)');
+  c.fillStyle = v;
+  c.fillRect(0, 0, 1920, 1080);
+}
+
+function sceneAt(t) {
+  const s = timeline.scenes;
+  for (const sc of s) if (t >= sc.start && t < sc.end) return sc;
+  return s[s.length - 1];
+}
+
+function draw(t) {
+  const sc = sceneAt(t);
+  // cam: shake in whole low-res pixels; zoom 1 or 2 crops around (x, y).
+  const cam = { zoom: 1, x: 0, y: 0, sx: 0, sy: 0 };
+  g.fillStyle = P.night;
+  g.fillRect(0, 0, W, H);
+  MODS[sc.id].draw(g, t, cam, sc);
+  o.fillStyle = P.night;
+  o.fillRect(0, 0, 1920, 1080);
+  const z = cam.zoom;
+  const cw = W / z, ch = H / z;
+  const cx = Math.max(0, Math.min(W - cw, Math.round(cam.x)));
+  const cy = Math.max(0, Math.min(H - ch, Math.round(cam.y)));
+  o.drawImage(lo, cx, cy, cw, ch, Math.round(cam.sx) * S, Math.round(cam.sy) * S, 1920, 1080);
+  o.drawImage(crt, 0, 0);
+}
+
+window.draw = draw;
+window.__lo = lo; // for palette QA
+window.__seek = t => draw(t);
+window.__ready = { ok: true };
+draw(0);
+
+if (new URLSearchParams(location.search).get('play') === '1') {
+  const t0 = performance.now();
+  const loop = now => { draw(((now - t0) / 1000) % timeline.duration); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
