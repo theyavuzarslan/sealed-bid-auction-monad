@@ -103,11 +103,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ── Marquee bar ─────────────────────────────────────────────────────── */
 
+/* A translucent layer the page scrolls under (material, not a slab), with a soft scroll-edge fade
+   instead of a hard divider. Solid again when the visitor asks for less transparency. */
 .marquee {
-  background: var(--night-black);
-  border-bottom: 4px solid var(--cabinet-deep);
+  background: rgb(14 16 15 / 0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: inset 0 -1px 0 rgb(181 168 255 / 0.12);
   position: sticky; top: 0; z-index: 5;
 }
+.marquee::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 12px; pointer-events: none;
+  background: linear-gradient(rgb(20 0 51 / 0.45), transparent);
+}
+.logo-coin { width: 40px; height: 40px; margin-right: -2px; filter: drop-shadow(0 2px 6px rgb(110 84 255 / 0.45)); }
 .marquee-in {
   max-width: 1180px; margin: 0 auto; padding: 12px 20px;
   display: flex; align-items: center; gap: 28px;
@@ -126,13 +135,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .logo-sub { font: 400 var(--t-micro)/1.2 var(--f-label); color: var(--purple-glow); text-transform: uppercase; }
 .logo:hover { color: var(--marquee-white); }
 .logo:hover .logo-plate { box-shadow: 4px 4px 0 var(--berry-lamp); }
+.logo:active .logo-plate { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--berry-lamp); transition: transform 80ms, box-shadow 80ms; }
 
 .nav { display: flex; gap: 22px; margin-right: auto; }
 .nav a {
   font: 400 var(--t-label)/1 var(--f-label); text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--purple-glow); text-decoration: none; padding: 8px 0; border-bottom: 3px solid transparent;
 }
-.nav a:hover, .nav a[aria-current="page"] { color: var(--marquee-white); border-bottom-color: var(--monad-purple); }
+.nav a[aria-current="page"] { color: var(--marquee-white); border-bottom-color: var(--monad-purple); }
+@media (hover: hover) { .nav a:hover { color: var(--marquee-white); border-bottom-color: var(--monad-purple); } }
+.nav a:active { color: var(--marquee-white); border-bottom-color: var(--win-lime); }
 
 .wallet { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
 .wallet select {
@@ -148,10 +160,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* Phone: logo and wallet share the top row, the three links get their own row. */
 @media (max-width: 760px) {
-  .marquee { position: static; }
+  .marquee { position: relative; }
   .marquee-in { flex-wrap: wrap; gap: 12px 16px; padding: 12px 16px; }
   .logo-sub { display: none; }
   .logo-plate { font-size: var(--t-title); }
+  .logo-coin { width: 32px; height: 32px; }
   .wallet { order: 2; margin-left: auto; gap: 8px; }
   .wallet select { max-width: 9.5rem; }
   .nav { order: 3; width: 100%; margin-right: 0; justify-content: space-between; gap: 12px; }
@@ -380,6 +393,10 @@ input[type="file"] { font: 400 var(--t-small) var(--f-body); color: var(--ink-so
 
 .hero { padding: 32px 20px 0; max-width: 1180px; margin: 0 auto; }
 .hero-head { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; align-items: end; margin-bottom: 32px; }
+/* Wide: the coin sits above the two-line headline. Narrow: beside it. */
+.hero-title { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.hero-coin { width: clamp(84px, 9vw, 128px); height: auto; flex: none; filter: drop-shadow(0 10px 28px rgb(110 84 255 / 0.4)); }
+@media (max-width: 860px) { .hero-title { flex-direction: row; align-items: center; gap: 12px; } }
 .hero h1 { font: 400 clamp(3.4rem, 9vw, 7.2rem)/0.82 var(--f-display); letter-spacing: 0.005em; text-wrap: balance; }
 .hero h1 em { font-style: normal; color: var(--purple-glow); }
 .hero-sub { font-size: var(--t-lead); line-height: 1.5; color: var(--marquee-white); max-width: 34ch; }
@@ -420,7 +437,7 @@ input[type="file"] { font: 400 var(--t-small) var(--f-body); color: var(--ink-so
 }
 .score div { background: var(--night-black); padding: 10px 12px; }
 .score dt { font: 400 var(--t-micro)/1.2 var(--f-label); text-transform: uppercase; color: var(--purple-glow); margin: 0; }
-.score dd { margin: 4px 0 0; font: 700 var(--t-title-sm)/1 var(--f-body); color: var(--marquee-white); }
+.score dd { margin: 4px 0 0; font: 700 var(--t-title-sm)/1 var(--f-body); letter-spacing: -0.01em; color: var(--marquee-white); }
 .score dd small { font: 400 var(--t-label-sm) var(--f-label); color: var(--purple-glow); margin-left: 4px; }
 .score .is-bot dd { color: var(--berry-lamp); }
 .banner {
@@ -528,9 +545,23 @@ li.step p { font-size: var(--t-body-sm); color: var(--marquee-white); margin: 0;
 .wipe { animation: wipe 420ms steps(6, end) both; }
 @keyframes wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
+/* Reduced motion keeps feedback, as short cross-fades: no movement, no looping animation. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  *, *::before, *::after {
+    animation: none !important;
+    transition-property: opacity, color, background-color, border-color, box-shadow !important;
+    transition-duration: 150ms !important;
+  }
   .banner { opacity: 1; transform: none; }
+  .passkey-dialog[open] { animation: fade-in 150ms ease both !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .marquee { background: var(--night-black); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .marquee { background: var(--night-black); box-shadow: inset 0 -2px 0 var(--purple-glow); }
+  .marquee::after { display: none; }
+  .nav a { color: var(--marquee-white); }
 }
 
 /* Reveal reminders (Coin in panel) and the share card (result panel) */
@@ -544,7 +575,10 @@ li.step p { font-size: var(--t-body-sm); color: var(--marquee-white); margin: 0;
 
 /* ── Passkey sign-in (Mera) ─────────────────────────────────────────── */
 .passkey-dialog { border: 0; padding: 0; background: transparent; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); }
-.passkey-dialog::backdrop { background: rgba(20, 0, 51, 0.72); }
+.passkey-dialog::backdrop { background: rgba(20, 0, 51, 0.72); animation: fade-in 180ms ease both; }
+.passkey-dialog[open] { transform-origin: top right; animation: sheet-in 240ms var(--ease-out) both; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(-6px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 .passkey-dialog .panel-in { padding: 26px; }
 .account-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
 .account-btn small { font: 400 var(--t-micro)/1 var(--f-label); text-transform: uppercase; color: var(--purple-glow); }
@@ -557,7 +591,8 @@ li.step p { font-size: var(--t-body-sm); color: var(--marquee-white); margin: 0;
   font: 400 var(--t-label-sm)/1.2 var(--f-label); text-transform: uppercase; letter-spacing: 0.04em;
   padding: 10px 14px; background: var(--bezel-grey); color: var(--ink); border: 2px solid var(--ink); cursor: pointer;
 }
-.seg button:hover { background: var(--purple-mist); }
+@media (hover: hover) { .seg button:hover { background: var(--purple-mist); } }
+.seg button:active { transform: scale(0.97); transition: transform 100ms ease-out; }
 .seg button[aria-checked="true"] { background: var(--monad-purple); border-color: var(--monad-purple); color: var(--marquee-white); box-shadow: 3px 3px 0 var(--cabinet-indigo); }
 .step-no {
   display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; margin-right: 10px; vertical-align: 0.1em;

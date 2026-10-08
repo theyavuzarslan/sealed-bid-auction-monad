@@ -107,7 +107,10 @@ export function renderHome(el, { scrollTo } = {}) {
   el.innerHTML = `
   <section class="hero" aria-labelledby="hero-h">
     <div class="hero-head">
-      <h1 id="hero-h">Nobody gets <em>a head start.</em></h1>
+      <div class="hero-title">
+        <img class="hero-coin" src="assets/coin-360.png" width="180" height="180" alt="">
+        <h1 id="hero-h">Nobody gets <em>a head start.</em></h1>
+      </div>
       <div>
         <p class="hero-sub">Sealed bids, one clearing price. The bot that wins the bonding-curve race pays <strong>exactly what you pay</strong>, and the pool opens at that price, locked.</p>
         <div class="hero-actions">
