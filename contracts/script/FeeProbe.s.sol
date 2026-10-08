@@ -156,24 +156,64 @@ contract FeeProbe is Script {
         for (uint256 i; i < bs.length; ++i) {
             _print(bs[i], js[i], path);
         }
-        console2.log(string.concat(
-            "  round-level calls (paid by whoever pokes them): settle ", vm.toString(settleC.used), ", seedLP ",
-            vm.toString(seedC.used), ", burnUnrevealed ", vm.toString(burnC.used), ", disposeUnsold ", vm.toString(disposeC.used)
-        ));
+        console2.log(
+            string.concat(
+                "  round-level calls (paid by whoever pokes them): settle ",
+                vm.toString(settleC.used),
+                ", seedLP ",
+                vm.toString(seedC.used),
+                ", burnUnrevealed ",
+                vm.toString(burnC.used),
+                ", disposeUnsold ",
+                vm.toString(disposeC.used)
+            )
+        );
     }
 
     function _print(Bidder memory b, Journey memory j, string memory path) internal pure {
         Cost memory c = _sum(_sum(_sum(_sum(j.commit, j.reveal), j.claim), j.refund), j.tokens);
-        console2.log(string.concat(
-            "    ", b.label, ": commit ", vm.toString(j.commit.used), " / reveal ", vm.toString(j.reveal.used),
-            " / claim ", vm.toString(j.claim.used), " / refund ", vm.toString(j.refund.used), " / tokens ",
-            vm.toString(j.tokens.used), " = ", vm.toString(c.used), " used, ", vm.toString(c.needed), " needed"
-        ));
-        console2.log(string.concat(
-            "FEEPROBE {\"label\":\"", b.label, "\",\"path\":\"", path, "\",\"noteBytes\":", vm.toString(b.noteLen),
-            ",\"commit\":", _json(j.commit), ",\"reveal\":", _json(j.reveal), ",\"claim\":", _json(j.claim),
-            ",\"refund\":", _json(j.refund), ",\"tokens\":", _json(j.tokens), "}"
-        ));
+        console2.log(
+            string.concat(
+                "    ",
+                b.label,
+                ": commit ",
+                vm.toString(j.commit.used),
+                " / reveal ",
+                vm.toString(j.reveal.used),
+                " / claim ",
+                vm.toString(j.claim.used),
+                " / refund ",
+                vm.toString(j.refund.used),
+                " / tokens ",
+                vm.toString(j.tokens.used),
+                " = ",
+                vm.toString(c.used),
+                " used, ",
+                vm.toString(c.needed),
+                " needed"
+            )
+        );
+        console2.log(
+            string.concat(
+                "FEEPROBE {\"label\":\"",
+                b.label,
+                "\",\"path\":\"",
+                path,
+                "\",\"noteBytes\":",
+                vm.toString(b.noteLen),
+                ",\"commit\":",
+                _json(j.commit),
+                ",\"reveal\":",
+                _json(j.reveal),
+                ",\"claim\":",
+                _json(j.claim),
+                ",\"refund\":",
+                _json(j.refund),
+                ",\"tokens\":",
+                _json(j.tokens),
+                "}"
+            )
+        );
     }
 
     function _setup() internal {
@@ -243,7 +283,9 @@ contract FeeProbe is Script {
     /// Ciphertext-like note: nonzero bytes, since calldata prices zero bytes cheaper.
     function _note(uint256 len) internal pure returns (bytes memory b) {
         b = new bytes(len);
-        for (uint256 i; i < len; ++i) b[i] = bytes1(uint8(i % 255) + 1);
+        for (uint256 i; i < len; ++i) {
+            b[i] = bytes1(uint8(i % 255) + 1);
+        }
     }
 
     function _json(Cost memory c) internal pure returns (string memory) {

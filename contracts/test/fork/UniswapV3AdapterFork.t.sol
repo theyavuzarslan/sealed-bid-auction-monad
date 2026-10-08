@@ -107,7 +107,9 @@ contract UniswapV3AdapterForkTest is Test {
         adapters[0] = address(adapter);
         engine = new AuctionEngine(LOCKER, adapters, LOCK_END, GRACE);
         address[7] memory people = [alice, bob, carol, dave, eve, creator, griefer];
-        for (uint256 i; i < people.length; ++i) vm.deal(people[i], 1000 ether);
+        for (uint256 i; i < people.length; ++i) {
+            vm.deal(people[i], 1000 ether);
+        }
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────
@@ -214,7 +216,9 @@ contract UniswapV3AdapterForkTest is Test {
     /// One tick is a factor of 1.0001 on price, i.e. 1 bp.
     function _assertWithinOneTickOf(address pool, uint256 price) internal view {
         uint160 s = _sqrtPrice(pool);
-        assertTrue(UniV3PriceMath.withinTolerance(s, adapter.targetSqrtPriceX96(address(token), price), 1), "not within a tick");
+        assertTrue(
+            UniV3PriceMath.withinTolerance(s, adapter.targetSqrtPriceX96(address(token), price), 1), "not within a tick"
+        );
         uint256 implied = _impliedPrice(s);
         assertApproxEqRel(implied, price, 1e14, "implied price"); // 1e14 / 1e18 = 1 bp
     }
@@ -227,7 +231,8 @@ contract UniswapV3AdapterForkTest is Test {
 
     function _assertLockedFullRange(Seeded memory s, uint24 fee) internal view {
         assertEq(IERC721Minimal(NPM).ownerOf(s.nftId), LOCKER, "NFT not in locker");
-        (,, address t0, address t1, uint24 f, int24 lo, int24 hi, uint128 liq,,,,) = INPMPositions(NPM).positions(s.nftId);
+        (,, address t0, address t1, uint24 f, int24 lo, int24 hi, uint128 liq,,,,) =
+            INPMPositions(NPM).positions(s.nftId);
         assertEq(f, fee);
         assertEq(t0, address(token) < WMON ? address(token) : WMON);
         assertEq(t1, address(token) < WMON ? WMON : address(token));
@@ -252,9 +257,10 @@ contract UniswapV3AdapterForkTest is Test {
         IWMON(WMON).deposit{value: monAmt}();
         IERC20Approve(WMON).approve(NPM, type(uint256).max);
         token.approve(NPM, type(uint256).max);
-        INonfungiblePositionManagerLike(NPM).mint(
-            INonfungiblePositionManagerLike.MintParams(t0, t1, fee, lo, hi, a0, a1, 0, 0, griefer, block.timestamp)
-        );
+        INonfungiblePositionManagerLike(NPM)
+            .mint(
+                INonfungiblePositionManagerLike.MintParams(t0, t1, fee, lo, hi, a0, a1, 0, 0, griefer, block.timestamp)
+            );
         vm.stopPrank();
     }
 
@@ -349,7 +355,9 @@ contract UniswapV3AdapterForkTest is Test {
         uint256 r = _settledRound(_params(FEE));
         address pool = _griefInit(FEE, adapter.targetSqrtPriceX96(address(token), badPrice));
         assertEq(IUniswapV3PoolLike(pool).liquidity(), 0);
-        assertFalse(UniV3PriceMath.withinTolerance(_sqrtPrice(pool), adapter.targetSqrtPriceX96(address(token), P), 100));
+        assertFalse(
+            UniV3PriceMath.withinTolerance(_sqrtPrice(pool), adapter.targetSqrtPriceX96(address(token), P), 100)
+        );
 
         Seeded[] memory s = _seedLP(r);
         _assertWithinOneTickOf(pool, P);
@@ -602,9 +610,10 @@ contract UniswapV3AdapterForkTest is Test {
             n >>= 1;
         }
         // acc = sqrt(1.0001)^|tick| × 1e18
-        return neg
-            ? uint160(UniV3PriceMath.mulDiv(1 << 96, 1e18, acc))
-            : uint160(UniV3PriceMath.mulDiv(1 << 96, acc, 1e18));
+        return
+            neg
+                ? uint160(UniV3PriceMath.mulDiv(1 << 96, 1e18, acc))
+                : uint160(UniV3PriceMath.mulDiv(1 << 96, acc, 1e18));
     }
 
     function _tickNear(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
@@ -642,7 +651,9 @@ contract UniswapV3AdapterForkTest is Test {
         uint256[3] memory ends = [LOCK_END, type(uint128).max, type(uint256).max];
         for (uint256 i; i < ends.length; ++i) {
             uint256 snap = vm.snapshotState();
-            vm.expectCall(npm, abi.encodeWithSignature("safeTransferFrom(address,address,uint256)", address(this), LOCKER, id));
+            vm.expectCall(
+                npm, abi.encodeWithSignature("safeTransferFrom(address,address,uint256)", address(this), LOCKER, id)
+            );
             IUniV3LPLocker(LOCKER).lock(npm, id, address(this), address(this), ends[i], "DEFAULT");
             assertEq(IERC721Minimal(npm).ownerOf(id), LOCKER);
             vm.revertToState(snap);

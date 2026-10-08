@@ -8,6 +8,13 @@ optimizer_runs = 200
 via_ir = true
 fs_permissions = [{ access = "read-write", path = "./deployments" }]
 
+# Vendored OpenZeppelin stays exactly as upstream released it: never reformat or lint it.
+[fmt]
+ignore = ["src/vendor/**/*.sol"]
+
+[lint]
+ignore = ["src/vendor/**/*.sol"]
+
 [fuzz]
 runs = 512
 

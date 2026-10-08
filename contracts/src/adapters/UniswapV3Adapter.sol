@@ -24,9 +24,13 @@ interface IUniswapV3PoolLike {
             bool unlocked
         );
     function liquidity() external view returns (uint128);
-    function swap(address recipient, bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes calldata data)
-        external
-        returns (int256 amount0, int256 amount1);
+    function swap(
+        address recipient,
+        bool zeroForOne,
+        int256 amountSpecified,
+        uint160 sqrtPriceLimitX96,
+        bytes calldata data
+    ) external returns (int256 amount0, int256 amount1);
 }
 
 interface INonfungiblePositionManagerLike {
@@ -107,7 +111,12 @@ contract UniswapV3Adapter is IDexAdapter {
 
     event PoolRepriced(address indexed pool, uint160 fromSqrtPriceX96, uint160 toSqrtPriceX96);
     event Seeded(
-        address indexed pool, address indexed token, uint256 nftId, uint256 tokenUsed, uint256 monUsed, address recipient
+        address indexed pool,
+        address indexed token,
+        uint256 nftId,
+        uint256 tokenUsed,
+        uint256 monUsed,
+        address recipient
     );
 
     /// @param factory_         UniswapV3Factory.
@@ -175,10 +184,7 @@ contract UniswapV3Adapter is IDexAdapter {
     }
 
     /// @dev Leaves the pool trading at `target` (or within tolerance of it), or reverts.
-    function _preparePool(address token0, address token1, uint24 fee, uint160 target)
-        private
-        returns (address pool)
-    {
+    function _preparePool(address token0, address token1, uint24 fee, uint160 target) private returns (address pool) {
         pool = factory.getPool(token0, token1, fee);
         uint160 current;
         if (pool != address(0)) (current,,,,,,) = IUniswapV3PoolLike(pool).slot0();

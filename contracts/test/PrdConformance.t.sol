@@ -45,7 +45,9 @@ contract PrdConformanceTest is Test {
         vm.prank(creator);
         token.approve(address(engine), type(uint256).max);
         address[7] memory people = [alice, bob, carol, dave, eve, mallory, creator];
-        for (uint256 i; i < people.length; ++i) vm.deal(people[i], 1000 ether);
+        for (uint256 i; i < people.length; ++i) {
+            vm.deal(people[i], 1000 ether);
+        }
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────
@@ -148,7 +150,10 @@ contract PrdConformanceTest is Test {
     /// The same bid under two salts gives two unrelated hashes, and the wrong salt cannot open it.
     function test_PRD_Bug1_SaltIsPartOfTheCommitment() public {
         uint256 r = _open();
-        assertTrue(_hash(0.005 ether, 400e18, bytes32(uint256(1)), alice) != _hash(0.005 ether, 400e18, bytes32(uint256(2)), alice));
+        assertTrue(
+            _hash(0.005 ether, 400e18, bytes32(uint256(1)), alice)
+                != _hash(0.005 ether, 400e18, bytes32(uint256(2)), alice)
+        );
         _commit(r, alice, 0.005 ether, 400e18);
         vm.warp(engine.getRound(r).commitEnd);
         vm.prank(alice);
@@ -229,9 +234,13 @@ contract PrdConformanceTest is Test {
     function test_PRD_UniformPrice_EveryWinnerPaysTheClearingPrice() public {
         _book();
         uint256 r = _open();
-        for (uint256 i; i < 5; ++i) _commit(r, who_[i], price_[i], amount_[i]);
+        for (uint256 i; i < 5; ++i) {
+            _commit(r, who_[i], price_[i], amount_[i]);
+        }
         vm.warp(engine.getRound(r).commitEnd);
-        for (uint256 i; i < 5; ++i) _reveal(r, who_[i], price_[i], amount_[i]);
+        for (uint256 i; i < 5; ++i) {
+            _reveal(r, who_[i], price_[i], amount_[i]);
+        }
         _settleAndSeed(r);
 
         uint256 P = _price(r);
@@ -264,14 +273,22 @@ contract PrdConformanceTest is Test {
         uint256 rb = _open();
 
         uint256 commitEnd = engine.getRound(ra).commitEnd;
-        for (uint256 i; i < 5; ++i) _commit(ra, who_[i], price_[i], amount_[i]);
+        for (uint256 i; i < 5; ++i) {
+            _commit(ra, who_[i], price_[i], amount_[i]);
+        }
         vm.warp(commitEnd - 10 minutes);
-        for (uint256 i = 5; i > 0; --i) _commit(rb, who_[i - 1], price_[i - 1], amount_[i - 1]);
+        for (uint256 i = 5; i > 0; --i) {
+            _commit(rb, who_[i - 1], price_[i - 1], amount_[i - 1]);
+        }
 
         vm.warp(commitEnd);
-        for (uint256 i = 5; i > 0; --i) _reveal(rb, who_[i - 1], price_[i - 1], amount_[i - 1]);
+        for (uint256 i = 5; i > 0; --i) {
+            _reveal(rb, who_[i - 1], price_[i - 1], amount_[i - 1]);
+        }
         vm.warp(commitEnd + 50 minutes);
-        for (uint256 i; i < 5; ++i) _reveal(ra, who_[i], price_[i], amount_[i]);
+        for (uint256 i; i < 5; ++i) {
+            _reveal(ra, who_[i], price_[i], amount_[i]);
+        }
 
         _settleAndSeed(ra);
         _settleAndSeed(rb);
@@ -300,7 +317,9 @@ contract PrdConformanceTest is Test {
         }
         uint256 commitEnd = engine.getRound(ra).commitEnd;
         vm.warp(commitEnd);
-        for (uint256 i; i < 5; ++i) _reveal(ra, who_[i], price_[i], amount_[i]);
+        for (uint256 i; i < 5; ++i) {
+            _reveal(ra, who_[i], price_[i], amount_[i]);
+        }
         for (uint256 i; i < 5; ++i) {
             uint256 k = order[i];
             vm.warp(commitEnd + (i + 1) * 1 minutes);
@@ -352,9 +371,13 @@ contract PrdConformanceTest is Test {
     function test_PRD_Bug7_PoolFirst_AtTheClearingPrice_Locked() public {
         _book();
         uint256 r = _open();
-        for (uint256 i; i < 5; ++i) _commit(r, who_[i], price_[i], amount_[i]);
+        for (uint256 i; i < 5; ++i) {
+            _commit(r, who_[i], price_[i], amount_[i]);
+        }
         vm.warp(engine.getRound(r).commitEnd);
-        for (uint256 i; i < 5; ++i) _reveal(r, who_[i], price_[i], amount_[i]);
+        for (uint256 i; i < 5; ++i) {
+            _reveal(r, who_[i], price_[i], amount_[i]);
+        }
         vm.warp(engine.getRound(r).revealEnd);
         engine.settle(r, type(uint256).max);
 
