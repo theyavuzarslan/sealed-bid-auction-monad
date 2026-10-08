@@ -9,6 +9,14 @@ pragma solidity ^0.8.24;
 ///      The adapter must revert if the pool cannot be made to trade at `price` (within its tolerance):
 ///      the engine never seeds at any other price (AUDIT.md second review, H1).
 interface IDexAdapter {
+    /// @notice Seed a full-range position for `token` against MON at `price`, owned by `recipient`.
+    /// @param token       The launch token; `tokenAmount` of it is pulled from msg.sender.
+    /// @param tokenAmount Most tokens the position may take.
+    /// @param price       MON wei per 1e18 token units (the clearing price).
+    /// @param fee         Pool fee tier; must pass `supportsFee`.
+    /// @param recipient   Owner of the minted position.
+    /// @return positionManager The ERC-721 contract of the position.
+    /// @return nftId           The position's token id.
     function seed(address token, uint256 tokenAmount, uint256 price, uint24 fee, address recipient)
         external
         payable
@@ -23,6 +31,8 @@ interface IDexAdapter {
 /// @dev Source: https://docs.gopluslabs.io/page/goplus-safetoken-locker. Selectors confirmed in the
 ///      deployed bytecode on 22 Sep 2026.
 interface IUniV3LPLocker {
+    /// @notice Lock position `nftId_` of `nftManager_` until `endTime_`; `collector_` receives its fees.
+    /// @return lockId The locker's id for the new lock.
     function lock(
         address nftManager_,
         uint256 nftId_,
@@ -33,11 +43,13 @@ interface IUniV3LPLocker {
     ) external payable returns (uint256 lockId);
 }
 
+/// @notice The ERC-721 calls the engine makes on a position manager.
 interface IERC721Minimal {
     function approve(address to, uint256 tokenId) external;
     function ownerOf(uint256 tokenId) external view returns (address);
 }
 
+/// @notice The ERC-20 view the engine and the adapter use to measure transfers by balance delta.
 interface IERC20Minimal {
     function balanceOf(address account) external view returns (uint256);
 }

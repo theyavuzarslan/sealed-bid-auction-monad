@@ -5,6 +5,7 @@ import {IDexAdapter} from "../interfaces/ILiquidity.sol";
 import {SafeTransferLib} from "../lib/SafeTransferLib.sol";
 import {UniV3PriceMath} from "./UniV3PriceMath.sol";
 
+/// @dev The subset of Uniswap v3's factory, pool and position manager that the adapter calls.
 interface IUniswapV3FactoryLike {
     function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address pool);
     function feeAmountTickSpacing(uint24 fee) external view returns (int24);
@@ -89,6 +90,7 @@ interface IERC20Balance {
 contract UniswapV3Adapter is IDexAdapter {
     using SafeTransferLib for address;
 
+    /// @dev Uniswap v3's TickMath.MAX_TICK; a full-range position spans ±(MAX_TICK rounded to the spacing).
     int24 internal constant MAX_TICK = 887272;
     /// @dev The most a repricing swap may take from the adapter: it is a 1-wei exact-input swap.
     uint256 internal constant MAX_REPRICE_INPUT = 1;
@@ -99,17 +101,27 @@ contract UniswapV3Adapter is IDexAdapter {
     /// @dev Smallest tick spacing a round may use; spacing 1 cannot be repriced within one transaction.
     int24 internal constant MIN_TICK_SPACING = 10;
 
+    /// @notice The Uniswap v3 factory pools are looked up in.
     IUniswapV3FactoryLike public immutable factory;
+    /// @notice The position manager positions are minted through (returned by `seed`).
     INonfungiblePositionManagerLike public immutable positionManager;
+    /// @notice Wrapped MON, the quote token of every pool.
     address public immutable wmon;
     /// @notice Largest accepted deviation of an existing pool's price from the target, in bps of price.
     uint256 public immutable toleranceBps;
 
+    // Transient state. Reset by assigning zero, never with `delete`: solc 0.8.28–0.8.33 under via-IR can
+    // emit the wrong clearing opcode for `delete` of a transient variable (fixed in 0.8.34; see
+    // CODE-QUALITY.md). This file is compiled with 0.8.28.
+
     /// @dev The pool a repricing swap is in flight on; the swap callback pays only this address.
     address private transient _repricingPool;
+    /// @dev Reentrancy flag of `seed`.
     bool private transient _entered;
 
+    /// @notice An empty pool was moved from `fromSqrtPriceX96` towards the target before seeding.
     event PoolRepriced(address indexed pool, uint160 fromSqrtPriceX96, uint160 toSqrtPriceX96);
+    /// @notice A position was minted for `recipient` with `tokenUsed` tokens and `monUsed` MON.
     event Seeded(
         address indexed pool,
         address indexed token,
@@ -213,6 +225,8 @@ contract UniswapV3Adapter is IDexAdapter {
         require(UniV3PriceMath.withinTolerance(current, target, toleranceBps), "pool price deviates");
     }
 
+    /// @dev Mints a full-range position with everything the adapter holds for this call, then clears
+    ///      the approvals.
     function _mintFullRange(
         address token0,
         address token1,
@@ -253,15 +267,22 @@ contract UniswapV3Adapter is IDexAdapter {
     }
 
     /// @notice Pays a repricing swap. Only the pool this adapter is repricing, and only up to 1 wei.
+    /// @param amount0Delta Token0 owed to the pool if positive.
+    /// @param amount1Delta Token1 owed to the pool if positive.
+    /// @param data         abi.encode(token0, token1, fee), checked against the factory.
     function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
         address pool = _repricingPool;
         require(pool != address(0) && msg.sender == pool, "not the pool");
         (address token0, address token1, uint24 fee) = abi.decode(data, (address, address, uint24));
         require(factory.getPool(token0, token1, fee) == msg.sender, "not the pool");
+        // casting to 'uint256' is safe because each delta is checked positive first
+        // forge-lint: disable-next-line(unsafe-typecast)
         if (amount0Delta > 0) _payPool(token0, uint256(amount0Delta));
+        // forge-lint: disable-next-line(unsafe-typecast)
         if (amount1Delta > 0) _payPool(token1, uint256(amount1Delta));
     }
 
+    /// @dev Pays the calling pool `amount` of `token`, at most MAX_REPRICE_INPUT.
     function _payPool(address token, uint256 amount) private {
         // More than the 1-wei input means the swap did something other than move an empty pool.
         require(amount <= MAX_REPRICE_INPUT, "pool price deviates");
@@ -273,6 +294,9 @@ contract UniswapV3Adapter is IDexAdapter {
     }
 
     /// @notice The pool sqrtPriceX96 that corresponds to `price` for `token` against WMON.
+    /// @param token The launch token.
+    /// @param price MON wei per 1e18 token units.
+
     function targetSqrtPriceX96(address token, uint256 price) external view returns (uint160) {
         return UniV3PriceMath.sqrtPriceX96For(token, wmon, price);
     }

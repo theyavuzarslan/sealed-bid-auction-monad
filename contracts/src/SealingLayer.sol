@@ -10,21 +10,30 @@ import {MerkleProofLib} from "./lib/MerkleProofLib.sol";
 ///      can be replayed or its reveal front-run (AGENTS.md bugs #1, #2).
 ///      `note` is an encrypted bid backup for recovery (10-decisions.md #33). It is emitted, never stored.
 abstract contract SealingLayer is DepositLedger {
+    /// @notice Longest accepted encrypted bid backup, in bytes.
     uint256 public constant MAX_NOTE_LENGTH = 256;
+    /// @dev "No hint": `reveal` passes it to `_onReveal`. Equal to `UniformClearing.NONE` on purpose, so
+    ///      the book treats it as "walk from the head". Keep the two equal.
     uint256 internal constant NO_HINT = type(uint256).max;
 
     struct Commitment {
-        bytes32 hash;
+        bytes32 hash; // zero = no commitment
         bool revealed;
     }
 
+    /// @notice Each bidder's commitment per round.
     mapping(uint256 => mapping(address => Commitment)) public commitments;
 
+    /// @notice `bidder` committed to `hash` in `roundId`, with an optional encrypted backup `note`.
     event Committed(uint256 indexed roundId, address indexed bidder, bytes32 hash, bytes note);
+    /// @notice `bidder` revealed a valid bid in `roundId`.
     event Revealed(uint256 indexed roundId, address indexed bidder, uint96 price, uint96 amount);
 
-    /// @param proof Merkle proof of msg.sender when the round has an allowlist; empty otherwise.
-    /// @param note  Encrypted bid backup (optional, at most MAX_NOTE_LENGTH bytes).
+    /// @notice Commit to a sealed bid, locking the round's uniform deposit (send exactly it as msg.value).
+    /// @param roundId The round to bid in; must be in its commit window.
+    /// @param hash    keccak256(abi.encode(price, amount, salt, msg.sender)); nonzero, one per bidder per round.
+    /// @param proof   Merkle proof of msg.sender when the round has an allowlist; empty otherwise.
+    /// @param note    Encrypted bid backup (optional, at most MAX_NOTE_LENGTH bytes).
     function commit(uint256 roundId, bytes32 hash, bytes32[] calldata proof, bytes calldata note)
         external
         payable
@@ -46,11 +55,22 @@ abstract contract SealingLayer is DepositLedger {
         emit Committed(roundId, msg.sender, hash, note);
     }
 
+    /// @notice Reveal a committed bid during the reveal window, walking the price book from its head.
+    /// @param roundId The round committed to.
+    /// @param price   Price of the bid (product-specific unit, see `_onReveal`).
+    /// @param amount  Amount of the bid (product-specific unit, see `_onReveal`).
+    /// @param salt    The salt used in the commitment.
     function reveal(uint256 roundId, uint96 price, uint96 amount, bytes32 salt) external nonReentrant {
         _reveal(roundId, price, amount, salt, NO_HINT);
     }
 
-    /// @param hint An existing price level above `price`, to skip walking the book (see findHint).
+    /// @notice `reveal` with a starting point in the price book, so the insert does not walk from the head.
+    /// @dev An invalid or stale hint is ignored (the walk starts from the head), never a revert.
+    /// @param roundId The round committed to.
+    /// @param price   Price of the bid.
+    /// @param amount  Amount of the bid.
+    /// @param salt    The salt used in the commitment.
+    /// @param hint    An existing price level above `price` (see `UniformClearing.findHint`).
     function revealWithHint(uint256 roundId, uint96 price, uint96 amount, bytes32 salt, uint256 hint)
         external
         nonReentrant
@@ -58,6 +78,7 @@ abstract contract SealingLayer is DepositLedger {
         _reveal(roundId, price, amount, salt, hint);
     }
 
+    /// @dev Effects (revealed flag, counter) before `_onReveal`, which may make external calls.
     function _reveal(uint256 roundId, uint96 price, uint96 amount, bytes32 salt, uint256 hint) private {
         (, uint256 commitEnd, uint256 revealEnd,) = _sealTerms(roundId);
         require(block.timestamp >= commitEnd && block.timestamp < revealEnd, "reveal window closed");

@@ -7,7 +7,9 @@ import {IERC20} from "../vendor/openzeppelin/token/ERC20/IERC20.sol";
 
 /// @notice What the vault needs to know from its exit adapter: shares it has promised to redeem.
 interface IExitReserve {
+    /// @notice The vault the exit adapter serves.
     function vault() external view returns (address);
+    /// @notice Shares the exit adapter has promised to redeem.
     function reservedShares() external view returns (uint256);
 }
 
@@ -29,17 +31,27 @@ interface IExitReserve {
 ///      donation attack then costs the attacker about 1000× what it can take from a victim, so it
 ///      never pays. Shares have 21 decimals as a result. No seed deposit is needed.
 contract DemoVault is ERC4626 {
+    /// @notice Virtual-share decimals offset against the inflation attack (shares have 18 + 3 decimals).
     uint8 public constant DECIMALS_OFFSET = 3;
 
+    /// @notice May wire the exit adapter, once.
     address public immutable deployer;
+    /// @notice May move the simulated strategy mark.
     address public immutable strategist;
+    /// @notice The exit adapter: the only owner whose shares can be redeemed. Zero until set.
     address public exitAuction;
+    /// @notice WMON marked as deployed to the simulated strategy.
     uint256 public strategyAssets;
 
+    /// @notice The exit adapter was wired.
     event ExitAuctionSet(address indexed exitAuction);
+    /// @notice `assets` WMON moved from idle to the strategy mark, now `strategyAssets`.
     event MovedToStrategy(uint256 assets, uint256 strategyAssets);
+    /// @notice `assets` WMON moved from the strategy mark back to idle, leaving `strategyAssets`.
     event MovedToIdle(uint256 assets, uint256 strategyAssets);
 
+    /// @param wmon        The asset (WMON).
+    /// @param strategist_ May move the simulated strategy mark.
     constructor(IERC20 wmon, address strategist_) ERC20("Demo Vault MON", "dvMON") ERC4626(wmon) {
         require(address(wmon).code.length != 0, "asset has no code");
         require(strategist_ != address(0), "zero strategist");
@@ -48,6 +60,7 @@ contract DemoVault is ERC4626 {
     }
 
     /// @notice One-time wiring of the exit adapter. It must point back at this vault.
+    /// @param exitAuction_ The exit adapter (ExitAuction) for this vault.
     function setExitAuction(address exitAuction_) external {
         require(msg.sender == deployer, "not deployer");
         require(exitAuction == address(0), "already set");
@@ -59,6 +72,8 @@ contract DemoVault is ERC4626 {
 
     // ─── Simulated strategy ─────────────────────────────────────────────
 
+    /// @notice Strategist: mark `assets` idle WMON as deployed. Never idle WMON reserved for exits.
+    /// @param assets WMON to mark.
     function moveToStrategy(uint256 assets) external {
         require(msg.sender == strategist, "not strategist");
         uint256 idle = idleAssets();
@@ -68,6 +83,8 @@ contract DemoVault is ERC4626 {
         emit MovedToStrategy(assets, strategyAssets);
     }
 
+    /// @notice Strategist: mark `assets` of the strategy as idle again.
+    /// @param assets WMON to unmark; at most `strategyAssets`.
     function moveToIdle(uint256 assets) external {
         require(msg.sender == strategist, "not strategist");
         strategyAssets -= assets;
@@ -91,6 +108,8 @@ contract DemoVault is ERC4626 {
         return idleAssets() + strategyAssets;
     }
 
+    /// @notice Only the exit adapter can withdraw, and at most the idle buffer.
+    /// @dev `owner == address(0)` matters only while the exit adapter is unset (`exitAuction` is zero).
     function maxWithdraw(address owner) public view override returns (uint256) {
         if (owner != exitAuction || owner == address(0)) return 0;
         uint256 m = super.maxWithdraw(owner);
@@ -98,6 +117,8 @@ contract DemoVault is ERC4626 {
         return m < idle ? m : idle;
     }
 
+    /// @notice Only the exit adapter can redeem, and at most the idle buffer's worth of shares.
+    /// @dev `owner == address(0)` matters only while the exit adapter is unset (`exitAuction` is zero).
     function maxRedeem(address owner) public view override returns (uint256) {
         if (owner != exitAuction || owner == address(0)) return 0;
         uint256 m = super.maxRedeem(owner);
@@ -105,12 +126,14 @@ contract DemoVault is ERC4626 {
         return m < idleShares ? m : idleShares;
     }
 
+    /// @dev `previewMint` of the reserved shares: the WMON they redeem for, rounded up.
     function _reservedAssets() private view returns (uint256) {
         address ea = exitAuction;
         if (ea == address(0)) return 0;
         return previewMint(IExitReserve(ea).reservedShares());
     }
 
+    /// @dev See DECIMALS_OFFSET.
     function _decimalsOffset() internal pure override returns (uint8) {
         return DECIMALS_OFFSET;
     }

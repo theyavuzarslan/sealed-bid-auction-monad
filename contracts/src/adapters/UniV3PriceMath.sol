@@ -12,10 +12,13 @@ pragma solidity ^0.8.24;
 library UniV3PriceMath {
     uint160 internal constant MIN_SQRT_RATIO = 4295128739;
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+    /// @dev The engine's price unit: MON wei per 1e18 token units (`AuctionEngine.PRICE_SCALE`).
     uint256 internal constant PRICE_SCALE = 1e18;
 
     /// @notice floor(a × b / d) with a 512-bit intermediate. Reverts if d == 0 or the result overflows.
     function mulDiv(uint256 a, uint256 b, uint256 d) internal pure returns (uint256 result) {
+        // Unchecked: the 512-bit product is computed with explicit borrows, `d > prod1` guarantees the
+        // quotient fits in 256 bits, and the Newton iteration for the inverse is meant to wrap mod 2^256.
         unchecked {
             uint256 prod0;
             uint256 prod1;
@@ -56,6 +59,8 @@ library UniV3PriceMath {
     /// @notice floor(sqrt(x)).
     function sqrt(uint256 x) internal pure returns (uint256) {
         if (x == 0) return 0;
+        // Unchecked: r starts at 1 or more (no division by zero) and stays within a small factor of
+        // sqrt(x) <= 2^128, so r + x / r stays far below 2^256.
         unchecked {
             uint256 xx = x;
             uint256 r = 1;
@@ -113,6 +118,8 @@ library UniV3PriceMath {
             root = sqrt(mulDiv(num, 1 << 128, den)) << 32;
         }
         require(root >= MIN_SQRT_RATIO && root < MAX_SQRT_RATIO, "price out of range");
+        // casting to 'uint160' is safe because root < MAX_SQRT_RATIO, a uint160
+        // forge-lint: disable-next-line(unsafe-typecast)
         return uint160(root);
     }
 
