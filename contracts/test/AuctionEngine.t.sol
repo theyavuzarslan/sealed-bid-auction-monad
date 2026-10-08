@@ -32,7 +32,8 @@ contract ReentrantBidder {
     receive() external payable {
         if (!attempted) {
             attempted = true;
-            try engine.claim(roundId) {} catch Error(string memory why) {
+            try engine.claim(roundId) {}
+            catch Error(string memory why) {
                 blocked = keccak256(bytes(why)) == keccak256("reentrancy");
             }
         }
@@ -76,7 +77,9 @@ abstract contract EngineBase is Test {
         vm.prank(creator);
         token.approve(address(engine), type(uint256).max);
         address[6] memory people = [alice, bob, carol, dave, eve, creator];
-        for (uint256 i; i < people.length; ++i) vm.deal(people[i], 1000 ether);
+        for (uint256 i; i < people.length; ++i) {
+            vm.deal(people[i], 1000 ether);
+        }
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────
@@ -109,7 +112,9 @@ abstract contract EngineBase is Test {
 
     function _commit(uint256 r, address who, uint96 price, uint96 amount) internal {
         vm.prank(who);
-        engine.commit{value: DEPOSIT}(r, _hash(price, amount, bytes32(uint256(uint160(who))), who), new bytes32[](0), "");
+        engine.commit{value: DEPOSIT}(
+            r, _hash(price, amount, bytes32(uint256(uint160(who))), who), new bytes32[](0), ""
+        );
     }
 
     function _reveal(uint256 r, address who, uint96 price, uint96 amount) internal {
@@ -144,7 +149,6 @@ abstract contract EngineBase is Test {
         _reveal(r, dave, 0.003 ether, 300e18);
         _reveal(r, eve, 0.002 ether, 500e18);
     }
-
 }
 
 contract AuctionEngineTest is EngineBase {
@@ -176,7 +180,8 @@ contract AuctionEngineTest is EngineBase {
         assertEq(adapter.monHeld(), (soldLB * 0.003 ether / 1e18) * 5000 / 10_000);
         assertEq(adapter.lastPrice(), 0.003 ether);
         // Permanent lock: the engine owns it, the creator collects fees.
-        (address mgr, uint256 nftId, address owner, address collector, uint256 endTime, string memory fee) = locker.locks(0);
+        (address mgr, uint256 nftId, address owner, address collector, uint256 endTime, string memory fee) =
+            locker.locks(0);
         assertEq(mgr, address(npm));
         assertEq(npm.ownerOf(nftId), address(locker));
         assertEq(owner, address(engine));
@@ -601,11 +606,15 @@ contract AuctionEngineTest is EngineBase {
             _commit(r, who[i], price[i], amount[i]);
         }
         _toReveal(r);
-        for (uint256 i; i < n; ++i) if (reveals[i]) _reveal(r, who[i], price[i], amount[i]);
+        for (uint256 i; i < n; ++i) {
+            if (reveals[i]) _reveal(r, who[i], price[i], amount[i]);
+        }
         _toSettle(r);
         while (!engine.settle(r, 2)) {}
         // Some bidders take their refund before the LP exists; anyone may trigger it for them.
-        for (uint256 i; i < n; ++i) if (reveals[i] && (seed >> (i + 8)) & 1 == 1) engine.claimRefund(r, who[i]);
+        for (uint256 i; i < n; ++i) {
+            if (reveals[i] && (seed >> (i + 8)) & 1 == 1) engine.claimRefund(r, who[i]);
+        }
         engine.seedLP(r);
         uint256 revealedCount;
         for (uint256 i; i < n; ++i) {
@@ -657,10 +666,13 @@ contract AuctionEngineTest is EngineBase {
         for (uint256 i; i < 5; ++i) {
             _reveal(ra, who[i], price[i], amount[i]);
             uint256 kind = uint256(keccak256(abi.encode(seed, "h", i))) % 4;
-            uint256 hint = kind == 0 ? engine.findHint(rb, price[i]) // the right hint
-                : kind == 1 ? uint256(price[i]) - TICK // at or below the price: ignored
-                : kind == 2 ? uint256(keccak256(abi.encode(seed, i))) // not a level: ignored
-                : NONE; // no hint
+            uint256 hint = kind == 0
+                ? engine.findHint(rb, price[i])  // the right hint
+                : kind == 1
+                    ? uint256(price[i]) - TICK  // at or below the price: ignored
+                    : kind == 2
+                        ? uint256(keccak256(abi.encode(seed, i)))  // not a level: ignored
+                        : NONE; // no hint
             vm.prank(who[i]);
             engine.revealWithHint(rb, price[i], amount[i], bytes32(uint256(uint160(who[i]))), hint);
         }

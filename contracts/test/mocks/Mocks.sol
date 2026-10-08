@@ -128,11 +128,14 @@ contract MockLocker {
 
     Lock[] public locks;
 
-    function lock(address nftManager_, uint256 nftId_, address owner_, address collector_, uint256 endTime_, string memory feeName_)
-        external
-        payable
-        returns (uint256 lockId)
-    {
+    function lock(
+        address nftManager_,
+        uint256 nftId_,
+        address owner_,
+        address collector_,
+        uint256 endTime_,
+        string memory feeName_
+    ) external payable returns (uint256 lockId) {
         MockPositionManager(nftManager_).transferFrom(msg.sender, address(this), nftId_);
         locks.push(Lock(nftManager_, nftId_, owner_, collector_, endTime_, feeName_));
         return locks.length - 1;

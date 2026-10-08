@@ -184,7 +184,9 @@ contract ExitAuctionTest is ExitBase {
     function setUp() public {
         _deploy(type(uint128).max);
         address[5] memory people = [alice, bob, carol, dave, stayer];
-        for (uint256 i; i < people.length; ++i) _join(people[i], EACH);
+        for (uint256 i; i < people.length; ++i) {
+            _join(people[i], EACH);
+        }
         _toStrategy(40_000 ether); // 50k TVL: 40k illiquid, 10k idle
     }
 

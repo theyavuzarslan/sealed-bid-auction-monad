@@ -155,7 +155,9 @@ contract UniformClearingTest is Test {
         _assertStrictlyDescending(h.levelPrices(1));
 
         uint256 steps = 1 + (seed >> 128) % 4;
-        for (uint256 guard; !h.step(1, steps); ++guard) require(guard < 100, "settle loop");
+        for (uint256 guard; !h.step(1, steps); ++guard) {
+            require(guard < 100, "settle loop");
+        }
 
         (uint256 refP, bool refOver, uint256 refAbove, uint256 refAtP) = _reference(bids, supply);
         (, uint256 p,,, bool over,,) = h.clearingOf(1);
@@ -204,7 +206,9 @@ contract UniformClearingTest is Test {
         for (uint256 g = GRID; g > 0; --g) {
             uint256 level = (g - 1) * 1e15;
             uint256 q;
-            for (uint256 i; i < bids.length; ++i) if (bids[i].price == level) q += bids[i].amount;
+            for (uint256 i; i < bids.length; ++i) {
+                if (bids[i].price == level) q += bids[i].amount;
+            }
             if (q == 0) continue;
             lowest = level;
             if (cum + q >= supply) {
@@ -214,11 +218,15 @@ contract UniformClearingTest is Test {
         }
         // Demand never reached the supply: everything fills at the lowest bid price.
         uint256 qLow;
-        for (uint256 i; i < bids.length; ++i) if (bids[i].price == lowest) qLow += bids[i].amount;
+        for (uint256 i; i < bids.length; ++i) {
+            if (bids[i].price == lowest) qLow += bids[i].amount;
+        }
         return (lowest, false, cum - qLow, qLow);
     }
 
     function _assertStrictlyDescending(uint256[] memory prices) private pure {
-        for (uint256 i = 1; i < prices.length; ++i) require(prices[i - 1] > prices[i], "levels out of order");
+        for (uint256 i = 1; i < prices.length; ++i) {
+            require(prices[i - 1] > prices[i], "levels out of order");
+        }
     }
 }

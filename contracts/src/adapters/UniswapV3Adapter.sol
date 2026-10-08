@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IDexAdapter} from "../interfaces/ILiquidity.sol";
+import {IDexAdapter, IERC20Minimal} from "../interfaces/ILiquidity.sol";
 import {SafeTransferLib} from "../lib/SafeTransferLib.sol";
 import {UniV3PriceMath} from "./UniV3PriceMath.sol";
 
+/// @dev The subset of Uniswap v3's factory, pool and position manager that the adapter calls.
 interface IUniswapV3FactoryLike {
     function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address pool);
     function feeAmountTickSpacing(uint24 fee) external view returns (int24);
@@ -24,9 +25,13 @@ interface IUniswapV3PoolLike {
             bool unlocked
         );
     function liquidity() external view returns (uint128);
-    function swap(address recipient, bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes calldata data)
-        external
-        returns (int256 amount0, int256 amount1);
+    function swap(
+        address recipient,
+        bool zeroForOne,
+        int256 amountSpecified,
+        uint160 sqrtPriceLimitX96,
+        bytes calldata data
+    ) external returns (int256 amount0, int256 amount1);
 }
 
 interface INonfungiblePositionManagerLike {
@@ -60,10 +65,6 @@ interface IWMON {
     function balanceOf(address account) external view returns (uint256);
 }
 
-interface IERC20Balance {
-    function balanceOf(address account) external view returns (uint256);
-}
-
 /// @title UniswapV3Adapter — seeds a full-range Uniswap v3 position at the clearing price
 /// @notice The LP seeder's venue for Uniswap v3 on Monad (10-decisions.md #23). Holds no funds between
 ///         calls: every call pulls the token side from the caller, wraps the MON side, mints a full-range
@@ -85,6 +86,7 @@ interface IERC20Balance {
 contract UniswapV3Adapter is IDexAdapter {
     using SafeTransferLib for address;
 
+    /// @dev Uniswap v3's TickMath.MAX_TICK; a full-range position spans ±(MAX_TICK rounded to the spacing).
     int24 internal constant MAX_TICK = 887272;
     /// @dev The most a repricing swap may take from the adapter: it is a 1-wei exact-input swap.
     uint256 internal constant MAX_REPRICE_INPUT = 1;
@@ -95,20 +97,42 @@ contract UniswapV3Adapter is IDexAdapter {
     /// @dev Smallest tick spacing a round may use; spacing 1 cannot be repriced within one transaction.
     int24 internal constant MIN_TICK_SPACING = 10;
 
+    /// @notice The Uniswap v3 factory pools are looked up in.
     IUniswapV3FactoryLike public immutable factory;
+    /// @notice The position manager positions are minted through (returned by `seed`).
     INonfungiblePositionManagerLike public immutable positionManager;
+    /// @notice Wrapped MON, the quote token of every pool.
     address public immutable wmon;
     /// @notice Largest accepted deviation of an existing pool's price from the target, in bps of price.
     uint256 public immutable toleranceBps;
 
+    // Transient state. Reset by assigning zero, never with `delete`: solc 0.8.28–0.8.33 under via-IR can
+    // emit the wrong clearing opcode for `delete` of a transient variable (fixed in 0.8.34; see
+    // CODE-QUALITY.md). This file is compiled with 0.8.28.
+
     /// @dev The pool a repricing swap is in flight on; the swap callback pays only this address.
     address private transient _repricingPool;
+    /// @dev Reentrancy flag of `seed`.
     bool private transient _entered;
 
+    /// @notice An empty pool was moved from `fromSqrtPriceX96` towards the target before seeding.
     event PoolRepriced(address indexed pool, uint160 fromSqrtPriceX96, uint160 toSqrtPriceX96);
+    /// @notice A position was minted for `recipient` with `tokenUsed` tokens and `monUsed` MON.
     event Seeded(
-        address indexed pool, address indexed token, uint256 nftId, uint256 tokenUsed, uint256 monUsed, address recipient
+        address indexed pool,
+        address indexed token,
+        uint256 nftId,
+        uint256 tokenUsed,
+        uint256 monUsed,
+        address recipient
     );
+
+    modifier nonReentrant() {
+        require(!_entered, "reentrancy");
+        _entered = true;
+        _;
+        _entered = false;
+    }
 
     /// @param factory_         UniswapV3Factory.
     /// @param positionManager_ NonfungiblePositionManager of the same deployment.
@@ -116,18 +140,16 @@ contract UniswapV3Adapter is IDexAdapter {
     /// @param toleranceBps_    Largest accepted deviation of a pool with liquidity from the target price.
     constructor(address factory_, address positionManager_, address wmon_, uint256 toleranceBps_) {
         require(factory_.code.length != 0 && positionManager_.code.length != 0 && wmon_.code.length != 0, "no code");
-        require(toleranceBps_ < 10_000, "tolerance >= 100%");
+        require(toleranceBps_ < UniV3PriceMath.BPS, "tolerance >= 100%");
         factory = IUniswapV3FactoryLike(factory_);
         positionManager = INonfungiblePositionManagerLike(positionManager_);
         wmon = wmon_;
         toleranceBps = toleranceBps_;
     }
 
-    modifier nonReentrant() {
-        require(!_entered, "reentrancy");
-        _entered = true;
-        _;
-        _entered = false;
+    /// @dev MON arrives only from unwrapping WMON.
+    receive() external payable {
+        require(msg.sender == wmon, "unexpected MON");
     }
 
     /// @inheritdoc IDexAdapter
@@ -146,24 +168,24 @@ contract UniswapV3Adapter is IDexAdapter {
 
         // Balances before this call's funds arrive. Anything already here (a donation) is left alone,
         // so the caller gets back exactly its own unused funds and its balance-delta accounting holds.
-        uint256 tokenBase = IERC20Balance(token).balanceOf(address(this));
+        uint256 tokenBase = IERC20Minimal(token).balanceOf(address(this));
         uint256 wmonBase = IWMON(wmon).balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), tokenAmount);
-        require(IERC20Balance(token).balanceOf(address(this)) - tokenBase == tokenAmount, "fee-on-transfer token");
+        require(IERC20Minimal(token).balanceOf(address(this)) - tokenBase == tokenAmount, "fee-on-transfer token");
         IWMON(wmon).deposit{value: msg.value}();
 
         (address token0, address token1) = token < wmon ? (token, wmon) : (wmon, token);
         address pool = _preparePool(token0, token1, fee, target);
 
         // This call's funds only, net of the (at most 1-wei) repricing payment.
-        uint256 tokenHeld = IERC20Balance(token).balanceOf(address(this)) - tokenBase;
+        uint256 tokenHeld = IERC20Minimal(token).balanceOf(address(this)) - tokenBase;
         uint256 wmonHeld = IWMON(wmon).balanceOf(address(this)) - wmonBase;
         (uint256 amount0, uint256 amount1) = token == token0 ? (tokenHeld, wmonHeld) : (wmonHeld, tokenHeld);
         nftId = _mintFullRange(token0, token1, fee, spacing, amount0, amount1, recipient);
 
         // Return what the pool did not take. Capped at what was sent in: a repricing swap takes at most
         // 1 wei and pays out nothing, so the caps only bind if something unexpected reached the adapter.
-        uint256 tokenLeft = _min(IERC20Balance(token).balanceOf(address(this)) - tokenBase, tokenAmount);
+        uint256 tokenLeft = _min(IERC20Minimal(token).balanceOf(address(this)) - tokenBase, tokenAmount);
         uint256 wmonLeft = _min(IWMON(wmon).balanceOf(address(this)) - wmonBase, msg.value);
         emit Seeded(pool, token, nftId, tokenAmount - tokenLeft, msg.value - wmonLeft, recipient);
         if (tokenLeft != 0) token.safeTransfer(msg.sender, tokenLeft);
@@ -174,11 +196,36 @@ contract UniswapV3Adapter is IDexAdapter {
         return (address(positionManager), nftId);
     }
 
+    /// @notice Pays a repricing swap. Only the pool this adapter is repricing, and only up to 1 wei.
+    /// @param amount0Delta Token0 owed to the pool if positive.
+    /// @param amount1Delta Token1 owed to the pool if positive.
+    /// @param data         abi.encode(token0, token1, fee), checked against the factory.
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
+        address pool = _repricingPool;
+        require(pool != address(0) && msg.sender == pool, "not the pool");
+        (address token0, address token1, uint24 fee) = abi.decode(data, (address, address, uint24));
+        require(factory.getPool(token0, token1, fee) == msg.sender, "not the pool");
+        // casting to 'uint256' is safe because each delta is checked positive first
+        // forge-lint: disable-next-line(unsafe-typecast)
+        if (amount0Delta > 0) _payPool(token0, uint256(amount0Delta));
+        // forge-lint: disable-next-line(unsafe-typecast)
+        if (amount1Delta > 0) _payPool(token1, uint256(amount1Delta));
+    }
+
+    /// @inheritdoc IDexAdapter
+    function supportsFee(uint24 fee) external view returns (bool) {
+        return factory.feeAmountTickSpacing(fee) >= MIN_TICK_SPACING;
+    }
+
+    /// @notice The pool sqrtPriceX96 that corresponds to `price` for `token` against WMON.
+    /// @param token The launch token.
+    /// @param price MON wei per 1e18 token units.
+    function targetSqrtPriceX96(address token, uint256 price) external view returns (uint160) {
+        return UniV3PriceMath.sqrtPriceX96For(token, wmon, price);
+    }
+
     /// @dev Leaves the pool trading at `target` (or within tolerance of it), or reverts.
-    function _preparePool(address token0, address token1, uint24 fee, uint160 target)
-        private
-        returns (address pool)
-    {
+    function _preparePool(address token0, address token1, uint24 fee, uint160 target) private returns (address pool) {
         pool = factory.getPool(token0, token1, fee);
         uint160 current;
         if (pool != address(0)) (current,,,,,,) = IUniswapV3PoolLike(pool).slot0();
@@ -207,6 +254,8 @@ contract UniswapV3Adapter is IDexAdapter {
         require(UniV3PriceMath.withinTolerance(current, target, toleranceBps), "pool price deviates");
     }
 
+    /// @dev Mints a full-range position with everything the adapter holds for this call, then clears
+    ///      the approvals.
     function _mintFullRange(
         address token0,
         address token1,
@@ -241,21 +290,7 @@ contract UniswapV3Adapter is IDexAdapter {
         token1.safeApprove(npm, 0);
     }
 
-    /// @inheritdoc IDexAdapter
-    function supportsFee(uint24 fee) external view returns (bool) {
-        return factory.feeAmountTickSpacing(fee) >= MIN_TICK_SPACING;
-    }
-
-    /// @notice Pays a repricing swap. Only the pool this adapter is repricing, and only up to 1 wei.
-    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
-        address pool = _repricingPool;
-        require(pool != address(0) && msg.sender == pool, "not the pool");
-        (address token0, address token1, uint24 fee) = abi.decode(data, (address, address, uint24));
-        require(factory.getPool(token0, token1, fee) == msg.sender, "not the pool");
-        if (amount0Delta > 0) _payPool(token0, uint256(amount0Delta));
-        if (amount1Delta > 0) _payPool(token1, uint256(amount1Delta));
-    }
-
+    /// @dev Pays the calling pool `amount` of `token`, at most MAX_REPRICE_INPUT.
     function _payPool(address token, uint256 amount) private {
         // More than the 1-wei input means the swap did something other than move an empty pool.
         require(amount <= MAX_REPRICE_INPUT, "pool price deviates");
@@ -264,15 +299,5 @@ contract UniswapV3Adapter is IDexAdapter {
 
     function _min(uint256 a, uint256 b) private pure returns (uint256) {
         return a < b ? a : b;
-    }
-
-    /// @notice The pool sqrtPriceX96 that corresponds to `price` for `token` against WMON.
-    function targetSqrtPriceX96(address token, uint256 price) external view returns (uint160) {
-        return UniV3PriceMath.sqrtPriceX96For(token, wmon, price);
-    }
-
-    /// @dev MON arrives only from unwrapping WMON.
-    receive() external payable {
-        require(msg.sender == wmon, "unexpected MON");
     }
 }

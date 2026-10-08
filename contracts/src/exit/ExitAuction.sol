@@ -32,8 +32,10 @@ import {DemoVault} from "./DemoVault.sol";
 contract ExitAuction is SealingLayer, UniformClearing {
     using SafeTransferLib for address;
 
+    /// @notice Basis-point denominator; discounts are in bps.
     uint256 public constant BPS = 10_000;
 
+    /// @notice Deployment parameters, fixed for every round.
     struct Config {
         uint64 commitDuration; // seconds
         uint64 revealDuration; // seconds
@@ -45,6 +47,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
         bytes32 allowlistRoot; // Merkle root of holders who may bid; zero = every holder (PRD Vault preset)
     }
 
+    /// @notice One exit round's windows and accounting.
     struct ExitRound {
         uint128 capacity; // exit capacity in shares, fixed at open
         uint64 commitEnd;
@@ -61,31 +64,49 @@ contract ExitAuction is SealingLayer, UniformClearing {
         uint256 exitsClaimed; // revealed bids whose exit has been claimed
     }
 
+    /// @notice A revealed exit bid.
     struct Bid {
         uint96 discountBps;
         uint96 shares;
     }
 
+    /// @notice The vault whose shares are auctioned for exit.
     DemoVault public immutable vault;
-    address public immutable asset; // WMON
+    /// @notice The vault's asset (WMON).
+    address public immutable asset;
+    /// @notice Length of every commit window, in seconds.
     uint64 public immutable commitDuration;
+    /// @notice Length of every reveal window, in seconds.
     uint64 public immutable revealDuration;
+    /// @notice Uniform MON deposit per commit, refunded in full once the round settles.
     uint96 public immutable depositAmount;
+    /// @notice Discount grid, in bps.
     uint16 public immutable tickBps;
+    /// @notice Smallest bid, in shares.
     uint96 public immutable minExitShares;
+    /// @notice Cap on one round's exit capacity, in shares.
     uint128 public immutable maxExitSharesPerRound;
+    /// @notice Blocks between a round's settlement and the next round's opening.
     uint64 public immutable roundGapBlocks;
+    /// @notice Merkle root of holders who may bid; zero lets every holder bid.
     bytes32 public immutable allowlistRoot;
 
+    /// @notice Number of rounds opened; round ids run from 1 to `roundCount`.
     uint256 public roundCount;
     /// @notice Shares of settled rounds not yet redeemed: an upper bound on what winners can still claim.
     uint256 public pendingExitShares;
     mapping(uint256 => ExitRound) internal _rounds;
+    /// @notice Each bidder's revealed bid per round.
     mapping(uint256 => mapping(address => Bid)) public bids;
+    /// @notice Whether a bidder's exit for a round has been claimed.
     mapping(uint256 => mapping(address => bool)) public exitClaimed;
 
+    /// @notice A round opened with `capacity` shares of exit capacity.
     event ExitRoundOpened(uint256 indexed roundId, uint256 capacity, uint256 commitEnd, uint256 revealEnd);
+    /// @notice Settlement finished: the clearing discount and the shares sold are final.
     event Cleared(uint256 indexed roundId, uint256 clearingDiscountBps, uint256 sold, bool oversubscribed);
+    /// @notice A bidder's exit: `allocated` shares redeemed for `assets`, `payout` to the bidder,
+    ///         `donated` to the vault, and `sharesReturned` unfilled shares back.
     event ExitClaimed(
         uint256 indexed roundId,
         address indexed bidder,
@@ -95,8 +116,11 @@ contract ExitAuction is SealingLayer, UniformClearing {
         uint256 payout,
         uint256 donated
     );
+    /// @notice A bidder's MON deposit was refunded.
     event DepositRefunded(uint256 indexed roundId, address indexed bidder, uint256 amount);
 
+    /// @param vault_ The vault to run exit rounds for; this contract must then be set as its exit auction.
+    /// @param c      Round parameters, validated here.
     constructor(DemoVault vault_, Config memory c) {
         require(address(vault_).code.length != 0, "vault has no code");
         require(c.commitDuration != 0 && c.revealDuration != 0, "zero window");
@@ -120,6 +144,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
 
     /// @notice Anyone, once the previous round has settled and `roundGapBlocks` blocks have passed
     ///         since its settlement. Capacity = min(free idle buffer in shares, maxExitSharesPerRound).
+    /// @return roundId The new round's id.
     function openExitRound() external nonReentrant returns (uint256 roundId) {
         uint256 prev = roundCount;
         if (prev != 0) {
@@ -136,10 +161,16 @@ contract ExitAuction is SealingLayer, UniformClearing {
         roundId = prev + 1;
         roundCount = roundId;
         ExitRound storage r = _rounds[roundId];
+        // casting to 'uint128' is safe because capacity <= maxExitSharesPerRound, a uint128;
+        // casting to 'uint64' is safe for timestamps and block numbers for billions of years
+        // forge-lint: disable-next-line(unsafe-typecast)
         r.capacity = uint128(capacity);
+        // forge-lint: disable-next-line(unsafe-typecast)
         r.commitEnd = uint64(block.timestamp + commitDuration);
         r.revealEnd = r.commitEnd + revealDuration;
+        // forge-lint: disable-next-line(unsafe-typecast)
         r.openedBlock = uint64(block.number);
+        // forge-lint: disable-next-line(unsafe-typecast)
         _initBook(roundId, uint128(capacity));
         emit ExitRoundOpened(roundId, capacity, r.commitEnd, r.revealEnd);
     }
@@ -172,6 +203,9 @@ contract ExitAuction is SealingLayer, UniformClearing {
     // ─── Settle ─────────────────────────────────────────────────────────
 
     /// @notice Advance clearing by up to `maxSteps` discount levels. Anyone, after the reveal window.
+    /// @param roundId  The round to settle.
+    /// @param maxSteps Most discount levels to visit in this call (> 0); call again until it returns true.
+    /// @return done    True once the clearing discount is fixed.
     function settle(uint256 roundId, uint256 maxSteps) external nonReentrant returns (bool done) {
         ExitRound storage r = _rounds[roundId];
         require(r.commitEnd != 0, "unknown round");
@@ -180,6 +214,8 @@ contract ExitAuction is SealingLayer, UniformClearing {
         if (done) {
             Book storage b = _books[roundId];
             uint256 sold = b.sold;
+            // casting to 'uint64' is safe because block numbers fit in 64 bits
+            // forge-lint: disable-next-line(unsafe-typecast)
             r.settledBlock = uint64(block.number);
             if (sold != 0) {
                 r.settleAssets = vault.convertToAssets(sold);
@@ -198,6 +234,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
     //   - refund: the full MON deposit (exit bidders pay in discount, not MON).
 
     /// @notice Exit and refund for msg.sender, whichever are not yet claimed.
+    /// @param roundId The settled round.
     function claim(uint256 roundId) external nonReentrant {
         bool exited = exitClaimed[roundId][msg.sender];
         bool refunded = accounts[roundId][msg.sender].settled;
@@ -207,15 +244,21 @@ contract ExitAuction is SealingLayer, UniformClearing {
     }
 
     /// @notice The allocation at (1 − P) and the unfilled shares, to `bidder`. Anyone may trigger it.
+    /// @param roundId The settled round.
+    /// @param bidder  The revealed bidder.
     function claimExit(uint256 roundId, address bidder) external nonReentrant {
         _exit(roundId, bidder);
     }
 
     /// @notice The full MON deposit, to `bidder`. Anyone may trigger it once the round is settled.
+    /// @param roundId The settled round.
+    /// @param bidder  The revealed bidder.
     function claimRefund(uint256 roundId, address bidder) external nonReentrant {
         _refund(roundId, bidder);
     }
 
+    /// @dev Effects and accounting checks first; then redeem, pay the bidder, donate to the vault and
+    ///      return unfilled shares.
     function _exit(uint256 roundId, address bidder) private {
         require(commitments[roundId][bidder].revealed, "not revealed");
         require(!exitClaimed[roundId][bidder], "exit already claimed");
@@ -246,6 +289,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
         if (back != 0) address(vault).safeTransfer(bidder, back);
     }
 
+    /// @dev Returns the whole deposit (`paid` = 0): exit bidders pay in discount, not MON.
     function _refund(uint256 roundId, address bidder) private {
         require(_books[roundId].settled, "not settled");
         require(commitments[roundId][bidder].revealed, "not revealed");
@@ -256,11 +300,20 @@ contract ExitAuction is SealingLayer, UniformClearing {
 
     // ─── Views ──────────────────────────────────────────────────────────
 
+    /// @notice A round's windows and accounting.
+    /// @param roundId The round id (1..roundCount); an unknown id returns an all-zero struct.
     function getRound(uint256 roundId) external view returns (ExitRound memory) {
         return _rounds[roundId];
     }
 
     /// @notice What `bidder` would receive by claiming now. Reverts until the round is settled.
+    /// @param roundId The round id.
+    /// @param bidder  A revealed bidder.
+    /// @return allocated      Shares redeemed.
+    /// @return sharesReturned Unfilled shares returned.
+    /// @return assets         WMON the allocation redeems for.
+    /// @return payout         WMON to the bidder.
+    /// @return donation       WMON donated to the vault.
     function quote(uint256 roundId, address bidder)
         external
         view

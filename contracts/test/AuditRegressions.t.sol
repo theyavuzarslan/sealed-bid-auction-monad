@@ -314,7 +314,9 @@ contract AuditRegressions is EngineBase {
 
     function _check() internal view {
         uint256 sum;
-        for (uint256 r = 1; r <= engine.roundCount(); ++r) sum += engine.roundBalance(r);
+        for (uint256 r = 1; r <= engine.roundCount(); ++r) {
+            sum += engine.roundBalance(r);
+        }
         assertEq(address(engine).balance, sum, "engine MON != sum of round balances");
     }
 
@@ -336,20 +338,34 @@ contract AuditRegressions is EngineBase {
         uint256 r2 = _open(p2);
         B[] memory a = _mk(seed, 1, 1 + seed % 9);
         B[] memory b = _mk(seed, 2, 1 + (seed >> 8) % 9);
-        for (uint256 i; i < a.length; ++i) _commit(r1, a[i].who, a[i].price, a[i].amount);
-        for (uint256 i; i < b.length; ++i) _commit(r2, b[i].who, b[i].price, b[i].amount);
+        for (uint256 i; i < a.length; ++i) {
+            _commit(r1, a[i].who, a[i].price, a[i].amount);
+        }
+        for (uint256 i; i < b.length; ++i) {
+            _commit(r2, b[i].who, b[i].price, b[i].amount);
+        }
         _toReveal(r1);
-        for (uint256 i; i < a.length; ++i) if (a[i].reveal) _reveal(r1, a[i].who, a[i].price, a[i].amount);
-        for (uint256 i; i < b.length; ++i) if (b[i].reveal) _reveal(r2, b[i].who, b[i].price, b[i].amount);
+        for (uint256 i; i < a.length; ++i) {
+            if (a[i].reveal) _reveal(r1, a[i].who, a[i].price, a[i].amount);
+        }
+        for (uint256 i; i < b.length; ++i) {
+            if (b[i].reveal) _reveal(r2, b[i].who, b[i].price, b[i].amount);
+        }
         _toSettle(r1);
         while (!engine.settle(r1, 1)) {}
         while (!engine.settle(r2, 3)) {}
-        if (seed & 1 != 0) try engine.burnUnrevealed(r1) {} catch {}
+        if (seed & 1 != 0) {
+            try engine.burnUnrevealed(r1) {} catch {}
+        }
         _check();
 
         // Half the bidders take refunds before the LP step.
-        for (uint256 i; i < a.length; i += 2) if (a[i].reveal) engine.claimRefund(r1, a[i].who);
-        for (uint256 i; i < b.length; i += 2) if (b[i].reveal) engine.claimRefund(r2, b[i].who);
+        for (uint256 i; i < a.length; i += 2) {
+            if (a[i].reveal) engine.claimRefund(r1, a[i].who);
+        }
+        for (uint256 i; i < b.length; i += 2) {
+            if (b[i].reveal) engine.claimRefund(r2, b[i].who);
+        }
         _check();
 
         bool blocked = (seed >> 3) & 1 != 0;

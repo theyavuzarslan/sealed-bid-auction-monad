@@ -28,7 +28,9 @@ contract DeployAdapter is Script {
 
         console2.log("UniswapV3Adapter", address(adapter));
         console2.log("toleranceBps", toleranceBps);
-        vm.writeJson(vm.serializeAddress("adapter", "uniswapV3Adapter", address(adapter)),
-            string.concat("deployments/", vm.toString(block.chainid), "-adapter.json"));
+        vm.writeJson(
+            vm.serializeAddress("adapter", "uniswapV3Adapter", address(adapter)),
+            string.concat("deployments/", vm.toString(block.chainid), "-adapter.json")
+        );
     }
 }
