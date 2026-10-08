@@ -73,6 +73,47 @@ export function revertReason(err) {
   return m ? m[1] : null;
 }
 
+// All of an engine's raw logs, scanned once per page and then only extended. Public Monad RPCs cap
+// eth_getLogs ranges (rpc2.monad.xyz: 10,000 blocks; most others: 100), and the engine's history
+// keeps growing by about 200,000 blocks a day, so the first scan goes out in chunks, several at a
+// time, and every later call (the round page polls) asks only for blocks it has not seen yet.
+const logScans = new Map(); // address|fromBlock -> { to, logs, pending }
+const LOG_CONCURRENCY = 6;
+
+async function scanLogs(request, address, fromBlock, logChunk) {
+  const key = `${address.toLowerCase()}|${fromBlock}`;
+  let s = logScans.get(key);
+  if (!s) logScans.set(key, (s = { to: fromBlock - 1n, logs: [], pending: null }));
+  while (s.pending) await s.pending.catch(() => {});
+  const latest = BigInt(await request("eth_blockNumber", []));
+  if (latest < s.to) Object.assign(s, { to: fromBlock - 1n, logs: [] }); // the chain went back (anvil): rescan
+  if (s.to >= latest) return s.logs;
+  const start = s.to + 1n;
+  const chunk = logChunk ? BigInt(logChunk) : latest - start + 1n;
+  const ranges = [];
+  for (let lo = start; lo <= latest; lo += chunk) ranges.push([lo, lo + chunk - 1n < latest ? lo + chunk - 1n : latest]);
+  s.pending = (async () => {
+    const found = new Array(ranges.length);
+    let next = 0;
+    const worker = async () => {
+      while (next < ranges.length) {
+        const i = next++;
+        const [lo, hi] = ranges[i];
+        found[i] = await request("eth_getLogs", [{ address, fromBlock: toQuantity(lo), toBlock: toQuantity(hi) }]);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(LOG_CONCURRENCY, ranges.length) }, worker));
+    for (const logs of found) s.logs.push(...logs);
+    s.to = latest;
+  })();
+  try {
+    await s.pending;
+  } finally {
+    s.pending = null;
+  }
+  return s.logs;
+}
+
 export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }) {
   const iface = engineIface;
 
@@ -83,15 +124,16 @@ export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }
     return ifc.decodeResult(name, out);
   }
 
+  // Every query is answered from one shared scan of the engine's logs (see scanLogs), filtered here.
   async function getLogs(topics, from = fromBlock) {
-    const latest = BigInt(await request("eth_blockNumber", []));
+    const raw = await scanLogs(request, address, BigInt(fromBlock), logChunk);
     const start = BigInt(from);
-    const chunk = logChunk ? BigInt(logChunk) : null;
+    const want = topics.map((t) => (t == null ? null : t.toLowerCase()));
     const out = [];
-    for (let lo = start; lo <= latest; lo = chunk ? lo + chunk : latest + 1n) {
-      const hi = chunk && lo + chunk - 1n < latest ? lo + chunk - 1n : latest;
-      const logs = await request("eth_getLogs", [{ address, topics, fromBlock: toQuantity(lo), toBlock: toQuantity(hi) }]);
-      for (const l of logs) out.push(iface.decodeLog(l));
+    for (const l of raw) {
+      if (BigInt(l.blockNumber) < start) continue;
+      if (want.some((t, i) => t !== null && (l.topics[i] || "").toLowerCase() !== t)) continue;
+      out.push(iface.decodeLog(l));
     }
     return out;
   }

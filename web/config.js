@@ -29,11 +29,11 @@ export default {
     monad: {
       label: "Monad",
       chainId: 143,
-      // Public read RPC; writes still go through the wallet. rpc1 is used because it serves eth_getLogs over any
-      // range (probed 26 Sep: full history in < 1 s, CORS open). rpc.monad.xyz caps log queries at 100 blocks.
-      rpcUrl: "https://rpc1.monad.xyz",
+      // Public read RPC; writes still go through the wallet. rpc2 is used because it serves eth_getLogs over
+      // 10,000 blocks per call (probed 8 Oct, CORS open); rpc1, rpc and rpc3 now cap it at 100 blocks.
+      rpcUrl: "https://rpc2.monad.xyz",
       fromBlock: 110869947, // AuctionEngine deploy block (6 Oct 2026); log scans start here
-      logChunk: null, // rpc1 needs none; set e.g. 100 for rpc.monad.xyz
+      logChunk: 10000, // blocks per eth_getLogs call; rpc2's limit. Use 100 for the other public RPCs
       deploymentUrls: [],
       deployment: {
         auctionEngine: "0x0Fa0E7Db5b2c2146D77E41579030A842492E2120", // deployments/143.json

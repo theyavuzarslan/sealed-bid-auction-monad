@@ -142,7 +142,7 @@ The engine address lands in `contracts/deployments/143.json`; put it in `web/con
 
 **Alternative for a wallet that can only call contracts** (for example the OKX Agentic Wallet, which supports Monad but sends no contract-creation transaction): `forge script script/Create2Plan.s.sol --fork-url https://rpc.monad.xyz` writes three calls to the standard CREATE2 deployer (`0x4e59b44847b379578588920cA78FbF26c0B4956C`, live on Monad) and simulates them on a mainnet fork. The addresses are fixed in advance (salt `even-v1`, 5 Oct build): `UniswapV3Adapter` `0xf39aC5535BBC2d05DAB077F9bbA02fAc9003D87C`, `AuctionEngine` `0xA24b9038C1f517bc0be0FAe6374B6D7a4BC90312`, `TokenFactory` `0xD739cb0b65E48EE7443beEEA0950733C76dA4D4e`. Any code change changes them; rerun the plan before deploying.
 
-**After deploying** (the site reads through `https://rpc1.monad.xyz`, which serves `eth_getLogs` over any range; `rpc.monad.xyz` caps it at 100 blocks, about 30 seconds of Monad):
+**After deploying** (the site reads through `https://rpc2.monad.xyz`, which serves `eth_getLogs` over 10,000 blocks per call; the other public RPCs cap it at 100 blocks, about 40 seconds of Monad. The app scans the engine's history once in parallel chunks and then fetches only new blocks):
 
 1. In `web/config.js` under `monad.deployment`, set `auctionEngine`, `adapter`, `tokenFactory` and `positionManager` (`0x7197E214c0b767cFB76Fb734ab638E2c192F4E53`).
 2. Set `monad.fromBlock` to the engine's deploy block, so log scans start there.
