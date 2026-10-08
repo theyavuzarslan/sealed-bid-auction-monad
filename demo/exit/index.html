@@ -1091,7 +1091,7 @@
       $("ibPhase").textContent = isSettled ? "Settled" : "Bidding open";
       $("ibP").textContent = isSettled ? pct(P) : "sealed";
       $("ibPaid").textContent = isSettled ? fmt(wmon(A.paidOut), 1) : "—";
-      $("ibPaidSub").textContent = isSettled ? "WMON to " + winners.length + " LPs at once" : "WMON, after the round";
+      $("ibPaidSub").textContent = isSettled ? "WMON to " + winners.length + " LPs this round" : "WMON, after the round";
       $("ibAccrued").textContent = isSettled ? "+" + fmt(accrued, 1) : "—";
       $("ibLabel").textContent = isSettled ? "Revealed bids, highest discount first · filled share" : "What the chain shows while bidding is open";
       $("ib").innerHTML = isSettled ? settledRows() : sealedRows();
