@@ -1,4 +1,4 @@
-# How Even differs from Zama and other launch mechanisms
+# How Even differs from Zama, other auctions and today's launchpads
 
 Even, Zama's public auction and Uniswap's Continuous Clearing Auction (CCA) all use the same core economics: bidders state a price, the highest bids fill first, and every winner pays one clearing price. The differences are in what stays hidden, who you have to trust, what happens after the sale, and who can run one.
 
@@ -42,6 +42,27 @@ Sources are linked at the bottom. Where a number comes from a vendor's own post,
 | **Fixed-price sales** (Echo/Sonar, Legion, exchange launchpads) | n/a | Fixed | Allocation by lottery, KYC or merit | Varies | The platform |
 
 In a 500-launch simulation on the real contracts, a bot took a median 59% of supply on a bonding curve and 18% on Even, and 60% of willing buyers got nothing on the curve against 0% on Even (see SUBMISSION.md).
+
+## Even vs today's launchpads
+
+Launchpads today fall into three groups. Even takes the openness of the first group and the fair pricing of the third, without the gatekeeping of the second.
+
+| | **Memecoin pads** (nad.fun on Monad; pump.fun and LetsBonk on Solana; Zora, Clanker, Flaunch on Base) | **Gated or curated sales** (Virtuals Genesis, Legion, Echo/Sonar, MetaDAO, CoinList, exchange launchpads) | **Even** |
+|---|---|---|---|
+| Who can launch | Anyone, in seconds | Projects the platform admits | Anyone, in three steps and one button |
+| Who can buy | Anyone | Whoever gets an allocation: points, reputation score, KYC, lottery or a curator's choice | Anyone (Degen) or an allowlist the creator sets (Raise) |
+| How the price is set | A bonding curve: each buy raises the price, so arrival order decides who pays what | Usually fixed by the project, sometimes pro-rata at a fixed price | Sealed bids; one clearing price set by demand |
+| What a fast bot gets | The cheapest tokens. Sniper and bundler bots for nad.fun and pump.fun are sold openly; fixes are time-based (Virtuals' launch tax falls from 99% to 1% over a set window) | Little, because access is gated, but the platform decides who is in | Nothing extra: it pays the same price as everyone, and its bid is hidden like everyone's |
+| What a fair buyer needs | To be early | To qualify | To bid what it is worth to them before the close |
+| When trading starts | Immediately; a pool at graduation (nad.fun: when about 80% of supply has sold) | After the sale, often days later | Right after the round: the pool opens at the clearing price with locked liquidity |
+| Trust | Contracts | The platform and its allocation rules | Contracts |
+| Trade-off | Fast and fun, but the race is the product | Fairer access, but permissioned and slower | A bidding window (10 minutes to a day) and a reveal step before trading starts |
+
+What this means for Monad:
+
+- **nad.fun is the incumbent, and Even does not replace it.** It is where memecoins start on Monad. Even is for launches where a fair first price matters more than instant trading: community tokens, projects raising funds, launches that expect bots. A token can also launch on Even and trade on Uniswap afterwards.
+- **Anti-sniper fixes elsewhere tax time, not information.** Decaying launch taxes and cool-downs make the first blocks expensive, but whoever reads the curve best still wins. Even removes the information instead: nobody sees a bid until the close.
+- **Gated sales solve fairness by choosing the buyers.** Points, reputation and KYC keep bots out but also keep most people out. Even keeps the door open and makes speed worthless instead.
 
 ## One-line answers for a pitch
 
