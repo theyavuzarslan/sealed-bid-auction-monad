@@ -314,7 +314,6 @@ contract ExitAuction is SealingLayer, UniformClearing {
     /// @return assets         WMON the allocation redeems for.
     /// @return payout         WMON to the bidder.
     /// @return donation       WMON donated to the vault.
-
     function quote(uint256 roundId, address bidder)
         external
         view

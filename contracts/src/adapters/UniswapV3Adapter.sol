@@ -217,6 +217,9 @@ contract UniswapV3Adapter is IDexAdapter {
         return factory.feeAmountTickSpacing(fee) >= MIN_TICK_SPACING;
     }
 
+    /// @notice The pool sqrtPriceX96 that corresponds to `price` for `token` against WMON.
+    /// @param token The launch token.
+    /// @param price MON wei per 1e18 token units.
     function targetSqrtPriceX96(address token, uint256 price) external view returns (uint160) {
         return UniV3PriceMath.sqrtPriceX96For(token, wmon, price);
     }
@@ -297,8 +300,4 @@ contract UniswapV3Adapter is IDexAdapter {
     function _min(uint256 a, uint256 b) private pure returns (uint256) {
         return a < b ? a : b;
     }
-
-    /// @notice The pool sqrtPriceX96 that corresponds to `price` for `token` against WMON.
-    /// @param token The launch token.
-    /// @param price MON wei per 1e18 token units.
 }
