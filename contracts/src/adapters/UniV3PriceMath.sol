@@ -14,6 +14,8 @@ library UniV3PriceMath {
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
     /// @dev The engine's price unit: MON wei per 1e18 token units (`AuctionEngine.PRICE_SCALE`).
     uint256 internal constant PRICE_SCALE = 1e18;
+    /// @dev Basis-point denominator (100%) for tolerances.
+    uint256 internal constant BPS = 10_000;
 
     /// @notice floor(a × b / d) with a 512-bit intermediate. Reverts if d == 0 or the result overflows.
     function mulDiv(uint256 a, uint256 b, uint256 d) internal pure returns (uint256 result) {
@@ -130,8 +132,8 @@ library UniV3PriceMath {
     function withinTolerance(uint160 sqrtPrice, uint160 target, uint256 toleranceBps) internal pure returns (bool) {
         uint256 q = mulDiv(sqrtPrice, PRICE_SCALE, target);
         if (q >= 2 * PRICE_SCALE) return false;
-        uint256 lhs = q * q * 10_000;
-        return lhs <= PRICE_SCALE * PRICE_SCALE * (10_000 + toleranceBps)
-            && lhs >= PRICE_SCALE * PRICE_SCALE * (10_000 - toleranceBps);
+        uint256 lhs = q * q * BPS;
+        return lhs <= PRICE_SCALE * PRICE_SCALE * (BPS + toleranceBps)
+            && lhs >= PRICE_SCALE * PRICE_SCALE * (BPS - toleranceBps);
     }
 }

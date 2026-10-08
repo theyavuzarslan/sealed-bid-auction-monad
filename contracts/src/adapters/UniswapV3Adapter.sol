@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IDexAdapter} from "../interfaces/ILiquidity.sol";
+import {IDexAdapter, IERC20Minimal} from "../interfaces/ILiquidity.sol";
 import {SafeTransferLib} from "../lib/SafeTransferLib.sol";
 import {UniV3PriceMath} from "./UniV3PriceMath.sol";
 
@@ -62,10 +62,6 @@ interface INonfungiblePositionManagerLike {
 interface IWMON {
     function deposit() external payable;
     function withdraw(uint256 amount) external;
-    function balanceOf(address account) external view returns (uint256);
-}
-
-interface IERC20Balance {
     function balanceOf(address account) external view returns (uint256);
 }
 
@@ -137,7 +133,7 @@ contract UniswapV3Adapter is IDexAdapter {
     /// @param toleranceBps_    Largest accepted deviation of a pool with liquidity from the target price.
     constructor(address factory_, address positionManager_, address wmon_, uint256 toleranceBps_) {
         require(factory_.code.length != 0 && positionManager_.code.length != 0 && wmon_.code.length != 0, "no code");
-        require(toleranceBps_ < 10_000, "tolerance >= 100%");
+        require(toleranceBps_ < UniV3PriceMath.BPS, "tolerance >= 100%");
         factory = IUniswapV3FactoryLike(factory_);
         positionManager = INonfungiblePositionManagerLike(positionManager_);
         wmon = wmon_;
@@ -167,24 +163,24 @@ contract UniswapV3Adapter is IDexAdapter {
 
         // Balances before this call's funds arrive. Anything already here (a donation) is left alone,
         // so the caller gets back exactly its own unused funds and its balance-delta accounting holds.
-        uint256 tokenBase = IERC20Balance(token).balanceOf(address(this));
+        uint256 tokenBase = IERC20Minimal(token).balanceOf(address(this));
         uint256 wmonBase = IWMON(wmon).balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), tokenAmount);
-        require(IERC20Balance(token).balanceOf(address(this)) - tokenBase == tokenAmount, "fee-on-transfer token");
+        require(IERC20Minimal(token).balanceOf(address(this)) - tokenBase == tokenAmount, "fee-on-transfer token");
         IWMON(wmon).deposit{value: msg.value}();
 
         (address token0, address token1) = token < wmon ? (token, wmon) : (wmon, token);
         address pool = _preparePool(token0, token1, fee, target);
 
         // This call's funds only, net of the (at most 1-wei) repricing payment.
-        uint256 tokenHeld = IERC20Balance(token).balanceOf(address(this)) - tokenBase;
+        uint256 tokenHeld = IERC20Minimal(token).balanceOf(address(this)) - tokenBase;
         uint256 wmonHeld = IWMON(wmon).balanceOf(address(this)) - wmonBase;
         (uint256 amount0, uint256 amount1) = token == token0 ? (tokenHeld, wmonHeld) : (wmonHeld, tokenHeld);
         nftId = _mintFullRange(token0, token1, fee, spacing, amount0, amount1, recipient);
 
         // Return what the pool did not take. Capped at what was sent in: a repricing swap takes at most
         // 1 wei and pays out nothing, so the caps only bind if something unexpected reached the adapter.
-        uint256 tokenLeft = _min(IERC20Balance(token).balanceOf(address(this)) - tokenBase, tokenAmount);
+        uint256 tokenLeft = _min(IERC20Minimal(token).balanceOf(address(this)) - tokenBase, tokenAmount);
         uint256 wmonLeft = _min(IWMON(wmon).balanceOf(address(this)) - wmonBase, msg.value);
         emit Seeded(pool, token, nftId, tokenAmount - tokenLeft, msg.value - wmonLeft, recipient);
         if (tokenLeft != 0) token.safeTransfer(msg.sender, tokenLeft);
