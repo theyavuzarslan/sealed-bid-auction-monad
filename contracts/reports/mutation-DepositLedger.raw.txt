@@ -1,0 +1,468 @@
+No files changed, compilation skipped
+
+Ran 1 test for test/Scale.t.sol:ScaleForkTest
+[SKIP: skipped] setUp() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 9.48ms (0.00ns CPU time)
+
+Ran 1 test for test/fork/UniswapV3AdapterFork.t.sol:UniswapV3AdapterForkTest
+[SKIP: skipped] setUp() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 9.83ms (0.00ns CPU time)
+
+Ran 1 test for test/Scale.t.sol:ScaleMockTest
+[SKIP: skipped] setUp() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 9.48ms (0.00ns CPU time)
+
+Ran 1 test for test/Observations.t.sol:ObservationsTest
+[PASS] test_O1_MonRejectingWinner_BlocksItsPaymentAndDustSweep() (gas: 3511596)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 11.05ms (1.18ms CPU time)
+
+Ran 4 tests for test/TokenFactory.t.sol:TokenFactoryTest
+[PASS] test_Create_MintsFixedSupplyToCreator() (gas: 601335)
+[PASS] test_Create_RejectsBadInput() (gas: 688465)
+[PASS] test_FactoryToken_FullLaunch() (gas: 2813828)
+[PASS] test_Token_HasNoAdminFunctions() (gas: 656510)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 11.67ms (1.51ms CPU time)
+
+Ran 1 test for test/ExitAuction.t.sol:ExitAllowlistTest
+[PASS] test_Allowlist_OnlyListedHoldersBid() (gas: 483936)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 2.56ms (286.58µs CPU time)
+
+Ran 21 tests for test/ExitAuction.t.sol:ExitAuctionTest
+[PASS] test_AnyoneCanTriggerClaims_FundsGoToBidder() (gas: 1348857)
+[PASS] test_ClaimOrder_DoesNotChangePayouts() (gas: 3371041)
+[PASS] test_Claim_OnceOnly_AndOnlyWhenSettled() (gas: 1376562)
+[PASS] test_Claim_ReentrancyBlocked() (gas: 1913725)
+[PASS] test_Commit_WrongDepositAndRoundChecks() (gas: 288548)
+[PASS] test_ExitIndependentOfRefund() (gas: 2156820)
+[PASS] test_Loser_GetsAllSharesBack() (gas: 2376570)
+[PASS] test_OnlyTheExitAuctionCanRedeem() (gas: 81611)
+[PASS] test_Open_CapacityCappedPerRound() (gas: 1028299)
+[PASS] test_Open_CapacityIsIdleBufferInShares() (gas: 316101)
+[PASS] test_Open_RevertsWhenIdleBufferEmpty() (gas: 124807)
+[PASS] test_Open_RevertsWhileRoundUnsettled_AndBeforeNBlocks() (gas: 635824)
+[PASS] test_Oversubscribed_ProRataAtClearingDiscount() (gas: 3603704)
+[PASS] test_RefundIndependentOfExit() (gas: 1546377)
+[PASS] test_RevealWithoutShares_Reverts_DepositBurnable() (gas: 1720130)
+[PASS] test_Reveal_PullsSharesIntoEscrow() (gas: 687106)
+[PASS] test_Reveal_ValidatesDiscountAndSize() (gas: 856667)
+[PASS] test_StayersGainEveryRound() (gas: 9767177)
+[PASS] test_UnclaimedWinner_StaysPayable() (gas: 2690103)
+[PASS] test_Undersubscribed_AllExit_AtLowestDiscount() (gas: 1916856)
+[PASS] test_ZeroDiscountIsLegal() (gas: 1287741)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 91.60ms (17.74ms CPU time)
+
+Ran 6 tests for test/DemoVault.t.sol:DemoVaultTest
+[PASS] testFuzz_InflationAttackDoesNotPay(uint256,uint256) (runs: 512, μ: 493633, ~: 500626)
+[PASS] test_InflationAttack_ConcreteCase() (gas: 503182)
+[PASS] test_NobodyRedeemsBeforeTheExitAuctionIsSet() (gas: 264025)
+[PASS] test_OnlyStrategistMovesAssets() (gas: 326338)
+[PASS] test_SetExitAuction_OnceByDeployer_MustPointBack() (gas: 141461)
+[PASS] test_TotalAssetsCountsIdleAndStrategy() (gas: 380325)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 467.17ms (460.30ms CPU time)
+
+Ran 23 tests for test/AuctionEngine.t.sol:AuctionEngineTest
+[PASS] testFuzz_LifecycleConservesEverything(uint256) (runs: 512, μ: 3798740, ~: 3737294)
+[PASS] testFuzz_RevealWithHint_AnyHintSameBook(uint256) (runs: 512, μ: 3913121, ~: 3912225)
+[PASS] test_BurnUnrevealed() (gas: 2055117)
+[PASS] test_CommitRules() (gas: 830566)
+[PASS] test_Degen_OversubscribedLifecycle() (gas: 3819300)
+[PASS] test_Degen_Undersubscribed_UnsoldBurned() (gas: 2286581)
+[PASS] test_FeeOnTransferTokenRejected() (gas: 468527)
+[PASS] test_LP_Blocked_AbandonBurnsLpShare() (gas: 3514761)
+[PASS] test_LP_PartialUse_DustToCreatorAndUnsoldBurned() (gas: 3410101)
+[PASS] test_NoBids_EverythingBackToCreator() (gas: 730935)
+[PASS] test_NoteIsEmittedNotStored() (gas: 539152)
+[PASS] test_OpenRules() (gas: 235000)
+[PASS] test_Raise_Allowlist() (gas: 659301)
+[PASS] test_Raise_UnsoldReturnedAndVesting() (gas: 2049370)
+[PASS] test_RevealRules() (gas: 1019490)
+[PASS] test_RoundsCannotSpendEachOther() (gas: 1196984)
+[PASS] test_Security_NoBidWithoutCommitAndDeposit() (gas: 645607)
+[PASS] test_Security_NoSettleBeforeRevealEnd() (gas: 827379)
+[PASS] test_Security_NobodyClaimsForSomeoneElse() (gas: 2728072)
+[PASS] test_Security_ReentrantClaimBlocked() (gas: 2163750)
+[PASS] test_SettleInSteps_SameResult() (gas: 2054540)
+[PASS] test_SplitsOf_ReturnsTheCreatorsSplit() (gas: 429034)
+[PASS] test_UnexpectedMonRejected() (gas: 40592)
+Suite result: ok. 23 passed; 0 failed; 0 skipped; finished in 467.20ms (894.45ms CPU time)
+
+Ran 11 tests for test/PrdConformance.t.sol:PrdConformanceTest
+[PASS] testFuzz_PRD_Bug8_RoundingNeverFavorsTheBidder(uint96,uint96,uint96) (runs: 512, μ: 2669851, ~: 2670321)
+[PASS] testFuzz_PRD_SnipeResistance_AnyRevealOrder(uint256) (runs: 512, μ: 7122500, ~: 7122766)
+[PASS] test_PRD_BlindBidding_OnlyTheHashIsOnChainBeforeReveal() (gas: 554924)
+[PASS] test_PRD_Bug1_SaltIsPartOfTheCommitment() (gas: 808468)
+[PASS] test_PRD_Bug2_CopiedCommitmentCannotBeReplayed() (gas: 893284)
+[PASS] test_PRD_Bug2_RevealCannotBeFrontRun() (gas: 896693)
+[PASS] test_PRD_Bug3_NonRevealerLosesExactlyTheDeposit() (gas: 1958562)
+[PASS] test_PRD_Bug7_PoolFirst_AtTheClearingPrice_Locked() (gas: 3208073)
+[PASS] test_PRD_SnipeResistance_OrderAndTimingDoNotMatter() (gas: 7112935)
+[PASS] test_PRD_UniformDeposit_SameForEveryBid_AndLargerThanTheBid() (gas: 929483)
+[PASS] test_PRD_UniformPrice_EveryWinnerPaysTheClearingPrice() (gas: 3848240)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 499.81ms (807.05ms CPU time)
+
+Ran 1 test for test/ExitAuction.t.sol:ExitAuctionFuzzTest
+[PASS] testFuzz_Conservation(uint256,uint256) (runs: 512, μ: 4273291, ~: 4439020)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 489.60ms (486.56ms CPU time)
+
+Ran 9 tests for test/UniformClearing.t.sol:UniformClearingTest
+[PASS] testFuzz_EqualBidsAtClearingPriceGetEqualShares(uint128,uint96,uint96) (runs: 512, μ: 555935, ~: 561436)
+[PASS] testFuzz_MatchesReference(uint256) (runs: 512, μ: 1683734, ~: 1677947)
+[PASS] test_CannotAddAfterSettlementStarts() (gas: 308846)
+[PASS] test_Example_EmptyBook() (gas: 164675)
+[PASS] test_Example_ExactlyCovered_NoProRata() (gas: 487658)
+[PASS] test_Example_OversubscribedTieIsProRata() (gas: 736133)
+[PASS] test_Example_SingleBidLargerThanSupply() (gas: 361299)
+[PASS] test_Example_Undersubscribed_AllFill_PriceIsLowestBid() (gas: 492239)
+[PASS] test_Example_ZeroPriceLevelWorks() (gas: 443057)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 499.88ms (594.80ms CPU time)
+
+Ran 10 tests for test/AuditRegressions.t.sol:AuditRegressions
+[PASS] testFuzz_Interleavings(uint256) (runs: 512, μ: 6272694, ~: 6273909)
+[PASS] test_FeeTierNotSupportedRejectedAtOpen() (gas: 61337)
+[PASS] test_H1_BlockedPool_AbandonBurns_NoUncheckedSeed() (gas: 4011379)
+[PASS] test_L1_AnyoneCanSettleANonClaimer() (gas: 3600772)
+[PASS] test_L2_ImpossibleParametersRejected() (gas: 53643)
+[PASS] test_L3_CheapHighPriceLevelsRejected() (gas: 659625)
+[PASS] test_M1_SeedNeverSucceeds_NothingStranded() (gas: 3290952)
+[PASS] test_M2_PausedToken_RefundsStillFlow() (gas: 2455079)
+[PASS] test_RaiseLockTooShortRejected() (gas: 62747)
+[PASS] test_StrayAdapterMonRejected() (gas: 2559184)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 499.90ms (493.79ms CPU time)
+
+Ran 16 tests for test/UniswapV3Adapter.t.sol:UniswapV3AdapterTest
+[PASS] testFuzz_MulDiv_FullWidth(uint256,uint256) (runs: 512, μ: 4027, ~: 3966)
+[PASS] testFuzz_MulDiv_MatchesNaive(uint128,uint128,uint256) (runs: 512, μ: 3759, ~: 3759)
+[PASS] testFuzz_SqrtPrice_RoundTrip(uint256,bool) (runs: 512, μ: 10980, ~: 10897)
+[PASS] testFuzz_Sqrt_IsFloor(uint256) (runs: 512, μ: 1777, ~: 1764)
+[PASS] test_Constructor_Checks() (gas: 472007)
+[PASS] test_MulDiv_Reverts() (gas: 17394)
+[PASS] test_Receive_OnlyFromWmon() (gas: 1608960)
+[PASS] test_Seed_InputChecks() (gas: 1785306)
+[PASS] test_Seed_RejectsFeeOnTransferToken() (gas: 1791909)
+[PASS] test_SqrtPrice_HighRatioBranch() (gas: 3673)
+[PASS] test_SqrtPrice_KnownValues() (gas: 6904)
+[PASS] test_SqrtPrice_OutOfRange() (gas: 45072)
+[PASS] test_Sqrt_Edges() (gas: 2407)
+[PASS] test_SwapCallback_OnlyDuringRepricing() (gas: 1601458)
+[PASS] test_TargetSqrtPrice_UsesWmonOrdering() (gas: 1554851)
+[PASS] test_WithinTolerance_Boundaries() (gas: 7751)
+Suite result: ok. 16 passed; 0 failed; 0 skipped; finished in 499.91ms (519.04ms CPU time)
+
+Ran 1 test for test/invariant/AuctionEngine.invariant.t.sol:AuctionEngineInvariantTest
+[PASS]
+AuctionEngineInvariantTest invariants:
+[PASS] invariant_ClearingAndAllocations
+[PASS] invariant_LedgerMatchesHistory
+[PASS] invariant_MonBalanceEqualsSumOfRoundBalances
+[PASS] invariant_NoDoubleClaim
+[PASS] invariant_RefundsNeverExceedDeposits
+[PASS] invariant_RoundBalanceDecomposes
+[PASS] invariant_SettledBiddersPaidExactly
+[PASS] invariant_TokensAccountedFor
+[PASS] invariant_UnrevealedDepositsOnlyBurned
+ AuctionEngineInvariantTest invariants (runs: 32, calls: 4096, reverts: 0)
+
+╭----------------+------------------+-------+---------+----------╮
+| Contract       | Selector         | Calls | Reverts | Discards |
++================================================================+
+| AuctionHandler | abandonLP        | 192   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | burnUnrevealed   | 179   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | claim            | 584   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | claimVested      | 204   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | commit           | 569   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | disposeUnsold    | 201   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | openRound        | 186   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | reveal           | 545   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | seedLP           | 182   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | settle           | 389   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | sweepDust        | 159   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | warp             | 541   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | withdrawProceeds | 165   | 0       | 0        |
+╰----------------+------------------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 9.92s (9.90s CPU time)
+
+Ran 15 test suites in 9.92s (13.49s CPU time): 104 tests passed, 0 failed, 3 skipped (107 total tests)
+No files changed, compilation skipped
+Running mutation tests with 8 parallel workers...
+Running mutation tests for /Users/0xatakan/Claude Code/Sealed Bid Auction on Monad/.claude/worktrees/agent-a74d4770a3ab3e997/contracts/src/DepositLedger.sol
+  Generated 115 mutants; testing 115, adaptively skipped 0
+Running 115 mutants in parallel with 8 workers
+[4/115] Testing mutant: contracts/src/DepositLedger.sol:49: `unrevealed * _depositOf(roundId)` → `unrevealed ^ _depositOf(roundId)`
+[2/115] Testing mutant: contracts/src/DepositLedger.sol:50: `due - l.burned` → `due << l.burned`
+[6/115] Testing mutant: contracts/src/DepositLedger.sol:63: `paid < deposit` → `paid == deposit`
+[8/115] Testing mutant: contracts/src/DepositLedger.sol:68: `ledgers[roundId].claims += 1` → `ledgers[roundId].claims <<= 1`
+[3/115] Testing mutant: contracts/src/DepositLedger.sol:51: `amount != 0` → `amount > 0`
+[7/115] Testing mutant: contracts/src/DepositLedger.sol:48: `l.commits - l.reveals` → `l.commits / l.reveals`
+[5/115] Testing mutant: contracts/src/DepositLedger.sol:62: `!a.settled` → `a.settled`
+[1/115] Testing mutant: contracts/src/DepositLedger.sol:33: `uint256 private _lock = 1;` → `0`
+[9/115] Testing mutant: contracts/src/DepositLedger.sol:38: `require(_lock == 1, "reentrancy")` → `require(true, "reentrancy")`
+[10/115] Testing mutant: contracts/src/DepositLedger.sol:63: `paid < deposit` → `paid != deposit`
+[11/115] Skipping mutant (adaptive: span already has surviving mutation)
+[12/115] Skipping mutant (adaptive: span already has surviving mutation)
+[13/115] Skipping mutant (adaptive: span already has surviving mutation)
+[14/115] Skipping mutant (adaptive: span already has surviving mutation)
+[15/115] Skipping mutant (adaptive: span already has surviving mutation)
+[16/115] Skipping mutant (adaptive: span already has surviving mutation)
+[17/115] Skipping mutant (adaptive: span already has surviving mutation)
+[18/115] Skipping mutant (adaptive: span already has surviving mutation)
+[19/115] Skipping mutant (adaptive: span already has surviving mutation)
+[20/115] Testing mutant: contracts/src/DepositLedger.sol:51: `require(amount != 0, "nothing to burn")` → `require(true, "nothing to burn")`
+[21/115] Skipping mutant (adaptive: span already has surviving mutation)
+[22/115] Testing mutant: contracts/src/DepositLedger.sol:49: `unrevealed * _depositOf(roundId)` → `unrevealed >> _depositOf(roundId)`
+[23/115] Skipping mutant (adaptive: span already has surviving mutation)
+[24/115] Skipping mutant (adaptive: span already has surviving mutation)
+[25/115] Skipping mutant (adaptive: span already has surviving mutation)
+[26/115] Skipping mutant (adaptive: span already has surviving mutation)
+[27/115] Skipping mutant (adaptive: span already has surviving mutation)
+[28/115] Skipping mutant (adaptive: span already has surviving mutation)
+[29/115] Testing mutant: contracts/src/DepositLedger.sol:46: `block.timestamp >= _revealEndOf(roundId)` → `block.timestamp < _revealEndOf(roundId)`
+[30/115] Testing mutant: contracts/src/DepositLedger.sol:63: `require(paid < deposit, "paid exceeds deposit")` → `require(true, "paid exceeds deposit")`
+[31/115] Skipping mutant (adaptive: span already has surviving mutation)
+[32/115] Skipping mutant (adaptive: span already has surviving mutation)
+[33/115] Testing mutant: contracts/src/DepositLedger.sol:52: `l.burned = due` → `0`
+[34/115] Skipping mutant (adaptive: span already has surviving mutation)
+[35/115] Skipping mutant (adaptive: span already has surviving mutation)
+[36/115] Skipping mutant (adaptive: span already has surviving mutation)
+[37/115] Skipping mutant (adaptive: span already has surviving mutation)
+[38/115] Skipping mutant (adaptive: span already has surviving mutation)
+[39/115] Skipping mutant (adaptive: span already has surviving mutation)
+[40/115] Skipping mutant (adaptive: span already has surviving mutation)
+[41/115] Skipping mutant (adaptive: span already has surviving mutation)
+[42/115] Testing mutant: contracts/src/DepositLedger.sol:73: `roundBalance[roundId] += amount` → `roundBalance[roundId] >>= amount`
+[43/115] Skipping mutant (adaptive: span already has surviving mutation)
+[44/115] Skipping mutant (adaptive: span already has surviving mutation)
+[45/115] Skipping mutant (adaptive: span already has surviving mutation)
+[46/115] Skipping mutant (adaptive: span already has surviving mutation)
+[47/115] Skipping mutant (adaptive: span already has surviving mutation)
+[48/115] Skipping mutant (adaptive: span already has surviving mutation)
+[49/115] Skipping mutant (adaptive: span already has surviving mutation)
+[50/115] Testing mutant: contracts/src/DepositLedger.sol:39: `_lock = 2` → `0`
+[51/115] Skipping mutant (adaptive: span already has surviving mutation)
+[52/115] Skipping mutant (adaptive: span already has surviving mutation)
+[53/115] Skipping mutant (adaptive: span already has surviving mutation)
+[54/115] Skipping mutant (adaptive: span already has surviving mutation)
+[55/115] Testing mutant: contracts/src/DepositLedger.sol:73: `roundBalance[roundId] += amount` → `roundBalance[roundId] -= amount`
+[56/115] Skipping mutant (adaptive: span already has surviving mutation)
+[57/115] Skipping mutant (adaptive: span already has surviving mutation)
+[58/115] Skipping mutant (adaptive: span already has surviving mutation)
+[59/115] Skipping mutant (adaptive: span already has surviving mutation)
+[60/115] Skipping mutant (adaptive: span already has surviving mutation)
+[61/115] Skipping mutant (adaptive: span already has surviving mutation)
+[62/115] Skipping mutant (adaptive: span already has surviving mutation)
+[63/115] Skipping mutant (adaptive: span already has surviving mutation)
+[64/115] Skipping mutant (adaptive: span already has surviving mutation)
+[65/115] Skipping mutant (adaptive: span already has surviving mutation)
+[66/115] Skipping mutant (adaptive: span already has surviving mutation)
+[67/115] Testing mutant: contracts/src/DepositLedger.sol:46: `block.timestamp >= _revealEndOf(roundId)` → `block.timestamp == _revealEndOf(roundId)`
+[68/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit >> paid`
+[69/115] Testing mutant: contracts/src/DepositLedger.sol:46: `block.timestamp >= _revealEndOf(roundId)` → `block.timestamp <= _revealEndOf(roundId)`
+[70/115] Testing mutant: contracts/src/DepositLedger.sol:62: `require(!a.settled, "already settled")` → `require(true, "already settled")`
+[71/115] Skipping mutant (adaptive: span already has surviving mutation)
+[72/115] Skipping mutant (adaptive: span already has surviving mutation)
+[73/115] Skipping mutant (adaptive: span already has surviving mutation)
+[74/115] Skipping mutant (adaptive: span already has surviving mutation)
+[75/115] Skipping mutant (adaptive: span already has surviving mutation)
+[76/115] Testing mutant: contracts/src/DepositLedger.sol:73: `roundBalance[roundId] += amount` → `roundBalance[roundId] <<= amount`
+[77/115] Testing mutant: contracts/src/DepositLedger.sol:77: `roundBalance[roundId] -= amount` → `roundBalance[roundId] &= amount`
+[78/115] Testing mutant: contracts/src/DepositLedger.sol:41: `_lock = 1` → `0`
+[79/115] Skipping mutant (adaptive: span already has surviving mutation)
+[80/115] Skipping mutant (adaptive: span already has surviving mutation)
+[81/115] Skipping mutant (adaptive: span already has surviving mutation)
+[82/115] Skipping mutant (adaptive: span already has surviving mutation)
+[83/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit ^ paid`
+[84/115] Skipping mutant (adaptive: span already has surviving mutation)
+[85/115] Skipping mutant (adaptive: span already has surviving mutation)
+[86/115] Skipping mutant (adaptive: span already has surviving mutation)
+[87/115] Skipping mutant (adaptive: span already has surviving mutation)
+[88/115] Testing mutant: contracts/src/DepositLedger.sol:77: `roundBalance[roundId] -= amount` → `roundBalance[roundId] >>= amount`
+[89/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit << paid`
+[90/115] Skipping mutant (adaptive: span already has surviving mutation)
+[91/115] Skipping mutant (adaptive: span already has surviving mutation)
+[92/115] Skipping mutant (adaptive: span already has surviving mutation)
+[93/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit & paid`
+[94/115] Testing mutant: contracts/src/DepositLedger.sol:77: `roundBalance[roundId] -= amount` → `roundBalance[roundId] |= amount`
+[95/115] Skipping mutant (adaptive: span already has surviving mutation)
+[96/115] Skipping mutant (adaptive: span already has surviving mutation)
+[97/115] Testing mutant: contracts/src/DepositLedger.sol:77: `roundBalance[roundId] -= amount` → `roundBalance[roundId] <<= amount`
+[98/115] Testing mutant: contracts/src/DepositLedger.sol:77: `roundBalance[roundId] -= amount` → `roundBalance[roundId] *= amount`
+[99/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit + paid`
+[100/115] Testing mutant: contracts/src/DepositLedger.sol:77: `roundBalance[roundId] -= amount` → `roundBalance[roundId] ^= amount`
+[101/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit >>> paid`
+[102/115] Testing mutant: contracts/src/DepositLedger.sol:46: `require(block.timestamp >= _revealEndOf(roundId), "reveal window open")` → `require(true, "reveal window open")`
+[103/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit | paid`
+[104/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit / paid`
+[105/115] Skipping mutant (adaptive: span already has surviving mutation)
+[106/115] Skipping mutant (adaptive: span already has surviving mutation)
+[107/115] Skipping mutant (adaptive: span already has surviving mutation)
+[108/115] Testing mutant: contracts/src/DepositLedger.sol:65: `a.settled = true` → `false`
+[109/115] Skipping mutant (adaptive: span already has surviving mutation)
+[110/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit ** paid`
+[111/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit % paid`
+[112/115] Skipping mutant (adaptive: span already has surviving mutation)
+[113/115] Skipping mutant (adaptive: span already has surviving mutation)
+[114/115] Skipping mutant (adaptive: span already has surviving mutation)
+[115/115] Testing mutant: contracts/src/DepositLedger.sol:64: `deposit - paid` → `deposit * paid`
+
+════════════════════════════════════════════════════════════
+MUTATION TESTING RESULTS
+════════════════════════════════════════════════════════════
+
+╭──────────┬───────────┬────────────╮
+│ Status   ┆ # Mutants ┆ % of Total │
+╞══════════╪═══════════╪════════════╡
+│ Survived ┆ 19        ┆ 16.5%      │
+├╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Killed   ┆ 22        ┆ 19.1%      │
+├╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Invalid  ┆ 1         ┆ 0.9%       │
+├╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Skipped  ┆ 73        ┆ 63.5%      │
+╰──────────┴───────────┴────────────╯
+
+Legend:
+  Survived - tests did not catch the mutation
+  Killed - tests caught the mutation
+  Invalid - mutation produced a compilation error
+  Skipped - redundant mutation on the same expression
+  Timed out - compile/test exceeded the configured timeout
+
+Mutation Score: 53.7% (22/41 mutants killed); finished in 4m 8.63s
+
+────────────────────────────────────────────────────────────
+Survived mutants
+────────────────────────────────────────────────────────────
+
+  1. contracts/src/DepositLedger.sol:38
+     require(_lock == 1, "reentrancy");
+     Mutation:
+       - require(_lock == 1, "reentrancy")
+       + require(true, "reentrancy")
+
+  2. contracts/src/DepositLedger.sol:39
+     _lock = 2;
+     Mutation:
+       - _lock = 2
+       + 0
+
+  3. contracts/src/DepositLedger.sol:46
+     require(block.timestamp >= _revealEndOf(roundId), "reveal window open");
+     Mutation:
+       - require(block.timestamp >= _revealEndOf(roundId), "reveal window open")
+       + require(true, "reveal window open")
+
+  4. contracts/src/DepositLedger.sol:46
+     require(block.timestamp >= _revealEndOf(roundId), "reveal window open");
+     Mutation:
+       - block.timestamp >= _revealEndOf(roundId)
+       + block.timestamp == _revealEndOf(roundId)
+
+  5. contracts/src/DepositLedger.sol:48
+     uint256 unrevealed = l.commits - l.reveals;
+     Mutation:
+       - l.commits - l.reveals
+       + l.commits / l.reveals
+
+  6. contracts/src/DepositLedger.sol:49
+     uint256 due = unrevealed * _depositOf(roundId);
+     Mutation:
+       - unrevealed * _depositOf(roundId)
+       + unrevealed >> _depositOf(roundId)
+
+  7. contracts/src/DepositLedger.sol:49
+     uint256 due = unrevealed * _depositOf(roundId);
+     Mutation:
+       - unrevealed * _depositOf(roundId)
+       + unrevealed ^ _depositOf(roundId)
+
+  8. contracts/src/DepositLedger.sol:50
+     uint256 amount = due - l.burned;
+     Mutation:
+       - due - l.burned
+       + due << l.burned
+
+  9. contracts/src/DepositLedger.sol:51
+     require(amount != 0, "nothing to burn");
+     Mutation:
+       - require(amount != 0, "nothing to burn")
+       + require(true, "nothing to burn")
+
+  10. contracts/src/DepositLedger.sol:51
+     require(amount != 0, "nothing to burn");
+     Mutation:
+       - amount != 0
+       + amount > 0
+
+  11. contracts/src/DepositLedger.sol:52
+     l.burned = due;
+     Mutation:
+       - l.burned = due
+       + 0
+
+  12. contracts/src/DepositLedger.sol:62
+     require(!a.settled, "already settled");
+     Mutation:
+       - require(!a.settled, "already settled")
+       + require(true, "already settled")
+
+  13. contracts/src/DepositLedger.sol:63
+     require(paid < deposit, "paid exceeds deposit");
+     Mutation:
+       - require(paid < deposit, "paid exceeds deposit")
+       + require(true, "paid exceeds deposit")
+
+  14. contracts/src/DepositLedger.sol:63
+     require(paid < deposit, "paid exceeds deposit");
+     Mutation:
+       - paid < deposit
+       + paid != deposit
+
+  15. contracts/src/DepositLedger.sol:64
+     refund = deposit - paid;
+     Mutation:
+       - deposit - paid
+       + deposit * paid
+
+  16. contracts/src/DepositLedger.sol:64
+     refund = deposit - paid;
+     Mutation:
+       - deposit - paid
+       + deposit | paid
+
+  17. contracts/src/DepositLedger.sol:68
+     ledgers[roundId].claims += 1;
+     Mutation:
+       - ledgers[roundId].claims += 1
+       + ledgers[roundId].claims <<= 1
+
+  18. contracts/src/DepositLedger.sol:73
+     roundBalance[roundId] += amount;
+     Mutation:
+       - roundBalance[roundId] += amount
+       + roundBalance[roundId] -= amount
+
+  19. contracts/src/DepositLedger.sol:77
+     roundBalance[roundId] -= amount;
+     Mutation:
+       - roundBalance[roundId] -= amount
+       + roundBalance[roundId] |= amount
+
+────────────────────────────────────────────────────────────
+22 mutants killed
+
+────────────────────────────────────────────────────────────
+1 mutants invalid
+
+════════════════════════════════════════════════════════════

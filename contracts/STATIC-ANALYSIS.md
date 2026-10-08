@@ -63,6 +63,24 @@ TP = true positive, FP = false positive, Acc = accepted (real pattern, intended)
 | L-10 | Unspecific pragma | 9 files | Acc | `^0.8.24`; builds are pinned to 0.8.28 by `foundry.toml`. |
 | L-11 | Unused state variable | `UniswapV3Adapter.REPRICE_GAS` | FP | Used as `{gas: REPRICE_GAS}` in `_preparePool`. |
 
+## forge lint (9 Oct 2026)
+
+`forge lint src --severity high med low info gas code-size`, forge 1.8.3, on the same `src/` (unchanged since the Slither and Aderyn runs). 496 diagnostics, 264 outside `src/vendor/` (unmodified OpenZeppelin). Summary and the full text of every warning outside `vendor/`: `reports/forge-lint.txt`.
+
+**No new true positive.** Every warning outside `vendor/` is either the same pattern Slither or Aderyn already reported (triaged above) or one of the new items below. The 232 vendor diagnostics (including the only `controlled-delegatecall` and `encode-packed-collision`) are in OpenZeppelin code used by the demo vault and token factory, not on the launch engine's money path.
+
+| Lint (severity) | Outside `vendor/` | New vs Slither/Aderyn? | Verdict |
+| --- | --- | --- | --- |
+| `arbitrary-send-eth` (high) | `AuctionEngine` #370 (`seed{value}`), #448 (refund), #495 (creator proceeds); `ExitAuction` #254 | Same as Aderyn H-1 | FP. #370 pays an adapter from the fixed allow-list, inside `seedLP`; #448 pays the bidder whose own deposit is settled; #495 pays the round's creator, gated by `msg.sender == r.creator`. |
+| `arbitrary-send-erc20` (high) | `ExitAuction` #169 | New | FP. `from` is `bidder`, which `SealingLayer._reveal` passes as `msg.sender`; nobody can pull another address's shares. |
+| `reentrancy-balance` (high) | `AuctionEngine` #370 | Same as Slither #2, 3, 5 | FP, see above. |
+| `unsafe-typecast` (med) | 15: `DepositLedger` #66–67; `AuctionEngine` #176, #274, #461 (×2), #478; `ExitAuction` #139–143, #183; `UniV3PriceMath` #98; `UniswapV3Adapter` #255–256 | Partly new (Aderyn H-4 covered the ledger) | FP. Every cast is bounded by construction: `paid`, `refund` `< deposit ≤ type(uint96).max`; `tokenReserve ≤ sellAmount` (`lpShareBps ≤ 10,000`); `alloc ≤ amount ≤ type(uint96).max`; `vested ≤ total`; timestamps and block numbers fit `uint64`; `ExitAuction` capacity is capped at `maxExitSharesPerRound`, itself a `uint128`; the adapter's `int256 → uint256` casts are guarded by `> 0`; the sqrt-price cast is checked against `MAX_SQRT_RATIO < 2^160` on the line before. The symbolic proofs (P3–P5 in `PROPERTIES.md`) exercise the ledger casts over every `uint96` bid. |
+| `reentrancy-no-eth` (med) | `AuctionEngine` #378–379 (`roundBalance` credited after the lock call); `ExitAuction` #241 (`ledgers`, `_lock`) | New | FP. Both functions hold the engine-wide `nonReentrant` lock; the GoPlus locker and the vault are fixed at deployment. The `_lock` write it flags is the modifier's own reset. |
+| `reentrancy-events` (low) | 8: `AuctionEngine` #294, #387, #463; adapter, factory, exit auction | New | Accepted. Events are emitted after calls to fixed contracts (adapter, locker, vault) or after a refund, always under the lock. The indexer reads balances and state, not event order alone. |
+| `incorrect-strict-equality`, `divide-before-multiply`, `uninitialized-local`, `unused-return`, `calls-loop`, `require-revert-in-loop`, `block-timestamp` | as listed in the report | Same as Slither | Same verdicts as Slither #9–#61. |
+| `missing-zero-check` (low) | `DemoVault` #51, `UniswapV3Adapter` #117 | New | FP. Both are guarded by a code-length check (`code.length != 0` rejects the zero address): the adapter's constructor arguments, and the vault's one-time, deployer-only `setExitAuction`. |
+| Notes (`custom-errors` ×134, naming, `multi-contract-file`, …) | 128 | — | Style. Not changed: `src/` is frozen for review. |
+
 ## Reproduce
 
 ```bash
@@ -76,4 +94,7 @@ PATH=$HOME/.foundry/bin:/tmp/slither-venv/bin:$PATH slither . \
 # Aderyn
 npm i -g @cyfrin/aderyn
 cd contracts && aderyn . -s src -x src/vendor -o reports/aderyn.md
+
+# forge lint (forge 1.8.3)
+cd contracts && forge lint src --severity high med low info gas code-size
 ```
