@@ -581,6 +581,15 @@ contract ExitAuctionTest is ExitBase {
         c.revealDuration = uint64(auction.MIN_REVEAL_WINDOW() - 1);
         vm.expectRevert("window too short");
         new ExitAuction(vault, c);
+        // A huge duration would wrap the uint64 round ends (Codex review, finding 1).
+        c = _config();
+        c.commitDuration = type(uint64).max;
+        vm.expectRevert("window too long");
+        new ExitAuction(vault, c);
+        c = _config();
+        c.revealDuration = uint64(auction.MAX_EXIT_WINDOW() + 1);
+        vm.expectRevert("window too long");
+        new ExitAuction(vault, c);
     }
 
     /// Winners are paid on the settlement share price, so claim order cannot move money between them.

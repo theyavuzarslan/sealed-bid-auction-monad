@@ -25,10 +25,12 @@ export async function loadRoundState(engine, roundId, bidder) {
   ]);
   const s = { round, clearing, ledger, commits, me: null };
   if (bidder) {
-    const [commitment, account, tokensClaimed] = await Promise.all([
+    const [commitment, account, tokensClaimed, owed] = await Promise.all([
       engine.commitment(roundId, bidder), engine.account(roundId, bidder), engine.tokensClaimed(roundId, bidder),
+      engine.refundsOwed(bidder),
     ]);
-    const me = { commitment, committed: commitment.hash !== ZERO32, revealed: commitment.revealed, refunded: account.settled, tokensClaimed };
+    // `refunded` means the deposit was settled; if the wallet could not take the MON, it is in `owed`.
+    const me = { commitment, committed: commitment.hash !== ZERO32, revealed: commitment.revealed, refunded: account.settled, tokensClaimed, owed };
     if (clearing.settled && commitment.revealed) me.quote = await engine.quote(roundId, bidder);
     if (round.vestDuration !== 0n) me.vest = await engine.vestedOf(roundId, bidder);
     s.me = me;
@@ -92,6 +94,9 @@ export function bidderActions(s, bidder) {
   const out = [];
   if (!me.refunded) {
     out.push({ id: "refund", label: "Claim refund", build: (e, id) => e.tx.claimRefund(id, bidder) });
+  }
+  if (me.owed > 0n) {
+    out.push({ id: "owed", label: "Withdraw owed refund", build: (e) => e.tx.withdrawOwed(bidder) });
   }
   if (s.round.claimsOpen && !me.tokensClaimed && me.quote?.allocated > 0n) {
     out.push({ id: "tokens", label: "Claim tokens", build: (e, id) => e.tx.claimTokens(id, bidder) });

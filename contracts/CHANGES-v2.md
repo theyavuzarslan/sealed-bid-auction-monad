@@ -11,6 +11,15 @@ The live Monad mainnet deployment is v1, tagged `mainnet-v1`. v2 fixes four item
 
 Tests: 108 passed, 0 failed (`forge test`), including new `test/Observations.t.sol` (a MON-rejecting winner and a gas-burning winner both settle, are owed, and withdraw; normal refunds are still pushed; short windows are refused) and `test_Constructor_RejectsShortWindows` / an updated `test_ExitIndependentOfRefund` in `test/ExitAuction.t.sol`. The full security pass (mutation testing, symbolic proofs, scale test, Monad rules) runs once v2 is final.
 
+## Independent review (Codex, gpt-5.5, read-only)
+
+Verdict: no significant issues. No reentrancy path through `_pushRefund`, `withdrawOwed` or the claim paths; no double-counted or twice-withdrawable MON across `roundBalance`, `totalOwed` and `refundsOwed`; the assembly call is correct; the exit-auction surplus goes to the vault. Its four low/info findings:
+
+1. **Fixed.** An `ExitAuction` window near `uint64` max would wrap the stored round end. The constructor now also refuses windows over `MAX_EXIT_WINDOW` (30 days), "window too long"; tested.
+2. **Accepted.** A bidder contract that burns the 50,000-gas stipend makes a third party who claims for it pay that gas (about 0.005 MON on Monad). Bounded, and it cannot block settlement.
+3. **Documented.** A bidder contract that rejects MON must be able to call `withdrawOwed(to)` to collect; a contract with neither cannot recover its refund. Ordinary wallets and passkey accounts are unaffected.
+4. **Fixed in the app.** "Settled" no longer implies "MON received": the round page reads `refundsOwed` and shows "Withdraw owed refund" when anything is owed.
+
 Not in v2 (after the hackathon): time-locked auto-reveal (`revealFor`), custom errors, event tweaks (CODE-QUALITY.md P1, P2, P5).
 
 Deploying v2 means a new engine address; round 1 stays on the v1 engine and stays visible on the explorer.

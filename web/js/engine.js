@@ -158,6 +158,8 @@ export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }
     ledgers: (id) => call("ledgers", [id]),
     commitment: (id, who) => call("commitments", [id, who]),
     account: (id, who) => call("accounts", [id, who]), // refund settled?
+    // v2: a refund the wallet could not take is held here until withdrawOwed. v1 engines lack it.
+    refundsOwed: (who) => call("refundsOwed", [who]).catch(() => 0n),
     tokensClaimed: (id, who) => call("tokensClaimed", [id, who]),
     bidOf: (id, who) => call("bids", [id, who]),
     quote: (id, who) => call("quote", [id, who]),
@@ -212,6 +214,7 @@ export function makeEngine({ request, address, fromBlock = 0n, logChunk = null }
       disposeUnsold: (id) => tx("disposeUnsold", [id]),
       claim: (id) => tx("claim", [id]),
       claimRefund: (id, bidder) => tx("claimRefund", [id, bidder]),
+      withdrawOwed: (to) => tx("withdrawOwed", [to]),
       claimTokens: (id, bidder) => tx("claimTokens", [id, bidder]),
       claimVested: (id) => tx("claimVested", [id]),
       withdrawProceeds: (id) => tx("withdrawProceeds", [id]),

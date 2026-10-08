@@ -74,6 +74,8 @@ contract ExitAuction is SealingLayer, UniformClearing {
     DemoVault public immutable vault;
     /// @notice The vault's asset (WMON).
     address public immutable asset;
+    /// @notice Longest commit or reveal window an exit round may have, in seconds.
+    uint256 public constant MAX_EXIT_WINDOW = 30 days;
     /// @notice Length of every commit window, in seconds.
     uint64 public immutable commitDuration;
     /// @notice Length of every reveal window, in seconds.
@@ -124,6 +126,8 @@ contract ExitAuction is SealingLayer, UniformClearing {
     constructor(DemoVault vault_, Config memory c) {
         require(address(vault_).code.length != 0, "vault has no code");
         require(c.commitDuration >= MIN_COMMIT_WINDOW && c.revealDuration >= MIN_REVEAL_WINDOW, "window too short");
+        // Upper bound keeps block.timestamp + duration far inside uint64 when a round's ends are stored.
+        require(c.commitDuration <= MAX_EXIT_WINDOW && c.revealDuration <= MAX_EXIT_WINDOW, "window too long");
         require(c.depositAmount != 0, "zero deposit");
         require(c.tickBps != 0 && c.tickBps < BPS, "bad tick");
         require(c.minExitShares != 0, "zero minimum exit");
