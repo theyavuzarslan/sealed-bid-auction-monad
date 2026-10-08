@@ -41,6 +41,8 @@ The same comparison, repeated on 500 random launches: 8–24 buyers each with a 
 
 On this curve the crowd's average price is exactly twice the bot's whenever the curve sells out (a property of its constant-product shape and sale size: 1.74–2.00× across the runs), so that ratio is not reported as a finding. Reproduce: `cd demo && LAUNCHES=500 forge script script/FairnessStats.s.sol && node tools/fairness-summary.mjs`.
 
+How Even differs from Zama's auction, Uniswap CCA, bonding curves and other launch mechanisms, with likely judge questions answered: [COMPARISON.md](COMPARISON.md).
+
 ## How it works
 
 ```mermaid
