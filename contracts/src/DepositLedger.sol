@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 import {SafeTransferLib} from "./lib/SafeTransferLib.sol";
 
@@ -35,6 +35,15 @@ abstract contract DepositLedger {
     mapping(uint256 => mapping(address => Account)) public accounts;
     /// @notice MON each round holds. Every outflow is a checked subtraction from it.
     mapping(uint256 => uint256) public roundBalance;
+    /// @notice Refunds that could not be pushed to their bidder (the address rejected MON or ran out
+    ///         of the forwarded gas). The bidder withdraws them with `withdrawOwed`.
+    mapping(address => uint256) public refundsOwed;
+    /// @notice Sum of `refundsOwed`: MON the contract holds outside every round's balance.
+    uint256 public totalOwed;
+
+    /// @dev Gas forwarded with a pushed refund: enough for a smart wallet's receive hook, too little
+    ///      for a recipient to make the push revert by burning gas. A failed push becomes an owed refund.
+    uint256 internal constant REFUND_PUSH_GAS = 50_000;
 
     /// @dev Reentrancy lock shared by every `nonReentrant` function of the inheriting contract:
     ///      1 = free, 2 = entered. Never 0, so the slot is never cleared.
@@ -42,6 +51,10 @@ abstract contract DepositLedger {
 
     /// @notice `count` unrevealed deposits of `roundId` were burned, `amount` MON in total this call.
     event UnrevealedBurned(uint256 indexed roundId, uint256 count, uint256 amount);
+    /// @notice A refund of `amount` could not be pushed to `bidder` and is now owed to them.
+    event RefundOwed(address indexed bidder, uint256 amount);
+    /// @notice `bidder` withdrew `amount` of owed refunds to `to`.
+    event OwedWithdrawn(address indexed bidder, address indexed to, uint256 amount);
 
     modifier nonReentrant() {
         require(_lock == 1, "reentrancy");
@@ -64,6 +77,37 @@ abstract contract DepositLedger {
         _debit(roundId, amount);
         emit UnrevealedBurned(roundId, unrevealed, amount);
         SafeTransferLib.sendValue(BURN, amount);
+    }
+
+    /// @notice Withdraw every refund owed to the caller, to `to`. Lets a bidder whose address cannot
+    ///         receive MON (for example a contract without a payable receive) collect elsewhere.
+    /// @param to Where the MON goes.
+    function withdrawOwed(address to) external nonReentrant {
+        uint256 amount = refundsOwed[msg.sender];
+        require(amount != 0, "nothing owed");
+        refundsOwed[msg.sender] = 0;
+        totalOwed -= amount;
+        emit OwedWithdrawn(msg.sender, to, amount);
+        SafeTransferLib.sendValue(to, amount);
+    }
+
+    /// @dev Pushes a refund that `_settleAccount` already debited from its round. If the push fails
+    ///      (the recipient rejects MON, or needs more than REFUND_PUSH_GAS), the refund is recorded as
+    ///      owed instead of reverting, so one bidder can never block a round's settlement (O1).
+    ///      Return data is not copied, so a recipient cannot make the caller pay for a large revert.
+    ///      Call last, under the reentrancy lock: the recipient may run code.
+    function _pushRefund(address bidder, uint256 amount) internal {
+        if (amount == 0) return;
+        uint256 gasLimit = REFUND_PUSH_GAS;
+        bool ok;
+        assembly ("memory-safe") {
+            ok := call(gasLimit, bidder, amount, 0, 0, 0, 0)
+        }
+        if (!ok) {
+            refundsOwed[bidder] += amount;
+            totalOwed += amount;
+            emit RefundOwed(bidder, amount);
+        }
     }
 
     /// @dev Records a revealed bidder's settlement. The caller sends the refund after all effects.

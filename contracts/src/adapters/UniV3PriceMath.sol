@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 /// @notice The price arithmetic the Uniswap v3 adapter needs: a 512-bit mulDiv, an integer square
 ///         root, the Uniswap v3 sqrt-price bounds, and the conversion from the engine's clearing price

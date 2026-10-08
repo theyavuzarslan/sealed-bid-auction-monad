@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 import {SealingLayer} from "../SealingLayer.sol";
 import {UniformClearing} from "../UniformClearing.sol";
@@ -123,7 +123,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
     /// @param c      Round parameters, validated here.
     constructor(DemoVault vault_, Config memory c) {
         require(address(vault_).code.length != 0, "vault has no code");
-        require(c.commitDuration != 0 && c.revealDuration != 0, "zero window");
+        require(c.commitDuration >= MIN_COMMIT_WINDOW && c.revealDuration >= MIN_REVEAL_WINDOW, "window too short");
         require(c.depositAmount != 0, "zero deposit");
         require(c.tickBps != 0 && c.tickBps < BPS, "bad tick");
         require(c.minExitShares != 0, "zero minimum exit");
@@ -282,9 +282,12 @@ contract ExitAuction is SealingLayer, UniformClearing {
 
         if (alloc != 0) {
             uint256 got = vault.redeem(alloc, address(this), address(this));
-            require(got == assets, "redeem mismatch");
+            // ERC-4626: previewRedeem never exceeds what redeem returns. Anything above the quote
+            // belongs to the shareholders who stay, so it goes back to the vault with the donation.
+            require(got >= assets, "redeem short");
             if (payout != 0) asset.safeTransfer(bidder, payout);
-            if (donation != 0) asset.safeTransfer(address(vault), donation);
+            uint256 toVault = donation + (got - assets);
+            if (toVault != 0) asset.safeTransfer(address(vault), toVault);
         }
         if (back != 0) address(vault).safeTransfer(bidder, back);
     }
@@ -295,7 +298,7 @@ contract ExitAuction is SealingLayer, UniformClearing {
         require(commitments[roundId][bidder].revealed, "not revealed");
         uint256 refund = _settleAccount(roundId, bidder, 0); // reverts on a second refund
         emit DepositRefunded(roundId, bidder, refund);
-        SafeTransferLib.sendValue(bidder, refund);
+        _pushRefund(bidder, refund);
     }
 
     // ─── Views ──────────────────────────────────────────────────────────

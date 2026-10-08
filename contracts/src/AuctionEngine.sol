@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 import {SealingLayer} from "./SealingLayer.sol";
 import {UniformClearing} from "./UniformClearing.sol";
@@ -257,7 +257,8 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         require(
             uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE, "no valid bid possible"
         );
-        require(p.commitEnd > block.timestamp && p.revealEnd > p.commitEnd, "bad windows");
+        require(p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW, "commit window too short");
+        require(p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW, "reveal window too short");
         require(p.lpShareBps <= BPS, "lp share > 100%");
         if (p.lpShareBps == 0) {
             require(p.dexSplits.length == 0, "splits without LP");
@@ -523,7 +524,7 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         r.collected += paid;
         r.allocatedTotal += alloc;
         emit Claimed(roundId, bidder, alloc, paid, refund);
-        if (refund != 0) SafeTransferLib.sendValue(bidder, refund);
+        _pushRefund(bidder, refund);
     }
 
     /// @dev Sends the bidder's allocation, or for a vesting round its TGE share and records the rest.

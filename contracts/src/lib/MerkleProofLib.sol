@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 /// @notice Verifier compatible with OpenZeppelin's StandardMerkleTree (sorted-pair hashing).
 ///         Leaf for an allowlisted address: keccak256(bytes.concat(keccak256(abi.encode(addr)))).

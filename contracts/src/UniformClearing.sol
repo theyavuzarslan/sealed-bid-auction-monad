@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 /// @notice Zama-style uniform-price clearing over a book of price levels (10-decisions.md #22).
 /// @dev Generic by design (10-decisions.md #34): it knows prices, amounts, a supply and allocations,

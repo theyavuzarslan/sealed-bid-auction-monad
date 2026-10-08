@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 /// @notice A DEX venue for seeding launch liquidity (10-decisions.md #23).
 /// @dev The adapter pulls `tokenAmount` of `token` from msg.sender (which must approve it first),

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 import {DepositLedger} from "./DepositLedger.sol";
 import {MerkleProofLib} from "./lib/MerkleProofLib.sol";
@@ -12,6 +12,14 @@ import {MerkleProofLib} from "./lib/MerkleProofLib.sol";
 abstract contract SealingLayer is DepositLedger {
     /// @notice Longest accepted encrypted bid backup, in bytes.
     uint256 public constant MAX_NOTE_LENGTH = 256;
+    /// @notice Shortest commit window a round may have, in seconds. Monad timestamps have one-second
+    ///         resolution over ~300 ms blocks; a window of a few seconds would let a creator open a round
+    ///         nobody can realistically bid in.
+    uint256 public constant MIN_COMMIT_WINDOW = 5 minutes;
+    /// @notice Shortest reveal window a round may have, in seconds. Without a floor, a creator could
+    ///         open a round with a reveal window too short for honest bidders, whose unrevealed
+    ///         deposits would then be burned.
+    uint256 public constant MIN_REVEAL_WINDOW = 5 minutes;
     /// @dev "No hint": `reveal` passes it to `_onReveal`. Equal to `UniformClearing.NONE` on purpose, so
     ///      the book treats it as "walk from the head". Keep the two equal.
     uint256 internal constant NO_HINT = type(uint256).max;

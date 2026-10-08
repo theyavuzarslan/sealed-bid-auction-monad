@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity 0.8.34;
 
 /// @notice ERC-20 and native transfers that tolerate tokens returning no value, and reject
 ///         calls to addresses with no code (a silent "success" from a non-contract).

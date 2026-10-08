@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity 0.8.34;
 
 import {IDexAdapter, IERC20Minimal} from "../interfaces/ILiquidity.sol";
 import {SafeTransferLib} from "../lib/SafeTransferLib.sol";

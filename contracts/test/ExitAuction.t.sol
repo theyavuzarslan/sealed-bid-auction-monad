@@ -67,6 +67,10 @@ contract MonRejecter {
         auction.claim(roundId);
     }
 
+    function withdrawOwed(address to) external {
+        auction.withdrawOwed(to);
+    }
+
     receive() external payable {
         revert("no MON");
     }
@@ -88,6 +92,19 @@ abstract contract ExitBase is Test {
     ExitAuction auction;
     address strategist = makeAddr("strategist");
     bytes32 allowRoot; // zero: open to every holder
+
+    function _config() internal view returns (ExitAuction.Config memory) {
+        return ExitAuction.Config({
+            commitDuration: COMMIT,
+            revealDuration: REVEAL,
+            depositAmount: DEPOSIT,
+            tickBps: TICK,
+            minExitShares: MIN_EXIT,
+            maxExitSharesPerRound: 1e30,
+            roundGapBlocks: GAP,
+            allowlistRoot: allowRoot
+        });
+    }
 
     function _deploy(uint128 maxPerRound) internal {
         vm.warp(1_800_000_000);
@@ -536,14 +553,34 @@ contract ExitAuctionTest is ExitBase {
         _toReveal(r);
         bad.approveAndReveal(100, s, bytes32("x"));
         _settle(r);
-        vm.expectRevert("send failed");
+        // The refund push fails, so the deposit becomes owed instead of blocking the claim (O1).
         bad.claim();
-        auction.claimExit(r, address(bad));
-        assertGt(wmon.balanceOf(address(bad)), 0);
+        assertGt(wmon.balanceOf(address(bad)), 0, "the exit went through");
         assertEq(auction.pendingExitShares(), 0);
-        vm.expectRevert("send failed");
-        auction.claimRefund(r, address(bad)); // stays claimable; nobody else can take it
-        assertEq(auction.roundBalance(r), DEPOSIT);
+        assertEq(auction.refundsOwed(address(bad)), DEPOSIT, "deposit owed, not lost");
+        assertEq(auction.totalOwed(), DEPOSIT);
+        assertEq(auction.roundBalance(r), 0, "the round itself is fully settled");
+        vm.expectRevert("already settled");
+        auction.claimRefund(r, address(bad));
+        // The bidder collects to an address that can receive MON.
+        address payable to = payable(makeAddr("collector"));
+        bad.withdrawOwed(to);
+        assertEq(to.balance, DEPOSIT);
+        assertEq(auction.refundsOwed(address(bad)), 0);
+        assertEq(auction.totalOwed(), 0);
+        assertEq(address(auction).balance, 0);
+    }
+
+    /// Rounds shorter than the minimum windows are refused at construction.
+    function test_Constructor_RejectsShortWindows() public {
+        ExitAuction.Config memory c = _config();
+        c.commitDuration = uint64(auction.MIN_COMMIT_WINDOW() - 1);
+        vm.expectRevert("window too short");
+        new ExitAuction(vault, c);
+        c = _config();
+        c.revealDuration = uint64(auction.MIN_REVEAL_WINDOW() - 1);
+        vm.expectRevert("window too short");
+        new ExitAuction(vault, c);
     }
 
     /// Winners are paid on the settlement share price, so claim order cannot move money between them.

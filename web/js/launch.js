@@ -5,6 +5,9 @@ import { parseUnits, perTokenToWire, UINT96_MAX, PRICE_SCALE } from "./bid.js";
 import { rootOf } from "./merkle.js";
 import { isAddress } from "./hex.js";
 
+/** Shortest commit and reveal window the engine accepts (SealingLayer.MIN_COMMIT_WINDOW / MIN_REVEAL_WINDOW). */
+export const MIN_WINDOW_MINUTES = 5;
+
 export const BPS = 10000n;
 export const MAX_SPLITS = 4;
 export const MIN_RAISE_LOCK_DAYS = 30; // AuctionEngine.MIN_RAISE_LOCK
@@ -42,7 +45,10 @@ export function buildOpenParams(v, token, nowSec) {
   const reservePrice = perTokenToWire(num(v.reserve, 18, "Reserve price"), tdec);
   const commitMin = Number(v.commitMinutes);
   const revealMin = Number(v.revealMinutes);
-  if (!(commitMin > 0) || !(revealMin > 0)) problems.push("Both windows must be longer than zero minutes.");
+  // The engine refuses windows under MIN_COMMIT_WINDOW / MIN_REVEAL_WINDOW (5 minutes each): a reveal
+  // window too short for people to reveal in would burn honest bidders' deposits.
+  if (!(commitMin >= MIN_WINDOW_MINUTES)) problems.push(`Bidding must stay open at least ${MIN_WINDOW_MINUTES} minutes.`);
+  if (!(revealMin >= MIN_WINDOW_MINUTES)) problems.push(`The reveal window must be at least ${MIN_WINDOW_MINUTES} minutes, so bidders have time to reveal.`);
   const commitEnd = BigInt(Math.floor(nowSec) + Math.round((commitMin || 0) * 60) + 30); // 30 s for inclusion
   const revealEnd = commitEnd + BigInt(Math.round((revealMin || 0) * 60));
 
