@@ -54,6 +54,9 @@ const BIG = {
   '/': ['....#', '....#', '...#.', '..#..', '.#...', '#....', '#....'],
   '→': ['.....', '..#..', '...#.', '#####', '...#.', '..#..', '.....'],
   '=': ['.....', '.....', '#####', '.....', '#####', '.....', '.....'],
+  '(': ['...#.', '..#..', '.#...', '.#...', '.#...', '..#..', '...#.'],
+  ')': ['.#...', '..#..', '...#.', '...#.', '...#.', '..#..', '.#...'],
+  '$': ['..#..', '.####', '#.#..', '.###.', '..#.#', '####.', '..#..'],
 };
 
 const TINY = {
@@ -83,19 +86,22 @@ const TINY = {
 
 const FONTS = { big: { g: BIG, w: 5, h: 7, adv: 6 }, tiny: { g: TINY, w: 3, h: 5, adv: 4 } };
 
-export function textWidth(str, scale = 1, font = 'big') {
+// tight: 1 low-res px between glyphs at any scale (for wide captions at scale 2+).
+export function textWidth(str, scale = 1, font = 'big', tight = false) {
   const f = FONTS[font];
+  if (tight) return str.length ? str.length * (f.w * scale + 1) - 1 : 0;
   return str.length ? (str.length * f.adv - 1) * scale : 0;
 }
 
 // Draw text on the low-res canvas. align: 'left' | 'center' | 'right'.
 // opts.shadow: colour drawn 1 px (x scale) down-right first.
 export function text(g, str, x, y, color, opts = {}) {
-  const { scale = 1, align = 'left', font = 'big', shadow = null, chars = Infinity } = opts;
+  const { scale = 1, align = 'left', font = 'big', shadow = null, chars = Infinity, tight = false } = opts;
   const f = FONTS[font];
+  const adv = tight ? f.w * scale + 1 : f.adv * scale;
   str = String(str).toUpperCase();
   let x0 = Math.round(x);
-  const w = textWidth(str, scale, font);
+  const w = textWidth(str, scale, font, tight);
   if (align === 'center') x0 = Math.round(x - w / 2);
   else if (align === 'right') x0 = Math.round(x - w);
   const y0 = Math.round(y);
@@ -104,7 +110,7 @@ export function text(g, str, x, y, color, opts = {}) {
     g.fillStyle = c;
     for (let i = 0; i < str.length && i < chars; i++) {
       const gl = f.g[str[i]];
-      const gx = x0 + i * f.adv * scale + off;
+      const gx = x0 + i * adv + off;
       if (!gl) { // visible box for missing glyphs
         g.fillRect(gx, y0 + off, f.w * scale, f.h * scale);
         continue;

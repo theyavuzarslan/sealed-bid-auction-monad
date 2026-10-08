@@ -7,13 +7,13 @@ import { makeMaze, drawMaze } from './maze.js';
 export const MAZE = makeMaze('curve');
 const DMAX = Math.max(...MAZE.edge.map(e => e[3]).filter(d => d < 99));
 
-function slotPanel(g, t, cx, cy) {
+export function slotPanel(g, t, cx, cy, hotT = 1.0) {
   // Cabinet coin door: dark plate, glowing slot, two bolts.
   rect(g, cx - 22, cy - 16, 44, 32, P.line);
   rect(g, cx - 21, cy - 15, 42, 30, P.deep);
   rect(g, cx - 18, cy - 12, 2, 2, P.dim); rect(g, cx + 16, cy - 12, 2, 2, P.dim);
   rect(g, cx - 18, cy + 10, 2, 2, P.dim); rect(g, cx + 16, cy + 10, 2, 2, P.dim);
-  const hot = t >= 1.0 && t < 1.2;
+  const hot = t >= hotT && t < hotT + 0.2;
   rect(g, cx - 2, cy - 9, 4, 18, hot ? P.white : P.lime);
   rect(g, cx - 1, cy - 8, 2, 16, hot ? P.lime : P.night);
   text(g, '25', cx - 14, cy - 3, P.dim, { font: 'tiny' });

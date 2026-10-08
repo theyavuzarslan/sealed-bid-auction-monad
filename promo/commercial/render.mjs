@@ -1,7 +1,8 @@
 // Render promo/commercial/index.html frame by frame to PNGs.
 // Usage: node promo/commercial/render.mjs [comma-separated frame indices]
-//   env URL  (default http://127.0.0.1:8777/promo/commercial/index.html)
-//   env OUT  (default: scratchpad promo-frames dir)
+//   env CUT  45 (default, 1350 frames) or 30 (the v3 master: index.html?cut=30, 900 frames)
+//   env URL  (default http://127.0.0.1:8777/promo/commercial/index.html[?cut=30])
+//   env OUT  (default: scratchpad commercial-frames / commercial30-frames dir)
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,9 +10,10 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const { chromium } = require('/Users/0xatakan/open-design/node_modules/.pnpm/playwright-core@1.59.1/node_modules/playwright-core');
 
-const FPS = 30, TOTAL = 1350;
-const URL = process.env.URL || 'http://127.0.0.1:8777/promo/commercial/index.html';
-const OUT = process.env.OUT || '/private/tmp/claude-501/-Users-0xatakan-Claude-Code-Sealed-Bid-Auction-on-Monad/98bef2a8-d70a-409f-aa32-3c11fe8a461d/scratchpad/commercial-frames';
+const CUT = process.env.CUT === '30' ? 30 : 45;
+const FPS = 30, TOTAL = CUT === 30 ? 900 : 1350;
+const URL = process.env.URL || 'http://127.0.0.1:8777/promo/commercial/index.html' + (CUT === 30 ? '?cut=30' : '');
+const OUT = process.env.OUT || '/private/tmp/claude-501/-Users-0xatakan-Claude-Code-Sealed-Bid-Auction-on-Monad/98bef2a8-d70a-409f-aa32-3c11fe8a461d/scratchpad/' + (CUT === 30 ? 'commercial30-frames' : 'commercial-frames');
 const frames = process.argv[2] ? process.argv[2].split(',').map(Number) : [...Array(TOTAL).keys()];
 
 fs.mkdirSync(OUT, { recursive: true });

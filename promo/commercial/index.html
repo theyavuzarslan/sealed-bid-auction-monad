@@ -12,15 +12,18 @@
 <canvas id="c" width="1920" height="1080"></canvas>
 <script type="module">
 import { P } from './palette.js';
-import * as attract from './scene-attract.js';
-import * as curve from './scene-curve.js';
-import * as sealed from './scene-sealed.js';
-import * as reveal from './scene-reveal.js';
-import * as numbers from './scene-numbers.js';
-import * as end from './scene-end.js';
 
-const timeline = await fetch('./timeline.json').then(r => r.json());
-const MODS = { attract, curve, sealed, reveal, numbers, end };
+// ?cut=30 loads the 30 s master (v3): its own clock and scene list. No param: the 45 s cut.
+const CUT = new URLSearchParams(location.search).get('cut') === '30' ? 30 : 45;
+const SCENES = CUT === 30
+  ? { hook: './scene-hook.js', turn: './scene-turn.js', sealed: './scene-sealed30.js', reveal: './scene-reveal30.js', proof: './scene-proof.js', end: './scene-end30.js' }
+  : { attract: './scene-attract.js', curve: './scene-curve.js', sealed: './scene-sealed.js', reveal: './scene-reveal.js', numbers: './scene-numbers.js', end: './scene-end.js' };
+const MODS = {};
+for (const [id, src] of Object.entries(SCENES)) MODS[id] = await import(src);
+await Promise.all(Object.values(MODS).map(m => m.ready).filter(Boolean));
+const timeline = await fetch(CUT === 30 ? './timeline-30.json' : './timeline.json').then(r => r.json());
+// Blocky mosaic dissolves (30 s cut): out of the old scene, into the new one.
+const DISSOLVES = CUT === 30 ? [{ at: 21.0, dur: 0.5 }] : [];
 const W = 320, H = 180, S = 6;
 
 const lo = document.createElement('canvas');
@@ -52,13 +55,14 @@ function sceneAt(t) {
   return s[s.length - 1];
 }
 
-function draw(t) {
+function compose(t) {
   const sc = sceneAt(t);
   // cam: shake in whole low-res pixels; zoom 1 or 2 crops around (x, y).
   const cam = { zoom: 1, x: 0, y: 0, sx: 0, sy: 0 };
   g.fillStyle = P.night;
   g.fillRect(0, 0, W, H);
-  MODS[sc.id].draw(g, t, cam, sc);
+  const mod = MODS[sc.id];
+  mod.draw(g, t, cam, sc);
   o.fillStyle = P.night;
   o.fillRect(0, 0, 1920, 1080);
   const z = cam.zoom;
@@ -66,6 +70,29 @@ function draw(t) {
   const cx = Math.max(0, Math.min(W - cw, Math.round(cam.x)));
   const cy = Math.max(0, Math.min(H - ch, Math.round(cam.y)));
   o.drawImage(lo, cx, cy, cw, ch, Math.round(cam.sx) * S, Math.round(cam.sy) * S, 1920, 1080);
+  // Full-resolution layer (the real screenshot in the proof scene), drawn in output px.
+  if (mod.drawHi) mod.drawHi(o, t, cam, S);
+}
+
+// Point-sampled mosaic of the output canvas in b x b blocks (keeps the palette). b divides 120.
+const mos = document.createElement('canvas');
+const mg = mos.getContext('2d');
+function pixelate(b) {
+  const w = Math.ceil(1920 / b), h = Math.ceil(1080 / b);
+  mos.width = w; mos.height = h;
+  mg.imageSmoothingEnabled = false;
+  mg.drawImage(out, 0, 0, w * b, h * b, 0, 0, w, h);
+  o.drawImage(mos, 0, 0, w, h, 0, 0, w * b, h * b);
+}
+
+function draw(t) {
+  const d = DISSOLVES.find(x => t >= x.at && t < x.at + x.dur);
+  if (d) {
+    const half = d.dur / 2, u = t - d.at;
+    compose(u < half ? d.at - 1 / 60 : t);
+    const q = Math.abs(u - half) / half; // 1 -> 0 -> 1
+    pixelate([12, 24, 40, 60, 120][Math.min(4, Math.floor((1 - q) * 5))]);
+  } else compose(t);
   o.drawImage(crt, 0, 0);
 }
 

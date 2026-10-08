@@ -8,6 +8,8 @@ key events (13.4 stamp, 21.2 lights_out, 34.6 stamp_draw, 41.7 logo).
 
 Usage:  python3 audio.py            -> audio.wav (+ stems/music.wav, stems/sfx.wav,
         pre-limiter and 6 dB down)
+        python3 audio.py --cut 30   -> audio-30.wav (v3 30 s master; arrangement,
+        SFX placement and mix in score30.py, clock in timeline-30.json)
 
 Mix: music bus at -18 dBFS RMS over its active parts, SFX on top, soft-knee
 limiter, peak normalised to -1 dBFS, 50 ms fade-in. Deterministic (seeded noise).
@@ -732,6 +734,14 @@ def write_wav(path, x):
 
 
 def main():
+    import sys
+    if "--cut" in sys.argv:  # alternate masters live in their own modules
+        cut = sys.argv[sys.argv.index("--cut") + 1]
+        assert cut == "30", f"unknown cut {cut!r} (known: 30)"
+        sys.path.insert(0, HERE)
+        import score30  # re-imports this file as module `audio` with fresh buses
+        score30.main()
+        return
     with open(os.path.join(HERE, "timeline.json")) as f:
         tl = json.load(f)
     assert abs(tl["duration"] - DUR) < 1e-9

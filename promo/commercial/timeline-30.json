@@ -1,0 +1,51 @@
+{
+  "_doc": "v3, 30-second master. Shared clock for the picture (index.html?cut=30) and the sound (audio.py --cut 30). Seconds. Research-driven: cold open on the problem, scenes <= 6 s, one turn line, real proof on mainnet, one call to action, captions readable with sound off.",
+  "duration": 30.0,
+  "fps": 30,
+  "scenes": [
+    { "id": "hook",   "start": 0.0,  "end": 8.0,  "mood": "cold open mid-race: fast, tense, driving from frame 0" },
+    { "id": "turn",   "start": 8.0,  "end": 9.4,  "mood": "hard stop: silence, one coin clink, the question" },
+    { "id": "sealed", "start": 9.4,  "end": 14.6, "mood": "light pulse, then drop to silence at lights_out, ticks" },
+    { "id": "reveal", "start": 14.6, "end": 21.0, "mood": "fast rising build, bright resolved hit on DRAW, happy loop" },
+    { "id": "proof",  "start": 21.0, "end": 25.4, "mood": "confident groove" },
+    { "id": "end",    "start": 25.4, "end": 30.0, "mood": "victory jingle, final note rings out" }
+  ],
+  "events": [
+    { "t": 0.0,  "type": "cold_open",    "note": "maze already lit, bot already running; music starts on beat 1" },
+    { "t": 0.2,  "type": "caption",      "note": "TOKEN LAUNCHES ARE A RACE." },
+    { "t": 0.0,  "type": "pellet_bot",   "note": "bot eats a pellet every 0.1 s from 0.0 to 2.9 (30 pellets); price HUD climbs 0.10 -> 0.40 by 5.0" },
+    { "t": 2.0,  "type": "caption",      "note": "THE FASTEST BOT WINS IT." },
+    { "t": 3.2,  "type": "crowd_go",     "note": "12 coins leave the START box late" },
+    { "t": 3.6,  "type": "pellets_crowd","note": "4 crowd pellets at 3.6, 4.0, 4.4, 4.8 (ana, chloe, emi, ines)" },
+    { "t": 5.0,  "type": "greyout",      "note": "8 coins grey out every 0.2 s from 5.0 to 6.4" },
+    { "t": 6.6,  "type": "hud",          "note": "BOT PAID 0.1375 · CROWD PAID 0.275" },
+    { "t": 7.0,  "type": "stamp",        "note": "BOT WINS + 8 OF 12 GOT NOTHING, screen shake" },
+
+    { "t": 8.0,  "type": "cut_black",    "note": "hard cut to black, music stops" },
+    { "t": 8.15, "type": "coin_clink",   "note": "one coin drops into a slot" },
+    { "t": 8.3,  "type": "question",     "note": "WHAT IF NOBODY GOT A HEAD START?" },
+
+    { "t": 9.4,  "type": "cut",          "note": "2P · EVEN, everyone already gathered around the vault" },
+    { "t": 9.6,  "type": "capsules",     "note": "13 capsule drops every 0.2 s from 9.6 to 12.0, lock click each" },
+    { "t": 12.2, "type": "lights_out",   "note": "maze dark, only the slot glows: NOBODY SEES A PRICE; music drops out" },
+    { "t": 12.4, "type": "ticks",        "note": "countdown 3, 2, 1, 0: ticks at 12.4, 13.0, 13.6, 14.2 (last higher)" },
+
+    { "t": 14.6, "type": "vault_open",   "note": "CONTINUE? flash, vault opens, light pours out" },
+    { "t": 15.0, "type": "steps",        "note": "13 steps rise every 0.15 s from 15.0 to 16.8, rising pitch; real bids high -> low" },
+    { "t": 17.0, "type": "line_sweep",   "note": "lime line sweeps at 0.220 until 17.6: ONE PRICE · 0.220" },
+    { "t": 17.8, "type": "land",         "note": "everyone at/above the line (bot too) lands on one lime step" },
+    { "t": 18.3, "type": "refund",       "note": "dev (0.20) gets the coin back: REFUND; 11 OF 12 GOT TOKENS" },
+    { "t": 18.8, "type": "stamp_draw",   "note": "DRAW stamp, bright resolved chord" },
+    { "t": 19.5, "type": "caption",      "note": "THE BOT CAN STILL PLAY. IT JUST PAYS WHAT EVERYONE PAYS." },
+
+    { "t": 21.0, "type": "proof_cut",    "note": "pixel-dissolve into a CRT bezel showing the real round page (assets/round1.png): LIVE ON MONAD MAINNET" },
+    { "t": 22.0, "type": "chip",         "note": "UNISWAP V3 POOL · LP LOCKED (GOPLUS)" },
+    { "t": 22.9, "type": "chip",         "note": "500 SIMULATED LAUNCHES: BOT'S SHARE 59% -> 18% (MEDIAN)" },
+    { "t": 23.8, "type": "chip",         "note": "UNDER $0.01 PER BID" },
+
+    { "t": 25.4, "type": "logo",         "note": "coin + EVEN pixel logo lands" },
+    { "t": 26.1, "type": "tagline",      "note": "NOBODY GETS A HEAD START." },
+    { "t": 26.9, "type": "cta",          "note": "LAUNCH OR BID: EVEN-MONAD.VERCEL.APP" },
+    { "t": 27.8, "type": "press_start",  "note": "PRESS START blinks; final note rings to 30.0" }
+  ]
+}
