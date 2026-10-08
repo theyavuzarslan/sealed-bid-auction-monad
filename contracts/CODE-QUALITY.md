@@ -24,11 +24,11 @@ Every commit on this branch was checked the same way:
 
 1. **Bytecode, ABI and storage layout.** Built with `FOUNDRY_CBOR_METADATA=false FOUNDRY_BYTECODE_HASH=none` (metadata off, everything else as in `foundry.toml`: solc 0.8.28, via-IR, 200 runs) and compared with the same build of `master` for `AuctionEngine`, `UniswapV3Adapter`, `TokenFactory`, `LaunchToken`, `ExitAuction` and `DemoVault`: creation bytecode, runtime bytecode, ABI and storage layout (labels, slots, offsets, types). **All 24 artefacts are identical after every commit.** Two clean builds of `master` were first confirmed identical, so the comparison is meaningful. The built `AuctionEngine` ABI also matches `contracts/abi/AuctionEngine.json`, which the frontend copies.
 2. `forge fmt --check`: passes (it did not on `master`).
-3. `forge lint`: exit 0; warnings 184 → 73 (vendor excluded, provably safe casts annotated). The remaining 60 in `src` are the classes already triaged as false positives or accepted in `STATIC-ANALYSIS.md` (timestamps, bounded loops, reentrancy-ordering under `nonReentrant`, intended strict equalities).
-4. `forge test` and `forge test --network monad --hardfork monad:MonadTen`: **104 passed, 0 failed, 3 skipped** in both (same as `master`; the skipped suites are the two scale suites, which run only under `FOUNDRY_PROFILE=scale`, and the fork suite, which needs `--fork-url`). The invariant suite and `PrdConformance.t.sol` are unchanged.
+3. `forge lint`: exit 0; warnings 179 → 73 (179 → 88 with vendor excluded, → 73 with the provably safe casts annotated). The remaining 60 in `src` are the classes already triaged as false positives or accepted in `STATIC-ANALYSIS.md` (timestamps, bounded loops, reentrancy-ordering under `nonReentrant`, intended strict equalities).
+4. `forge test` and `forge test --network monad --hardfork monad:MonadTen`: **104 passed, 0 failed, 3 skipped** in both (same as `master`; the skipped suites are the two scale suites, which run only under `FOUNDRY_PROFILE=scale`, and the fork suite, which needs `--fork-url`). The invariant suite is untouched and `PrdConformance.t.sol` changed only by `forge fmt` whitespace in commit 1. The only non-comment edits to money-path files (`SealingLayer`, `UniformClearing`, `DepositLedger`, `AuctionEngine`, `lib/SafeTransferLib`) are F6 and F8, both bytecode-identical.
 5. Fork suite on Monad mainnet under Monad rules, `forge test --match-path 'test/fork/*' --fork-url https://rpc.monad.xyz --network monad --hardfork monad:MonadTen`: **19 passed**.
 
-NatSpec coverage after the pass (ABI functions and events with a `@notice`/`@dev`): AuctionEngine 53/53, UniswapV3Adapter 10/10, TokenFactory 8/8, ExitAuction 42/42, DemoVault 40/42 (the two gaps are the inherited OpenZeppelin `Deposit`/`Withdraw` events).
+NatSpec coverage after the pass (ABI functions and events with a `@notice`/`@dev`, from `forge inspect … userdoc/devdoc`): AuctionEngine 53/53 (`openRound` checked by hand, since its nested-tuple signature defeats the coverage script), UniswapV3Adapter 10/10, TokenFactory 8/8, ExitAuction 42/42, DemoVault 40/42 (the two gaps are the inherited OpenZeppelin `Deposit`/`Withdraw` events).
 
 ## Findings
 
@@ -49,7 +49,7 @@ Status: **Fixed** on this branch (behaviour identical), **Accepted** (checked, n
 | F9 | Hidden coupling | `SealingLayer.NO_HINT` and `UniformClearing.NONE` are the same sentinel flowing from one base contract to the other, equal only by convention. | Documented at both declarations. (Safe even if they diverged: an invalid hint falls back to walking from the head.) |
 | F10 | Compiler bug exposure | `UniswapV3Adapter` uses `transient` state and is compiled with solc 0.8.28 via-IR, inside the range of the [transient-storage clearing-helper bug](https://soliditylang.org/blog/2026/02/18/transient-storage-clearing-helper-collision-bug/). The trigger is `delete` on a transient variable. **Checked: there is no `delete` anywhere in `src`**; the adapter resets `_entered` and `_repricingPool` by assigning zero, which the advisory states is unaffected. Not exploitable. | Comment in the adapter forbidding `delete` on its transient state while it compiles below 0.8.34. |
 | F11 | Readability | `AuctionEngine.claim`'s `else require(!refunded, …)` branch encodes three cases implicitly; `DemoVault.maxWithdraw/maxRedeem`'s `owner == address(0)` clause only matters before wiring. | Comments spelling out the cases. |
-| F12 | Lint noise | 96 of 184 lint warnings came from vendored OpenZeppelin. | Excluded via `[lint] ignore`. |
+| F12 | Lint noise | 91 of 179 lint warnings came from vendored OpenZeppelin. | Excluded via `[lint] ignore`. |
 
 ### Accepted (checked, no change)
 
@@ -89,3 +89,4 @@ Status: **Fixed** on this branch (behaviour identical), **Accepted** (checked, n
 4. `contracts: member order closer to the Solidity style guide`
 5. `contracts: reattach two NatSpec blocks displaced by the reorder`
 6. `contracts: CODE-QUALITY.md` (this file)
+7. `contracts: CODE-QUALITY.md — measured lint baseline, scope notes`
