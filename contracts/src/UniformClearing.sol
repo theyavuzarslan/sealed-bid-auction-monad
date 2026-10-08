@@ -51,6 +51,49 @@ abstract contract UniformClearing {
     /// @dev Price levels of each auction id, keyed by price.
     mapping(uint256 => mapping(uint256 => Level)) internal _levels;
 
+    /// @notice The existing level just above `price`, to pass as a reveal hint. NONE if there is none.
+    /// @dev O(levels) view, meant for off-chain calls. The book can change before the reveal lands;
+    ///      a stale hint only costs gas, it never reverts.
+    /// @param id    The auction (round) id.
+    /// @param price The price about to be revealed.
+    /// @return hint The lowest existing level strictly above `price`, or NONE.
+    function findHint(uint256 id, uint256 price) external view returns (uint256 hint) {
+        hint = _books[id].head;
+        if (hint == NONE || hint <= price) return NONE;
+        uint256 nxt = _levels[id][hint].next;
+        while (nxt != NONE && nxt > price) {
+            hint = nxt;
+            nxt = _levels[id][hint].next;
+        }
+    }
+
+    /// @notice The clearing state of auction `id`.
+    /// @param id The auction (round) id.
+    /// @return settled        Whether the clearing price is fixed; the other values are final only then.
+    /// @return clearingPrice  P, the lowest price at which a bid fills (0 if there were no bids).
+    /// @return sold           Nominal amount sold: the supply if demand reached it, else total demand.
+    /// @return soldLowerBound A floor on the sum of all allocations (pro-rata rounding loses under one
+    ///                        unit per bid at P).
+    /// @return oversubscribed Whether bids at P are pro-rated.
+    /// @return totalQty       Total amount bid.
+    /// @return levelCount     Number of distinct price levels.
+    function clearingOf(uint256 id)
+        external
+        view
+        returns (
+            bool settled,
+            uint256 clearingPrice,
+            uint256 sold,
+            uint256 soldLowerBound,
+            bool oversubscribed,
+            uint256 totalQty,
+            uint64 levelCount
+        )
+    {
+        Book storage b = _books[id];
+        return (b.settled, b.clearingPrice, b.sold, _soldLowerBound(id), b.oversubscribed, b.totalQty, b.levelCount);
+    }
+
     /// @dev Opens an empty book for `id` with `supply` for sale. Each id can be initialised once.
     function _initBook(uint256 id, uint128 supply) internal {
         require(supply != 0, "zero supply");
@@ -169,48 +212,5 @@ abstract contract UniformClearing {
         Book storage b = _books[id];
         if (!b.oversubscribed) return b.sold;
         return b.sold > b.countAtPrice ? b.sold - b.countAtPrice : 0;
-    }
-
-    /// @notice The existing level just above `price`, to pass as a reveal hint. NONE if there is none.
-    /// @dev O(levels) view, meant for off-chain calls. The book can change before the reveal lands;
-    ///      a stale hint only costs gas, it never reverts.
-    /// @param id    The auction (round) id.
-    /// @param price The price about to be revealed.
-    /// @return hint The lowest existing level strictly above `price`, or NONE.
-    function findHint(uint256 id, uint256 price) external view returns (uint256 hint) {
-        hint = _books[id].head;
-        if (hint == NONE || hint <= price) return NONE;
-        uint256 nxt = _levels[id][hint].next;
-        while (nxt != NONE && nxt > price) {
-            hint = nxt;
-            nxt = _levels[id][hint].next;
-        }
-    }
-
-    /// @notice The clearing state of auction `id`.
-    /// @param id The auction (round) id.
-    /// @return settled        Whether the clearing price is fixed; the other values are final only then.
-    /// @return clearingPrice  P, the lowest price at which a bid fills (0 if there were no bids).
-    /// @return sold           Nominal amount sold: the supply if demand reached it, else total demand.
-    /// @return soldLowerBound A floor on the sum of all allocations (pro-rata rounding loses under one
-    ///                        unit per bid at P).
-    /// @return oversubscribed Whether bids at P are pro-rated.
-    /// @return totalQty       Total amount bid.
-    /// @return levelCount     Number of distinct price levels.
-    function clearingOf(uint256 id)
-        external
-        view
-        returns (
-            bool settled,
-            uint256 clearingPrice,
-            uint256 sold,
-            uint256 soldLowerBound,
-            bool oversubscribed,
-            uint256 totalQty,
-            uint64 levelCount
-        )
-    {
-        Book storage b = _books[id];
-        return (b.settled, b.clearingPrice, b.sold, _soldLowerBound(id), b.oversubscribed, b.totalQty, b.levelCount);
     }
 }

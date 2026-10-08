@@ -78,19 +78,6 @@ abstract contract SealingLayer is DepositLedger {
         _reveal(roundId, price, amount, salt, hint);
     }
 
-    /// @dev Effects (revealed flag, counter) before `_onReveal`, which may make external calls.
-    function _reveal(uint256 roundId, uint96 price, uint96 amount, bytes32 salt, uint256 hint) private {
-        (, uint256 commitEnd, uint256 revealEnd,) = _sealTerms(roundId);
-        require(block.timestamp >= commitEnd && block.timestamp < revealEnd, "reveal window closed");
-        Commitment storage c = commitments[roundId][msg.sender];
-        require(c.hash != bytes32(0) && !c.revealed, "no unrevealed commitment");
-        require(keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash, "hash mismatch");
-        c.revealed = true;
-        ledgers[roundId].reveals += 1;
-        _onReveal(roundId, msg.sender, price, amount, hint);
-        emit Revealed(roundId, msg.sender, price, amount);
-    }
-
     function _depositOf(uint256 roundId) internal view override returns (uint256 deposit) {
         (deposit,,,) = _sealTerms(roundId);
     }
@@ -108,4 +95,17 @@ abstract contract SealingLayer is DepositLedger {
 
     /// @dev Validates the bid and books it. A revert here rolls back the whole reveal.
     function _onReveal(uint256 roundId, address bidder, uint96 price, uint96 amount, uint256 hint) internal virtual;
+
+    /// @dev Effects (revealed flag, counter) before `_onReveal`, which may make external calls.
+    function _reveal(uint256 roundId, uint96 price, uint96 amount, bytes32 salt, uint256 hint) private {
+        (, uint256 commitEnd, uint256 revealEnd,) = _sealTerms(roundId);
+        require(block.timestamp >= commitEnd && block.timestamp < revealEnd, "reveal window closed");
+        Commitment storage c = commitments[roundId][msg.sender];
+        require(c.hash != bytes32(0) && !c.revealed, "no unrevealed commitment");
+        require(keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash, "hash mismatch");
+        c.revealed = true;
+        ledgers[roundId].reveals += 1;
+        _onReveal(roundId, msg.sender, price, amount, hint);
+        emit Revealed(roundId, msg.sender, price, amount);
+    }
 }

@@ -127,6 +127,13 @@ contract UniswapV3Adapter is IDexAdapter {
         address recipient
     );
 
+    modifier nonReentrant() {
+        require(!_entered, "reentrancy");
+        _entered = true;
+        _;
+        _entered = false;
+    }
+
     /// @param factory_         UniswapV3Factory.
     /// @param positionManager_ NonfungiblePositionManager of the same deployment.
     /// @param wmon_            Wrapped MON, the quote token of every pool.
@@ -140,11 +147,9 @@ contract UniswapV3Adapter is IDexAdapter {
         toleranceBps = toleranceBps_;
     }
 
-    modifier nonReentrant() {
-        require(!_entered, "reentrancy");
-        _entered = true;
-        _;
-        _entered = false;
+    /// @dev MON arrives only from unwrapping WMON.
+    receive() external payable {
+        require(msg.sender == wmon, "unexpected MON");
     }
 
     /// @inheritdoc IDexAdapter
@@ -189,6 +194,31 @@ contract UniswapV3Adapter is IDexAdapter {
             SafeTransferLib.sendValue(msg.sender, wmonLeft);
         }
         return (address(positionManager), nftId);
+    }
+
+    /// @notice Pays a repricing swap. Only the pool this adapter is repricing, and only up to 1 wei.
+    /// @param amount0Delta Token0 owed to the pool if positive.
+    /// @param amount1Delta Token1 owed to the pool if positive.
+    /// @param data         abi.encode(token0, token1, fee), checked against the factory.
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
+        address pool = _repricingPool;
+        require(pool != address(0) && msg.sender == pool, "not the pool");
+        (address token0, address token1, uint24 fee) = abi.decode(data, (address, address, uint24));
+        require(factory.getPool(token0, token1, fee) == msg.sender, "not the pool");
+        // casting to 'uint256' is safe because each delta is checked positive first
+        // forge-lint: disable-next-line(unsafe-typecast)
+        if (amount0Delta > 0) _payPool(token0, uint256(amount0Delta));
+        // forge-lint: disable-next-line(unsafe-typecast)
+        if (amount1Delta > 0) _payPool(token1, uint256(amount1Delta));
+    }
+
+    /// @inheritdoc IDexAdapter
+    function supportsFee(uint24 fee) external view returns (bool) {
+        return factory.feeAmountTickSpacing(fee) >= MIN_TICK_SPACING;
+    }
+
+    function targetSqrtPriceX96(address token, uint256 price) external view returns (uint160) {
+        return UniV3PriceMath.sqrtPriceX96For(token, wmon, price);
     }
 
     /// @dev Leaves the pool trading at `target` (or within tolerance of it), or reverts.
@@ -257,27 +287,6 @@ contract UniswapV3Adapter is IDexAdapter {
         token1.safeApprove(npm, 0);
     }
 
-    /// @inheritdoc IDexAdapter
-    function supportsFee(uint24 fee) external view returns (bool) {
-        return factory.feeAmountTickSpacing(fee) >= MIN_TICK_SPACING;
-    }
-
-    /// @notice Pays a repricing swap. Only the pool this adapter is repricing, and only up to 1 wei.
-    /// @param amount0Delta Token0 owed to the pool if positive.
-    /// @param amount1Delta Token1 owed to the pool if positive.
-    /// @param data         abi.encode(token0, token1, fee), checked against the factory.
-    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external {
-        address pool = _repricingPool;
-        require(pool != address(0) && msg.sender == pool, "not the pool");
-        (address token0, address token1, uint24 fee) = abi.decode(data, (address, address, uint24));
-        require(factory.getPool(token0, token1, fee) == msg.sender, "not the pool");
-        // casting to 'uint256' is safe because each delta is checked positive first
-        // forge-lint: disable-next-line(unsafe-typecast)
-        if (amount0Delta > 0) _payPool(token0, uint256(amount0Delta));
-        // forge-lint: disable-next-line(unsafe-typecast)
-        if (amount1Delta > 0) _payPool(token1, uint256(amount1Delta));
-    }
-
     /// @dev Pays the calling pool `amount` of `token`, at most MAX_REPRICE_INPUT.
     function _payPool(address token, uint256 amount) private {
         // More than the 1-wei input means the swap did something other than move an empty pool.
@@ -292,13 +301,4 @@ contract UniswapV3Adapter is IDexAdapter {
     /// @notice The pool sqrtPriceX96 that corresponds to `price` for `token` against WMON.
     /// @param token The launch token.
     /// @param price MON wei per 1e18 token units.
-
-    function targetSqrtPriceX96(address token, uint256 price) external view returns (uint160) {
-        return UniV3PriceMath.sqrtPriceX96For(token, wmon, price);
-    }
-
-    /// @dev MON arrives only from unwrapping WMON.
-    receive() external payable {
-        require(msg.sender == wmon, "unexpected MON");
-    }
 }

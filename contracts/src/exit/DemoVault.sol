@@ -93,14 +93,14 @@ contract DemoVault is ERC4626 {
 
     // ─── Views ──────────────────────────────────────────────────────────
 
-    /// @notice WMON available for exits right now.
-    function idleAssets() public view returns (uint256) {
-        return IERC20(asset()).balanceOf(address(this)) - strategyAssets;
-    }
-
     /// @notice Idle WMON backing shares the exit adapter has promised to redeem (rounded up).
     function reservedAssets() external view returns (uint256) {
         return _reservedAssets();
+    }
+
+    /// @notice WMON available for exits right now.
+    function idleAssets() public view returns (uint256) {
+        return IERC20(asset()).balanceOf(address(this)) - strategyAssets;
     }
 
     /// @dev Idle buffer plus the strategy mark. Equal to the vault's WMON balance, stated explicitly.
@@ -126,15 +126,15 @@ contract DemoVault is ERC4626 {
         return m < idleShares ? m : idleShares;
     }
 
+    /// @dev See DECIMALS_OFFSET.
+    function _decimalsOffset() internal pure override returns (uint8) {
+        return DECIMALS_OFFSET;
+    }
+
     /// @dev `previewMint` of the reserved shares: the WMON they redeem for, rounded up.
     function _reservedAssets() private view returns (uint256) {
         address ea = exitAuction;
         if (ea == address(0)) return 0;
         return previewMint(IExitReserve(ea).reservedShares());
-    }
-
-    /// @dev See DECIMALS_OFFSET.
-    function _decimalsOffset() internal pure override returns (uint8) {
-        return DECIMALS_OFFSET;
     }
 }

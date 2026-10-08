@@ -192,6 +192,16 @@ contract AuctionEngine is SealingLayer, UniformClearing {
         }
     }
 
+    /// @dev Only adapters return MON, and only while seeding: anything else would be unaccounted.
+    receive() external payable {
+        require(_seeding && isAdapter[msg.sender], "unexpected MON");
+    }
+
+    /// @notice Accepts ERC-721 transfers (Uniswap v3 positions minted to the engine before locking).
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
     // ─── Open ────────────────────────────────────────────────────────────
 
     /// @notice Open a round and pull `sellAmount` plus the worst-case LP reserve from the caller, who
@@ -663,15 +673,5 @@ contract AuctionEngine is SealingLayer, UniformClearing {
     function _mulDivUp(uint256 a, uint256 b, uint256 d) private pure returns (uint256) {
         uint256 x = a * b;
         return x == 0 ? 0 : (x - 1) / d + 1;
-    }
-
-    /// @dev Only adapters return MON, and only while seeding: anything else would be unaccounted.
-    receive() external payable {
-        require(_seeding && isAdapter[msg.sender], "unexpected MON");
-    }
-
-    /// @notice Accepts ERC-721 transfers (Uniswap v3 positions minted to the engine before locking).
-    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
     }
 }
