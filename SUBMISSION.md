@@ -71,6 +71,40 @@ flowchart LR
 | Head-to-head demo | `demo/` | 73 transactions against the real engine |
 | Security | [AUDIT.md](AUDIT.md) | Two internal reviews, each finding with a proof-of-concept test, all fixed or documented; AgentGuard scan below |
 
+## Second market: institutional vault exits
+
+On 6 Oct 2026 Category Labs published Monad Private Settlement: a design, not live yet, for institutions to run private execution and settlement domains on Monad [src: https://monad.xyz/blog/monad-private-settlement]. The need behind it, moving size without showing your hand, is one Even's exit auction already meets for a vault, with commit-reveal. When a vault's liquid buffer is smaller than redemption demand, holders bid a sealed discount to exit now, everyone who exits pays one clearing discount, and the discount stays in the vault for the holders who stay. `ExitAuction` takes an allowlist root, which fits a permissioned vault (a credit or treasury vault with whitelisted LPs).
+
+**The scenario.** "Treasury Yield Vault", nine allowlisted LPs (a Merkle root of their addresses), one sealed round on the real `ExitAuction` + `DemoVault` on a local chain. Seven LPs want 530,000 WMON out; the idle buffer holds 185,000 (35%). Bids are scenario inputs we chose; every auction number is read from chain after the claims. The FIFO column is a model over the same buffer: requests paid at par in arrival order, with the two fastest desks getting in ahead of the fund's visible request [src: demo/exit/institutional.json, demo/script/InstitutionalExit.s.sol]. Page: https://even-monad.vercel.app/exit#institutional.
+
+| | FIFO queue (model) | Sealed exit round (on-chain) |
+| --- | --- | --- |
+| Who gets the 185,000 WMON | The first two to arrive: Desk D, then Desk B, both ahead of Fund A's request | The four highest discounts: LP E, Desk D, LP G in full, Fund A pro-rata at the margin |
+| Cost of exiting now | Par | 0.75% for every exit, the lowest winning bid |
+| LPs who wanted out and got nothing | 5 of 7, including Fund A and all three small LPs | 3 of 7, each having bid below 0.75%; their shares came back |
+| Paid to the LPs who stay | 0 | 1,387.5 WMON, to every share still in the vault |
+| Exit size visible before the close | Yes, the queue is public | No: each commit is a hash plus the same 1 MON deposit |
+
+| LP | Wants out (WMON) | FIFO: paid now | Sealed bid | Auction: paid now | Exit cost | Accrued on shares kept |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Fund A (large fund) | 250,000 | 0 | 0.75% | 92,302.5 (93k of 250k filled) | 697.5 | +595.8 |
+| Desk B | 120,000 | 110,000 | 0.50% | 0, shares back | — | +232.9 |
+| Desk C | 60,000 | 0 | 0.40% | 0, shares back | — | +174.7 |
+| Desk D | 75,000 | 75,000 | 1.20% | 74,437.5 | 562.5 | — |
+| LP E | 12,000 | 0 | 1.50% | 11,910.0 | 90.0 | — |
+| LP F | 8,000 | 0 | 0.25% | 0, shares back | — | +15.5 |
+| LP G | 5,000 | 0 | 1.00% | 4,962.5 | 37.5 | — |
+| Desk H, LP I (staying) | — | — | — | — | — | +291.1, +77.6 |
+
+Exit cost is the exited shares' value at settlement minus the WMON paid; the 1,387.5 WMON it adds up to is exactly what the shares left in the vault gained. Every 1 MON deposit came back in full; the auction holds no shares, WMON or MON after the claims.
+
+- **Sealed until the close.** During the commit window the chain shows a hash and one uniform deposit per bid, so Fund A's 250,000 WMON exit looks the same as LP G's 5,000; no desk can see another desk's exit size or price before bidding closes. What is public: how many bids and when. Bids open in the reveal window and stay public after the round, by design. Privacy via commit-reveal; snipe-resistant: submission timing no longer determines price.
+- **Allowlist = only the vault's LPs can bid.** In the run, an outside address's commit reverted with "not on allowlist", also when it reused Fund A's valid proof (a proof is bound to its address). The allowlist checks addresses; it is not identity verification, and KYC stays a non-goal.
+- **Settles on Monad.** Commit, reveal, settle and claim are ordinary transactions to `ExitAuction`; exits are paid in WMON from the vault's idle buffer.
+- **Private Settlement.** Monad's Private Settlement design would let institutions run this inside a private domain; today Even does it with commit-reveal on Monad mainnet, and bids become public after the round. Even does not use or integrate Private Settlement. Even's commit-reveal is live on mainnet in the launch engine; the exit vault is not deployed yet.
+- **Mainnet path, not deployed.** `contracts/script/DeployExitMainnet.s.sol` deploys `DemoVault` over real WMON (`0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A`) and an `ExitAuction` with a required allowlist root, as a reference vault with a simulated strategy (its "strategy" is a mark on WMON that never leaves the vault). Simulated on a Monad mainnet fork on 9 Oct 2026, no broadcast: three transactions, 5,492,197 gas, which is about 0.56 MON at the then base fee of 100 gwei plus 2 gwei tip (forge's upper bound at a 202 gwei max fee: 1.11 MON).
+- **Limits.** One round, one scenario, with bids we set; the FIFO side is a model, not a contract; the vault's strategy is simulated (decision 31). Reproduce: `demo/exit/run-institutional.sh`.
+
 ## Measured cost
 
 The whole bidder journey costs about a tenth of a cent. Gas from `contracts/script/FeeProbe.s.sol`, priced by `indexer/fee-report.mjs` at Monad mainnet's live gas price (102 gwei, `eth_gasPrice` on rpc.monad.xyz) and MON = $0.0252 (CoinGecko), 24 Sep 2026:

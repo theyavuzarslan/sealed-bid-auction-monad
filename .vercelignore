@@ -8,3 +8,4 @@
 /demo/*
 !/demo/exit
 /demo/exit/run.sh
+/demo/exit/run-institutional.sh

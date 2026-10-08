@@ -309,7 +309,80 @@
   }
   #missing .panel { margin: 0; max-width: 34rem; }
   #missing p { line-height: 1.6; }
-  body.no-data #missing { display: grid; }
+  body.no-data:not(.view-inst) #missing { display: grid; }
+
+  /* ── Scenario switch: two cabinet buttons, the current one pressed in ── */
+  .scenarios { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 0 0 24px; }
+  .scn {
+    font: 400 var(--t-label-sm)/1.1 var(--f-label); text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 11px 16px; border: 0; border-radius: var(--px); cursor: pointer;
+    background: var(--cabinet-deep); color: var(--purple-glow);
+    box-shadow: 3px 3px 0 var(--night-black);
+    transition: background-color 120ms, transform 80ms, box-shadow 80ms;
+  }
+  .scn:hover { color: var(--marquee-white); background: var(--screen-line); }
+  .scn[aria-pressed="true"] {
+    background: var(--monad-purple); color: var(--marquee-white);
+    transform: translate(3px, 3px); box-shadow: 0 0 0 var(--night-black);
+  }
+  [data-view][hidden] { display: none !important; }
+
+  /* ── Institutional vault ─────────────────────────────────────────── */
+  .inst-screen { grid-template-rows: repeat(5, auto); }
+  .inst-screen .player { grid-row: span 5; }
+  .iq { display: flex; flex-direction: column; gap: 10px; }
+  .iq-row { display: grid; grid-template-columns: 1.6rem 4.4rem minmax(0, 1fr) 7.6rem; gap: 4px 8px; align-items: center;
+    font: 600 var(--t-small)/1.2 var(--f-body); }
+  .iq-pos { font: 400 var(--t-label-sm)/1 var(--f-label); color: var(--screen-label); }
+  .iq-name { font: 400 var(--t-label-sm)/1 var(--f-label); color: var(--purple-glow); white-space: nowrap; }
+  .iq-num { text-align: right; color: var(--purple-glow); white-space: nowrap; }
+  .iq-row.stuck .iq-num { color: var(--berry-lamp); }
+  .iq-why { grid-column: 3 / -1; font: 400 var(--t-label)/1.35 var(--f-body); color: var(--screen-label); }
+  .iq-bar { position: relative; height: 12px; background: var(--screen-line); }
+  .iq-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bezel-grey); }
+  .iq-row.stuck .iq-bar { box-shadow: 0 0 0 2px var(--berry); }
+
+  .ib { display: flex; flex-direction: column; gap: 10px; }
+  .ib-row { display: grid; grid-template-columns: 4.4rem 3.4rem minmax(0, 1fr) 7.6rem; gap: 4px 8px; align-items: center;
+    font: 600 var(--t-small)/1.2 var(--f-body); }
+  .ib-name { font: 400 var(--t-label-sm)/1 var(--f-label); color: var(--purple-glow); white-space: nowrap; }
+  .ib-disc { text-align: right; color: var(--purple-glow); white-space: nowrap; }
+  .ib-num { text-align: right; color: var(--screen-dim); white-space: nowrap; }
+  .ib-row.win .ib-num { color: var(--marquee-white); }
+  .ib-sub { grid-column: 2 / -1; font: 400 var(--t-label)/1.35 var(--f-body); color: var(--screen-label); overflow-wrap: anywhere; }
+  .ib-bar { position: relative; height: 12px; min-width: 0; }
+  .ib-bar .seg { position: absolute; top: 0; bottom: 0; background: var(--screen-line); }
+  .ib-bar .fill { position: absolute; top: 0; bottom: 0; background: var(--purple-lamp); }
+  .ib-bar .cap { position: absolute; top: -5px; bottom: -5px; border-left: 2px dashed var(--purple-glow); }
+  .ib-sealed .ib-disc, .ib-sealed .ib-num { color: var(--screen-dim); }
+  .ib-sealed .ib-sub code { color: var(--screen-label); }
+  .ib-key { margin-top: 12px; font: 400 var(--t-micro)/1.4 var(--f-label); text-transform: uppercase; letter-spacing: 0.05em; color: var(--screen-label); }
+  .ib-row.fresh { animation: step-in 240ms steps(3, end) both; }
+
+  .why { margin: 0 0 18px; padding: 0; list-style: none; display: grid; gap: 14px; }
+  .why li { max-width: 72ch; font-size: var(--t-body-sm); line-height: 1.55; }
+  .why b { font-weight: 700; }
+  .why code { overflow-wrap: anywhere; }
+  .ps-note { margin: 0 0 16px; padding: 12px 14px; background: var(--bezel-grey); font-size: var(--t-body-sm); line-height: 1.55; max-width: 72ch; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 14px; }
+  .lp-table { border-collapse: collapse; min-width: 640px; width: 100%; font-size: var(--t-small); }
+  .lp-table th {
+    text-align: left; padding: 8px 10px 8px 0; border-bottom: 2px solid var(--ink);
+    font: 400 var(--t-label-sm)/1.3 var(--f-label); text-transform: uppercase; color: var(--ink-soft); vertical-align: bottom;
+  }
+  .lp-table td { padding: 9px 10px 9px 0; border-bottom: 2px solid var(--bezel-grey); vertical-align: top; }
+  .lp-table td.num, .lp-table th.num { text-align: right; white-space: nowrap; }
+  .lp-table td.lp { font-weight: 700; white-space: nowrap; }
+  .lp-table td.lp small { display: block; font-weight: 400; color: var(--ink-soft); }
+  .lp-table .bad { color: var(--berry); font-weight: 700; }
+  .lp-table .gain { color: #2c6a00; font-weight: 700; }
+  .lp-table tfoot td { font-weight: 700; border-bottom: 0; }
+
+  @media (max-width: 420px) {
+    .iq-row { grid-template-columns: 1.2rem 3.9rem minmax(0, 1fr) 6.2rem; gap: 4px 6px; }
+    .ib-row { grid-template-columns: 3.9rem 3rem minmax(0, 1fr) 6.2rem; gap: 4px 6px; }
+  }
 
   @media (max-width: 899px) {
     .screen { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; row-gap: 4px; }
@@ -349,7 +422,7 @@
   </header>
 
   <main class="page">
-    <div class="hero-head">
+    <div class="hero-head" data-view="retail">
       <div>
         <p class="kicker">Vault bank run · replay</p>
         <h1>Bank run, <em>twice</em></h1>
@@ -359,7 +432,23 @@
         <p class="replay-label"><span class="chip">Local run</span> A replay of an anvil run, not live data.</p>
       </div>
     </div>
+    <div class="hero-head" data-view="institutional" hidden>
+      <div>
+        <p class="kicker">Institutional vault · one sealed round</p>
+        <h1>Size, <em>sealed</em></h1>
+      </div>
+      <div>
+        <p class="hero-sub" id="iHeroSub">Seven of a permissioned vault's nine LPs want out, and the idle buffer covers about a third of it. 1P waits in a FIFO queue; 2P bids sealed.</p>
+        <p class="replay-label"><span class="chip">Local run</span> One round on anvil, not live data.</p>
+      </div>
+    </div>
 
+    <div class="scenarios" role="group" aria-label="Scenario">
+      <button class="scn" type="button" data-scn="retail" aria-pressed="true">Retail bank run</button>
+      <button class="scn" type="button" data-scn="institutional" aria-pressed="false">Institutional vault</button>
+    </div>
+
+    <div data-view="retail">
     <section class="cabinet" id="cabinet" aria-label="Two-player replay">
       <div class="cabinet-top">
         <span><span class="vs-1">1P FIFO queue</span> vs 2P Exit auction</span>
@@ -446,6 +535,96 @@
         <p class="claims">Snipe-resistant: submission timing no longer determines price · Privacy via commit-reveal</p>
       </div>
     </section>
+    </div>
+
+    <div data-view="institutional" hidden>
+      <section class="cabinet" id="instCabinet" aria-label="Institutional vault: FIFO queue against a sealed exit round">
+        <div class="cabinet-top">
+          <span><span class="vs-1">1P FIFO queue</span> vs 2P Sealed exit round</span>
+          <span class="meter" aria-hidden="true" style="background:none"></span>
+          <button id="iSealBtn" class="btn btn-start btn-sm" type="button" aria-pressed="false">Open the bids</button>
+        </div>
+
+        <div class="screen inst-screen">
+          <section class="player player-1" aria-label="FIFO redemption queue, modelled">
+            <header class="player-head">
+              <div class="player-id"><span class="player-tag">1P</span><span class="player-name">FIFO queue</span></div>
+              <p class="phase">Buffer<b id="iqBuffer">—</b></p>
+            </header>
+            <div class="title-block">
+              <p class="kicker">FIFO redemption queue · model</p>
+              <h2>Fastest out, slowest stuck</h2>
+              <p class="source">Model, not on-chain: the same vault and buffer, requests paid at par in arrival order. A large request sits in a public queue, so the desks watching it move first.</p>
+            </div>
+            <div class="stats">
+              <div class="stat"><span>Paid at par</span><b id="iqPaid">—</b><small>WMON, to the first two</small></div>
+              <div class="stat hot"><span>Still queued</span><b id="iqStuck">—</b><small>WMON, waiting on the strategy</small></div>
+              <div class="stat hot"><span>Got nothing</span><b id="iqNothing">—</b><small id="iqNothingSub">&nbsp;</small></div>
+              <div class="stat hot"><span>Accrued to stayers</span><b>+0</b><small>exits at par pay no one</small></div>
+            </div>
+            <div class="pane">
+              <p class="pane-label">Queue, front first · paid now / requested</p>
+              <div class="iq" id="iq"></div>
+            </div>
+            <div class="player-foot">
+              <p class="note" id="iqNote">&nbsp;</p>
+            </div>
+          </section>
+
+          <section class="player player-2" aria-label="Sealed exit round on anvil">
+            <header class="player-head">
+              <div class="player-id"><span class="player-tag">2P</span><span class="player-name">Sealed round</span></div>
+              <p class="phase"><span id="ibPhase">Bidding open</span><b>1 / 1</b></p>
+            </header>
+            <div class="title-block">
+              <p class="kicker">ExitAuction + allowlist · on anvil</p>
+              <h2>One discount for every desk</h2>
+              <p class="source" id="ibSource">&nbsp;</p>
+            </div>
+            <div class="stats">
+              <div class="stat"><span>Exit capacity</span><b id="ibCap">—</b><small>WMON of idle buffer</small></div>
+              <div class="stat"><span>Clearing discount</span><b id="ibP">sealed</b><small>paid by every exit</small></div>
+              <div class="stat"><span>Paid out now</span><b id="ibPaid">—</b><small id="ibPaidSub">WMON</small></div>
+              <div class="stat good"><span>Accrued to stayers</span><b id="ibAccrued">—</b><small>WMON, everyone still in</small></div>
+            </div>
+            <div class="pane">
+              <p class="pane-label" id="ibLabel">What the chain shows while bidding is open</p>
+              <div class="ib" id="ib"></div>
+              <p class="ib-key" id="ibKey">&nbsp;</p>
+            </div>
+            <div class="player-foot">
+              <p class="note" id="ibNote">&nbsp;</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="lpTitle">
+        <div class="panel-in">
+          <h2 class="panel-title" id="lpTitle">Who gets out, at what cost</h2>
+          <div class="table-wrap" tabindex="0" role="region" aria-labelledby="lpTitle">
+            <table class="lp-table" id="lpTable"></table>
+          </div>
+          <p class="claims" id="lpFoot">&nbsp;</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="whyTitle">
+        <div class="panel-in">
+          <h2 class="panel-title" id="whyTitle">Why sealed bids suit a permissioned vault</h2>
+          <ul class="why" id="whyList"></ul>
+          <p class="ps-note">Monad's Private Settlement design would let institutions run this inside a private domain; today Even does it with commit-reveal on Monad mainnet, and bids become public after the round.
+            <br><small>Private Settlement is a design Category Labs published on 6 Oct 2026, not live yet (<a href="https://monad.xyz/blog/monad-private-settlement" rel="noopener">monad.xyz/blog</a>). Even does not use or integrate it. Even's commit-reveal runs on Monad mainnet in the launch engine; this exit vault is not deployed there yet.</small></p>
+          <dl class="readout">
+            <dt>2P, auction</dt><dd id="iMetaSource">ExitAuction + DemoVault on anvil</dd>
+            <dt>1P, FIFO</dt><dd>A model over the same vault and buffer, not on-chain.</dd>
+            <dt>Replay</dt><dd>Run <code>demo/exit/run-institutional.sh</code> to play the round again, then reload.</dd>
+            <dt>Vault</dt><dd>DemoVault, an ERC-4626 over WMON with a simulated strategy, labelled "Treasury Yield Vault" here. A mainnet deploy script for it exists (<code>contracts/script/DeployExitMainnet.s.sol</code>); it has not been deployed.</dd>
+          </dl>
+          <p class="claims">Snipe-resistant: submission timing no longer determines price · Privacy via commit-reveal</p>
+        </div>
+      </section>
+    </div>
   </main>
 
   <div id="missing">
@@ -756,6 +935,226 @@
     $("replay").addEventListener("click", play);
     window.addEventListener("resize", function () { if (document.body.classList.contains("done") || reduced) frame(TOTAL_MS); });
     play();
+  }
+})();
+</script>
+<script src="institutional.js" onerror="void 0"></script>
+<script>
+// Institutional vault: one sealed round on anvil (2P) against a FIFO model over the same buffer (1P).
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+  function wmon(x) { return Number(BigInt(x)) / 1e18; }
+  function shares(x) { return Number(BigInt(x)) / 1e21; } // DemoVault shares have 21 decimals
+  function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function fmt1(n) { return n.toLocaleString("en-US", { maximumFractionDigits: 1 }); }
+  function k(n) { return n >= 1000 ? fmt1(n / 1000) + "k" : fmt(n); }
+  function pct(bps) { return (bps / 100).toFixed(2) + "%"; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ─── Scenario switch (#institutional deep-links) ─────────────────────
+  var current = null, onShowInst = null;
+  function show(name, user) {
+    if (name === current) return;
+    current = name;
+    each(document.querySelectorAll("[data-view]"), function (v) { v.hidden = v.getAttribute("data-view") !== name; });
+    each(document.querySelectorAll(".scn"), function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-scn") === name)); });
+    document.body.classList.toggle("view-inst", name === "institutional");
+    if (user) {
+      history.replaceState(null, "", name === "institutional" ? "#institutional" : location.pathname + location.search);
+      if (name === "retail" && $("replay")) $("replay").click();
+    }
+    if (name === "institutional" && onShowInst) onShowInst();
+  }
+  each(document.querySelectorAll(".scn"), function (b) {
+    b.addEventListener("click", function () { show(b.getAttribute("data-scn"), true); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash === "#institutional" ? "institutional" : "retail", false); });
+
+  function load() {
+    if (window.EXIT_INSTITUTIONAL) return Promise.resolve(window.EXIT_INSTITUTIONAL);
+    return fetch("institutional.json").then(function (r) { if (!r.ok) throw new Error("missing"); return r.json(); });
+  }
+  load().then(render).catch(function () {
+    $("iq").innerHTML = $("ib").innerHTML = "";
+    $("ibNote").textContent = "No results yet. Run demo/exit/run-institutional.sh, then reload.";
+  }).then(function () {
+    show(location.hash === "#institutional" ? "institutional" : "retail", false);
+  });
+
+  function render(d) {
+    var open = d.open, A = d.auction;
+    var buffer = wmon(d.meta.buffer), demand = wmon(d.meta.exitDemand);
+    var startPps = wmon(open.sharePrice);
+    var deposit = wmon(open.depositWei);
+    var P = A.clearingDiscountBps;
+    var capShares = shares(open.capacityShares);
+    var lps = A.lps.map(function (l) {
+      var sharesAfter = shares(l.sharesAfter);
+      var valueAfter = wmon(l.valueInVaultAfter);
+      return {
+        label: l.label, kind: l.kind,
+        holding: wmon(l.holding), want: wmon(l.exitWant), disc: l.discountBps,
+        bid: shares(l.bidShares), alloc: shares(l.allocatedShares),
+        payout: wmon(l.payout), cost: wmon(l.discountPaid),
+        // Gain on the shares it still holds: their value now minus their value at the starting price.
+        accrued: valueAfter - sharesAfter * startPps
+      };
+    });
+    var byLabel = {};
+    lps.forEach(function (l) { byLabel[l.label] = l; });
+    var bidders = lps.filter(function (l) { return l.want > 0; });
+    var stayersOnly = lps.filter(function (l) { return l.want === 0; });
+    var fifo = d.fifo.queue.map(function (q) {
+      return { label: q.label, pos: q.position, why: q.why, req: wmon(q.requested), paid: wmon(q.paidAtPar), stuck: wmon(q.stuck) };
+    });
+    var fifoBy = {};
+    fifo.forEach(function (q) { fifoBy[q.label] = q; });
+    var accrued = lps.reduce(function (s, l) { return s + l.accrued; }, 0);
+    var winners = bidders.filter(function (l) { return l.alloc > 0; });
+    var marginal = winners.filter(function (l) { return l.alloc < l.bid - 1e-9; })[0];
+    var big = bidders.reduce(function (a, b) { return b.want > a.want ? b : a; });
+    var small = bidders.reduce(function (a, b) { return b.want < a.want ? b : a; });
+
+    $("iHeroSub").textContent = bidders.length + " of a permissioned vault's " + lps.length + " LPs want " + k(demand) +
+      " WMON out; the idle buffer holds " + k(buffer) + " (" + Math.round(100 * buffer / demand) + "%). 1P waits in a FIFO queue; 2P bids sealed.";
+
+    // ─── 1P: FIFO model ──────────────────────────────────────────────
+    var paidFifo = fifo.reduce(function (s, q) { return s + q.paid; }, 0);
+    var stuckFifo = fifo.reduce(function (s, q) { return s + q.stuck; }, 0);
+    var nothing = fifo.filter(function (q) { return q.paid === 0; });
+    var first = fifo.filter(function (q) { return q.paid > 0; });
+    $("iqBuffer").textContent = k(buffer);
+    $("iqPaid").textContent = fmt(paidFifo);
+    $("iqStuck").textContent = fmt(stuckFifo);
+    $("iqNothing").textContent = nothing.length + " of " + fifo.length;
+    $("iqNothingSub").textContent = "LPs, incl. " + nothing.map(function (q) { return q.label; }).filter(function (x) { return x === big.label || x === small.label; }).join(" and ");
+    $("iq").innerHTML = fifo.map(function (q) {
+      var done = q.paid >= q.req - 1e-9;
+      return '<div class="iq-row' + (q.paid < q.req - 1e-9 ? " stuck" : "") + '">' +
+        '<span class="iq-pos">' + q.pos + '</span><span class="iq-name">' + esc(q.label) + '</span>' +
+        '<span class="iq-bar"><i style="width:' + (100 * q.paid / q.req).toFixed(1) + '%"></i></span>' +
+        '<span class="iq-num">' + (done ? "paid " + k(q.req) : k(q.paid) + " / " + k(q.req)) + '</span>' +
+        '<span class="iq-why">' + esc(q.why) + '</span></div>';
+    }).join("");
+    $("iqNote").innerHTML = first.map(function (q) { return "<b>" + esc(q.label) + "</b>"; }).join(" and ") +
+      " got in ahead of " + esc(big.label) + "'s request and took the whole buffer at par. <b class=\"hot\">" + nothing.length +
+      " LPs got nothing</b>, " + esc(big.label) + " included; they wait for the strategy to unwind. Order was set by speed and information, not need.";
+
+    // ─── 2P: the sealed round ────────────────────────────────────────
+    $("ibSource").textContent = "ExitAuction + DemoVault on anvil (chain " + d.meta.chainId + "), allowlist root of " + open.allowlistSize +
+      " LP addresses; numbers read from chain. Privacy via commit-reveal; bids are public after the round, by design.";
+    $("iMetaSource").textContent = d.meta.source + " (chain " + d.meta.chainId + ").";
+    $("ibCap").textContent = fmt(wmon(open.capacityAssets));
+
+    var hashes = {};
+    open.commits.forEach(function (c) { hashes[c.lp] = c.hash; });
+    var sorted = bidders.slice().sort(function (a, b) { return b.disc - a.disc || b.bid - a.bid; });
+    var total = sorted.reduce(function (s, b) { return s + b.bid; }, 0);
+    var scale = Math.max(total, capShares) * 1.02;
+    var capPct = 100 * capShares / scale;
+
+    function sealedRows() {
+      return open.commits.map(function (c) {
+        var h = c.hash;
+        return '<div class="ib-row ib-sealed fresh"><span class="ib-name">' + esc(c.lp) + '</span><span class="ib-disc">·····</span>' +
+          '<span class="ib-bar"><span class="sealed-chip">size hidden</span></span><span class="ib-num">sealed</span>' +
+          '<span class="ib-sub"><code>' + h.slice(0, 10) + "…" + h.slice(-6) + '</code> · ' + fmt(wmon(c.depositWei)) + ' MON deposit</span></div>';
+      }).join("");
+    }
+    function settledRows() {
+      var cum = 0;
+      return sorted.map(function (b) {
+        var left = 100 * cum / scale, width = 100 * b.bid / scale;
+        cum += b.bid;
+        var win = b.alloc > 0;
+        var sub = !win ? "below the clearing discount: all " + k(b.bid) + " back, still in the vault"
+          : b.alloc < b.bid - 1e-9 ? "at the margin: " + k(b.alloc) + " of " + k(b.bid) + " filled pro-rata, " + k(b.bid - b.alloc) + " back"
+          : "all " + k(b.bid) + " out at " + pct(P);
+        return '<div class="ib-row fresh' + (win ? " win" : "") + '"><span class="ib-name">' + esc(b.label) + '</span>' +
+          '<span class="ib-disc">' + pct(b.disc) + '</span>' +
+          '<span class="ib-bar"><i class="seg" style="left:' + left.toFixed(2) + '%;width:' + width.toFixed(2) + '%"></i>' +
+          '<i class="fill" style="left:' + left.toFixed(2) + '%;width:' + (width * b.alloc / b.bid).toFixed(2) + '%"></i>' +
+          '<i class="cap" style="left:' + capPct.toFixed(2) + '%"></i></span>' +
+          '<span class="ib-num">' + (win ? fmt(b.payout, 1) + " W" : "shares back") + '</span>' +
+          '<span class="ib-sub">' + sub + '</span></div>';
+      }).join("");
+    }
+
+    var settled = null;
+    function setState(isSettled) {
+      settled = isSettled;
+      $("iSealBtn").textContent = isSettled ? "Back to bidding" : "Open the bids";
+      $("iSealBtn").setAttribute("aria-pressed", String(isSettled));
+      $("ibPhase").textContent = isSettled ? "Settled" : "Bidding open";
+      $("ibP").textContent = isSettled ? pct(P) : "sealed";
+      $("ibPaid").textContent = isSettled ? fmt(wmon(A.paidOut), 1) : "—";
+      $("ibPaidSub").textContent = isSettled ? "WMON to " + winners.length + " LPs at once" : "WMON, after the round";
+      $("ibAccrued").textContent = isSettled ? "+" + fmt(accrued, 1) : "—";
+      $("ibLabel").textContent = isSettled ? "Revealed bids, highest discount first · filled share" : "What the chain shows while bidding is open";
+      $("ib").innerHTML = isSettled ? settledRows() : sealedRows();
+      $("ibKey").textContent = isSettled
+        ? "Dashed line: exit capacity, " + fmt(capShares) + " WMON of shares. Bids are public after the round, by design."
+        : open.commits.length + " commits, each a hash and the same " + fmt(deposit) + " MON deposit: " + big.label + "'s " + k(big.want) + " exit looks like " + small.label + "'s " + k(small.want) + ".";
+      $("ibNote").innerHTML = isSettled
+        ? winners.length + " LPs exit at <b class=\"good\">" + pct(P) + "</b> off, whatever they bid" +
+          (marginal ? "; " + esc(marginal.label) + " fills pro-rata at the margin" : "") +
+          ". The <b class=\"good\">" + fmt(accrued, 1) + " WMON</b> of discount stays in the vault for every share still in."
+        : open.commits.length + " sealed bids from allowlisted LPs. An outsider's commit reverted: <b>“" + esc(open.outsiderNoProof.replace(/^reverted: /, "")) + "”</b>.";
+    }
+    $("iSealBtn").addEventListener("click", function () { autoTimer && clearTimeout(autoTimer); setState(!settled); });
+
+    // First view: the commit window, then the result (a two-beat replay).
+    var autoTimer = null, played = false;
+    onShowInst = function () {
+      if (played) return;
+      played = true;
+      if (reduced) { setState(true); return; }
+      setState(false);
+      autoTimer = setTimeout(function () { setState(true); }, 2600);
+    };
+    setState(true);
+
+    // ─── Table: per LP ────────────────────────────────────────────────
+    var head = '<thead><tr><th>LP</th><th class="num">Holding</th><th class="num">Wants out</th>' +
+      '<th class="num">FIFO: paid now</th><th class="num">Sealed bid</th><th class="num">Auction: paid now</th>' +
+      '<th class="num">Exit cost</th><th class="num">Accrued on shares kept</th></tr></thead>';
+    var rows = lps.map(function (l) {
+      var q = fifoBy[l.label];
+      var fifoCell = !q ? "stays" : q.paid === 0 ? '<span class="bad">0</span>' : q.paid < q.req ? fmt(q.paid) + ' <small>of ' + k(q.req) + '</small>' : fmt(q.paid);
+      var paidCell = l.want === 0 ? "stays" : l.alloc === 0 ? "0 <small>shares back</small>" : fmt(l.payout, 1) + (l.alloc < l.bid - 1e-9 ? ' <small>' + k(l.alloc) + ' of ' + k(l.bid) + '</small>' : "");
+      return '<tr><td class="lp">' + esc(l.label) + '<small>' + esc(l.kind) + '</small></td>' +
+        '<td class="num">' + fmt(l.holding) + '</td><td class="num">' + (l.want ? fmt(l.want) : "—") + '</td>' +
+        '<td class="num">' + fifoCell + '</td><td class="num">' + (l.want ? pct(l.disc) : "—") + '</td>' +
+        '<td class="num">' + paidCell + '</td><td class="num">' + (l.cost ? fmt(l.cost, 1) : "—") + '</td>' +
+        '<td class="num">' + (l.accrued > 0.05 ? '<span class="gain">+' + fmt(l.accrued, 1) + '</span>' : "—") + '</td></tr>';
+    }).join("");
+    var costTotal = lps.reduce(function (s, l) { return s + l.cost; }, 0);
+    var foot = '<tfoot><tr><td>All ' + lps.length + '</td><td class="num">' + fmt(lps.reduce(function (s, l) { return s + l.holding; }, 0)) + '</td>' +
+      '<td class="num">' + fmt(demand) + '</td><td class="num">' + fmt(paidFifo) + '</td><td class="num">' + pct(P) + '</td>' +
+      '<td class="num">' + fmt(wmon(A.paidOut), 1) + '</td><td class="num">' + fmt(costTotal, 1) + '</td>' +
+      '<td class="num">+' + fmt(accrued, 1) + '</td></tr></tfoot>';
+    $("lpTable").innerHTML = head + '<tbody>' + rows + '</tbody>' + foot;
+    $("lpFoot").textContent = "Auction columns read from chain after every claim · FIFO is a model · exit cost = the exited shares' value at settlement minus the WMON paid · every bid's " +
+      fmt(deposit) + " MON deposit came back in full";
+
+    // ─── Why it fits ──────────────────────────────────────────────────
+    var hNames = stayersOnly.map(function (l) { return l.label; }).join(" and ");
+    var why = [
+      "<b>Size and price stay sealed until bidding closes.</b> While the commit window is open the chain shows a hash and the same " + fmt(deposit) +
+        " MON deposit per bid, so " + esc(big.label) + "'s " + fmt(big.want) + " WMON exit looks like " + esc(small.label) + "'s " + fmt(small.want) +
+        ". No desk can see another desk's exit size or price before the close, so there is no visible large redemption to get in front of. Public during bidding: how many bids, and when. Bids open in the reveal window and stay public after the round, by design.",
+      "<b>One discount for everyone.</b> Every exit paid " + pct(P) + ", the lowest winning bid, whether it bid " + pct(P) + " or " + pct(sorted[0].disc) +
+        ". The highest discounts exit first, the marginal bid fills pro-rata, unfilled shares go back. Snipe-resistant: submission timing no longer determines price.",
+      "<b>The LPs who stay are paid for the liquidity.</b> The discount stays in the vault: +" + fmt(accrued, 1) + " WMON across every share still in, including " +
+        esc(hNames) + ", who never bid. In the FIFO queue exits are paid at par, nobody is paid for waiting, and whoever moves first takes the buffer.",
+      "<b>Only the vault's LPs can bid.</b> The round's allowlist is a Merkle root of the " + open.allowlistSize + " LP addresses, fixed in the contract. In this run an outside address's commit reverted with “" +
+        esc(open.outsiderNoProof.replace(/^reverted: /, "")) + "”, and again with " + esc(lps[0].label) + "'s valid proof, because a proof is bound to its own address. It checks addresses, not identities.",
+      "<b>Everything settles on Monad.</b> Commit, reveal, settle and claim are ordinary transactions to <code>ExitAuction</code>; exits are paid in WMON from the vault's idle buffer and the deposit comes back in full. This run used a local chain; a mainnet deploy script for this vault exists, and it is not deployed yet."
+    ];
+    $("whyList").innerHTML = why.map(function (w) { return "<li>" + w + "</li>"; }).join("");
   }
 })();
 </script>
