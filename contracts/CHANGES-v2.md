@@ -20,6 +20,13 @@ Verdict: no significant issues. No reentrancy path through `_pushRefund`, `withd
 3. **Documented.** A bidder contract that rejects MON must be able to call `withdrawOwed(to)` to collect; a contract with neither cannot recover its refund. Ordinary wallets and passkey accounts are unaffected.
 4. **Fixed in the app.** "Settled" no longer implies "MON received": the round page reads `refundsOwed` and shows "Withdraw owed refund" when anything is owed.
 
+## Second independent review (Codex, gpt-5.6-sol, high effort)
+
+Verdict: no critical, high or medium issue. It confirmed no exploitable reentrancy through `_pushRefund` (including read-only reentrancy through public views), that a failed push moves value from `roundBalance` to `totalOwed` exactly once, and that creator proceeds, LP seeding or abandonment, unrevealed burns and `sweepDust` cannot spend owed refunds. Findings:
+
+1. **Fixed (low).** `ExitAuction` trusted the amount `redeem` returned and left any surplus out of the round's counters. It now measures the WMON that actually arrived, requires it to cover the quote, sends any surplus to the vault, records it in `assetsRedeemed` and `donated`, and emits `ExitSurplus`. Tests: the double-payment case checks the counters, and a vault that reports more than it transfers can no longer spend stray WMON held by the auction.
+2. **Documented (info).** An EIP-7702-delegated wallet whose code refuses refunds must be able to call `withdrawOwed` (or have enough MON above Monad's 10 MON reserve to send that transaction) to collect; the refund stays fully backed meanwhile.
+
 Not in v2 (after the hackathon): time-locked auto-reveal (`revealFor`), custom errors, event tweaks (CODE-QUALITY.md P1, P2, P5).
 
 Deploying v2 means a new engine address; round 1 stays on the v1 engine and stays visible on the explorer.

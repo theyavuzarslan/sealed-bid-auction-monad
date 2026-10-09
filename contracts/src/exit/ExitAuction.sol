@@ -6,6 +6,7 @@ import {UniformClearing} from "../UniformClearing.sol";
 import {SafeTransferLib} from "../lib/SafeTransferLib.sol";
 import {Math} from "../vendor/openzeppelin/utils/math/Math.sol";
 import {DemoVault} from "./DemoVault.sol";
+import {IERC20Minimal} from "../interfaces/ILiquidity.sol";
 
 /// @title ExitAuction — sealed-bid exit priority for a vault (use case 2, 10-decisions.md #31, #34)
 /// @notice Round lifecycle: openExitRound → commit → reveal → settle → claim (exit + refund).
@@ -118,6 +119,9 @@ contract ExitAuction is SealingLayer, UniformClearing {
         uint256 payout,
         uint256 donated
     );
+    /// @notice The vault paid `surplus` more than its quote for `bidder`'s exit; it went back to the vault
+    ///         with the donation and is included in the round's `assetsRedeemed` and `donated`.
+    event ExitSurplus(uint256 indexed roundId, address indexed bidder, uint256 surplus);
     /// @notice A bidder's MON deposit was refunded.
     event DepositRefunded(uint256 indexed roundId, address indexed bidder, uint256 amount);
 
@@ -285,13 +289,22 @@ contract ExitAuction is SealingLayer, UniformClearing {
         emit ExitClaimed(roundId, bidder, alloc, back, assets, payout, donation);
 
         if (alloc != 0) {
-            uint256 got = vault.redeem(alloc, address(this), address(this));
+            // What actually arrived, measured, not what the vault reports (Codex review, gpt-5.6).
+            uint256 before = IERC20Minimal(asset).balanceOf(address(this));
+            vault.redeem(alloc, address(this), address(this));
+            uint256 got = IERC20Minimal(asset).balanceOf(address(this)) - before;
             // ERC-4626: previewRedeem never exceeds what redeem returns. Anything above the quote
-            // belongs to the shareholders who stay, so it goes back to the vault with the donation.
+            // belongs to the shareholders who stay, so it goes back to the vault with the donation,
+            // and the round's counters record it. Under the lock, so the late writes cannot be raced.
             require(got >= assets, "redeem short");
+            uint256 surplus = got - assets;
+            if (surplus != 0) {
+                r.assetsRedeemed += surplus;
+                r.donated += surplus;
+                emit ExitSurplus(roundId, bidder, surplus);
+            }
             if (payout != 0) asset.safeTransfer(bidder, payout);
-            uint256 toVault = donation + (got - assets);
-            if (toVault != 0) asset.safeTransfer(address(vault), toVault);
+            if (donation + surplus != 0) asset.safeTransfer(address(vault), donation + surplus);
         }
         if (back != 0) address(vault).safeTransfer(bidder, back);
     }

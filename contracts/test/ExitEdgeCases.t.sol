@@ -197,10 +197,34 @@ contract ExitEdgeCasesTest is ExitBase {
 
     function test_Redeem_DoublePayment_AllSurplusToTheVault() public {
         pv.setAdjust(type(int256).max);
-        (uint256 r, uint256 payout,) = _oneExit();
+        (uint256 r, uint256 payout, uint256 donation) = _oneExit();
+        (,, uint256 assets,,) = auction.quote(r, alice);
         _claim(r, alice);
         assertEq(wmon.balanceOf(alice), payout);
         assertEq(wmon.balanceOf(address(auction)), 0, "auction keeps nothing");
+        // The round's counters record what actually moved (Codex review, gpt-5.6): twice the quote
+        // redeemed, and the surplus counted with the donation.
+        ExitAuction.ExitRound memory er = auction.getRound(r);
+        assertEq(er.assetsRedeemed, 2 * assets, "actual redeemed amount recorded");
+        assertEq(er.donated, donation + assets, "surplus counted as donated");
+    }
+
+    /// A vault that reports more than it transfers cannot make the auction pay out of stray WMON:
+    /// the auction measures what arrived instead of trusting the return value.
+    function test_Redeem_LyingVault_CannotSpendStrayFunds() public {
+        pv.setAdjust(type(int256).max);
+        pv.setLie(true);
+        (uint256 r, uint256 payout, uint256 donation) = _oneExit();
+        (,, uint256 assets,,) = auction.quote(r, alice);
+        vm.deal(address(this), 1_000 ether); // stray WMON sent to the auction by mistake
+        wmon.deposit{value: 1_000 ether}();
+        wmon.transfer(address(auction), 1_000 ether);
+        uint256 vaultBefore = wmon.balanceOf(address(vault));
+        _claim(r, alice);
+        assertEq(wmon.balanceOf(alice), payout);
+        assertEq(wmon.balanceOf(address(auction)), 1_000 ether, "stray WMON untouched");
+        assertEq(wmon.balanceOf(address(vault)), vaultBefore - assets + donation, "vault gets only the donation");
+        assertEq(auction.getRound(r).assetsRedeemed, assets, "only what arrived is recorded");
     }
 
     function test_Redeem_ShortPaymentReverts() public {

@@ -54,6 +54,7 @@ Everything below was run on 9 Oct 2026 on branch `contracts-v2` with forge 1.8.3
 | Second internal review (23 Sep), adversarial, on a copy | The rewritten engine | No path that loses or double-spends MON or tokens. 1 High (LP's MON drainable after a "relaxed" re-seed), 2 Medium, 3 Low: all fixed; every proof of concept now asserts the attack fails (`test/AuditRegressions.t.sol`) |
 | Static-analysis triage (6–9 Oct), [STATIC-ANALYSIS.md](contracts/STATIC-ANALYSIS.md) | v1 | One manual finding, O1: a bidder contract that rejects MON could block its round's creator proceeds and dust sweep. **Fixed in v2** (owed refunds) |
 | Independent read-only review of v2 (Codex, gpt-5.5) | v2 diff | No significant issue. 4 low/info: 2 fixed (exit windows capped at 30 days; the app shows owed refunds), 1 accepted, 1 documented ([CHANGES-v2.md](contracts/CHANGES-v2.md)) |
+| Second independent review of v2 (Codex, gpt-5.6-sol, high effort) | v2 diff since `mainnet-v1` | No critical, high or medium issue; reentrancy (including read-only), owed-refund isolation and every accounting path checked. 1 low fixed (ExitAuction now measures what the vault actually paid and records any surplus), 1 info documented (EIP-7702 wallets that refuse refunds must call `withdrawOwed`) |
 | This pass | v2 money path | **No bug found in `src/`.** Gaps were in the tests: 193 mutants that survived the earlier suite are now killed by new tests, and two existing tests were found to stop silently after their first expected revert (below) |
 
 ### Tests
