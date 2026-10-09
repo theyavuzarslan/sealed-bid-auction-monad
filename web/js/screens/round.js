@@ -390,6 +390,10 @@ export function renderRound(el, app, roundIdRaw) {
 
   function revealHtml() {
     const ph = phase();
+    if (ph === PHASE.Reveal && (!me() || !s.me.committed)) {
+      return panel("panel-p2", "Continue?", `<p>Bidding is closed. Bidders are revealing their sealed bids now; nobody can add or change one.</p>
+        <p class="note" style="margin-top:14px">One price is called for everyone when the reveal window closes, ${esc(fmtTime(s.round.revealEnd))}.</p>`, "reveal window");
+    }
     if (!me() || !s.me.committed || ph === PHASE.Commit) return "";
     if (s.me.revealed) {
       return ph === PHASE.Reveal ? panel("panel-p2", "Continued", `<p class="ok">Your bid is in the book. Results come when the reveal window closes.</p>`, "revealed") : "";
