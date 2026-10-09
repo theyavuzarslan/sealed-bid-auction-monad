@@ -572,24 +572,38 @@ contract ExitAuctionTest is ExitBase {
     }
 
     /// Rounds shorter than the minimum windows are refused at construction.
+    /// try/catch, not vm.expectRevert: forge 1.8 deploys `new` in tests through vm.deployCode, and an
+    /// expected revert there ends the test, so the checks after the first one never ran.
     function test_Constructor_RejectsShortWindows() public {
         ExitAuction.Config memory c = _config();
         c.commitDuration = uint64(auction.MIN_COMMIT_WINDOW() - 1);
-        vm.expectRevert("window too short");
-        new ExitAuction(vault, c);
+        try new ExitAuction(vault, c) {
+            revert("deployment should have reverted");
+        } catch Error(string memory why) {
+            assertEq(why, "window too short");
+        }
         c = _config();
         c.revealDuration = uint64(auction.MIN_REVEAL_WINDOW() - 1);
-        vm.expectRevert("window too short");
-        new ExitAuction(vault, c);
+        try new ExitAuction(vault, c) {
+            revert("deployment should have reverted");
+        } catch Error(string memory why) {
+            assertEq(why, "window too short");
+        }
         // A huge duration would wrap the uint64 round ends (Codex review, finding 1).
         c = _config();
         c.commitDuration = type(uint64).max;
-        vm.expectRevert("window too long");
-        new ExitAuction(vault, c);
+        try new ExitAuction(vault, c) {
+            revert("deployment should have reverted");
+        } catch Error(string memory why) {
+            assertEq(why, "window too long");
+        }
         c = _config();
         c.revealDuration = uint64(auction.MAX_EXIT_WINDOW() + 1);
-        vm.expectRevert("window too long");
-        new ExitAuction(vault, c);
+        try new ExitAuction(vault, c) {
+            revert("deployment should have reverted");
+        } catch Error(string memory why) {
+            assertEq(why, "window too long");
+        }
     }
 
     /// Winners are paid on the settlement share price, so claim order cannot move money between them.

@@ -1,22 +1,44 @@
-# Static analysis — Slither and Aderyn on `contracts/src`
+# Static analysis — Slither, Aderyn and forge lint on `contracts/src`
+
+## v2 re-run (9 Oct 2026, branch `contracts-v2`, solc 0.8.34)
+
+All three tools were re-run on the v2 sources (owed refunds, minimum and maximum windows, `redeem >= previewRedeem`, solc 0.8.34; see `CHANGES-v2.md`). Same scope as before: `contracts/src` without `src/vendor/`. The raw reports in `reports/` are the v2 runs; the v1 runs are in git history (tag `mainnet-v1`), and the v1 `forge lint` output is kept as `reports/forge-lint-v1.txt`.
+
+| Tool | Version | v2 result | Change from v1 | Raw report |
+| --- | --- | --- | --- | --- |
+| Slither | 0.11.6 | 63 results (6 High-impact, 22 Medium, 33 Low, 2 Informational), same detector set | **Gone:** `incorrect-equality` on `ExitAuction._exit` (`got == assets`, item 2 below; v2 uses `got >= assets`). **New:** `assembly` (Informational) on `DepositLedger._pushRefund` | `reports/slither.txt`, `reports/slither-checklist.md`, `reports/slither-summary.json` |
+| Aderyn | 0.6.8 | 4 High, 9 Low issue types | H-1 now also lists `DepositLedger.withdrawOwed` (and no longer the exit-auction refund paths, which use `_pushRefund`); L-6 PUSH0 and L-10 unspecific pragma are gone (every `src` contract is pinned to `0.8.34`) | `reports/aderyn.md` |
+| `forge lint` | forge 1.8.3 | 481 diagnostics, 249 outside `vendor/`, no `error`-level lint | **New:** `arbitrary-send-eth` on `DepositLedger.withdrawOwed` (#91), `reentrancy-events` on `_pushRefund` (#109), `inline-assembly` note on `_pushRefund` (#103). **Gone:** the 15 `unsafe-typecast` warnings (each cast now carries a `forge-lint: disable-next-line` with its bound, CODE-QUALITY.md) and the `arbitrary-send-eth` on the old refund `sendValue` | `reports/forge-lint.txt` |
+
+**Triage of everything new in v2. No true positive.**
+
+| Finding | Tool | Verdict | Why |
+| --- | --- | --- | --- |
+| `arbitrary-send-eth` / Aderyn H-1 on `withdrawOwed(to)` | forge lint, Aderyn | FP | The amount is `refundsOwed[msg.sender]`, zeroed before the transfer. The caller chooses where its *own* owed refund goes; nobody can move another bidder's balance. Proved for a symbolic bid (PROPERTIES.md O2) and checked by the invariant suite (`invariant_OwedRefundsAccountedFor`). |
+| `assembly` / `inline-assembly` on `_pushRefund` | Slither, forge lint | Acc | One `call(gasLimit, bidder, amount, 0, 0, 0, 0)`: a fixed 50,000-gas stipend and no return-data copy, so a recipient can neither make the push revert by burning gas nor make the caller pay to copy a large revert. A failed push is recorded as owed. Reviewed independently (CHANGES-v2.md, "Independent review"). |
+| `reentrancy-events` on `RefundOwed` | forge lint | Acc | Emitted after the failed call, under the engine-wide `nonReentrant` lock; the state it reports (`refundsOwed`, `totalOwed`) is written in the same branch. |
+
+Every other v2 finding is the same pattern, at shifted line numbers, as a v1 finding triaged below, with the same verdict.
+
+## v1 (6 Oct 2026)
 
 Run on 6 Oct 2026 against `master` at `b8e2835` (no changes to `src/`). Scope: everything under `contracts/src` except `src/vendor/` (OpenZeppelin). `lib/` (forge-std), `test/` and `script/` are excluded.
 
 | Tool | Version | Detectors | Findings | Raw report |
 | --- | --- | --- | --- | --- |
-| Slither | 0.11.6 (solc 0.8.28 via `forge build`) | 102 | 63 (2 High-impact checks, 4 Medium, 3 Low, 1 Informational) | `reports/slither.txt`, `reports/slither-checklist.md`, `reports/slither-summary.json` |
-| Aderyn | 0.6.8 | 88 | 4 High, 11 Low (issue types) | `reports/aderyn.md` |
+| Slither | 0.11.6 (solc 0.8.28 via `forge build`) | 102 | 63 (2 High-impact checks, 4 Medium, 3 Low, 1 Informational) | v1 reports in git history; `reports/` now holds the v2 run |
+| Aderyn | 0.6.8 | 88 | 4 High, 11 Low (issue types) | v1 report in git history |
 
 The full Slither JSON (2 MB) is not kept; `slither-summary.json` keeps every finding's check, impact, confidence, location and description.
 
-## For the main session: what needs a decision
+### For the main session: what needed a decision
 
 **No true positive on the launch engine's money path.** Every High and Medium from both tools is a false positive or an accepted design choice (triage below). Two items deserve a decision; neither came out as a tool "High".
 
 1. **Fixed in v2 (`contracts-v2` branch, see CHANGES-v2.md).** ~~**O1 — a bidder that cannot receive MON can never be settled (manual, found while triaging Slither's reentrancy/`sendValue` output). Low.** Refunds are pushed (`SafeTransferLib.sendValue`) on every path: `claim`, `claimRefund` and `claimTokens` all call `_refund` first. A contract bidder whose `receive` reverts therefore stays unsettled forever. Its own deposit and tokens are stuck (its loss), but so are (a) the creator's share of its payment, since `collected` only grows on refund, and (b) `sweepDust`, which waits for `claims == reveals`; dust tokens stay in the engine. Other bidders and other rounds are unaffected, and MON accounting stays exact (the deposit sits in `roundBalance`). Cost to the griefer is its whole deposit. PoC that pins the current behaviour: `test/Observations.t.sol::test_O1_MonRejectingWinner_BlocksItsPaymentAndDustSweep`. Possible fixes, if wanted: on a failed send, credit a pull balance (`withdrawRefund`) instead of reverting, or let `sweepDust`/`collected` stop waiting for a bidder after a deadline. `ExitAuction` also pushes its MON refunds, but there the exit and the refund are claimed independently, so only the bidder's own deposit is affected.~~ v2 pushes refunds with a fixed 50,000-gas stipend and records a failed push as an owed refund (`refundsOwed`, `withdrawOwed(to)`); tests: `test/Observations.t.sol`.
 2. **`ExitAuction._exit` requires `vault.redeem(...) == previewRedeem(...)` (Slither `incorrect-equality`, `src/exit/ExitAuction.sol#242`). Accepted today, a liveness bug if generalised.** ERC-4626 lets `redeem` return *more* than `previewRedeem` in the same transaction. The constructor takes the project's own `DemoVault` (OpenZeppelin ERC-4626, where the two are equal), so it holds today. If the exit auction is ever pointed at another vault, use `got >= assets` and decide where the surplus goes. Use case 2 only.
 
-## Slither triage (63)
+### Slither triage (63)
 
 TP = true positive, FP = false positive, Acc = accepted (real pattern, intended).
 
@@ -43,7 +65,7 @@ TP = true positive, FP = false positive, Acc = accepted (real pattern, intended)
 | 39–61 | timestamp | Low | 23 functions (windows, vesting, grace period) | Acc | Windows are hours long and vesting runs for days, so timestamp drift of a few seconds cannot change an outcome. Time-based windows are the design. |
 | 62 | assembly | Info | `UniV3PriceMath.mulDiv` | Acc | 512-bit multiply needs `mulmod`; fuzzed. |
 
-## Aderyn triage (4 High, 11 Low issue types)
+### Aderyn triage (4 High, 11 Low issue types)
 
 | ID | Issue | Instances | Verdict | Why |
 | --- | --- | --- | --- | --- |
@@ -63,9 +85,9 @@ TP = true positive, FP = false positive, Acc = accepted (real pattern, intended)
 | L-10 | Unspecific pragma | 9 files | Acc | `^0.8.24`; builds are pinned to 0.8.28 by `foundry.toml`. |
 | L-11 | Unused state variable | `UniswapV3Adapter.REPRICE_GAS` | FP | Used as `{gas: REPRICE_GAS}` in `_preparePool`. |
 
-## forge lint (9 Oct 2026)
+### forge lint on v1 (9 Oct 2026)
 
-`forge lint src --severity high med low info gas code-size`, forge 1.8.3, on the same `src/` (unchanged since the Slither and Aderyn runs). 496 diagnostics, 264 outside `src/vendor/` (unmodified OpenZeppelin). Summary and the full text of every warning outside `vendor/`: `reports/forge-lint.txt`.
+`forge lint src --severity high med low info gas code-size`, forge 1.8.3, on the same `src/` (unchanged since the Slither and Aderyn runs). 496 diagnostics, 264 outside `src/vendor/` (unmodified OpenZeppelin). Summary and the full text of every warning outside `vendor/`: `reports/forge-lint-v1.txt`.
 
 **No new true positive.** Every warning outside `vendor/` is either the same pattern Slither or Aderyn already reported (triaged above) or one of the new items below. The 232 vendor diagnostics (including the only `controlled-delegatecall` and `encode-packed-collision`) are in OpenZeppelin code used by the demo vault and token factory, not on the launch engine's money path.
 

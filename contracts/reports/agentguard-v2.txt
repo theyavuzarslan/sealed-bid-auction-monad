@@ -1,0 +1,8 @@
+== agentguard scan src (AgentGuard CLI 1.1.28, 2026-10-09, branch contracts-v2)
+CRITICAL: Found 4 findings: dangerous Web3 patterns
+Tags: HIDDEN_TRANSFER, WALLET_DRAINING
+== each file on its own (the CLI reports only tags; it scans directories, so each file is copied into its own directory)
+src/lib/SafeTransferLib.sol: MEDIUM: Found 1 findings: various security concerns Tags: HIDDEN_TRANSFER 
+src/vendor/openzeppelin/interfaces/IERC1363.sol: CRITICAL: Found 1 findings: dangerous Web3 patterns Tags: WALLET_DRAINING 
+src/vendor/openzeppelin/token/ERC20/IERC20.sol: CRITICAL: Found 1 findings: dangerous Web3 patterns Tags: WALLET_DRAINING 
+src/vendor/openzeppelin/utils/Address.sol: MEDIUM: Found 1 findings: various security concerns Tags: HIDDEN_TRANSFER 

@@ -145,10 +145,16 @@ contract UniswapV3AdapterTest is Test {
 
     function test_Constructor_Checks() public {
         MockToken t = new MockToken();
-        vm.expectRevert("no code");
-        new UniswapV3Adapter(address(0xBEEF), address(t), address(t), 100);
-        vm.expectRevert("tolerance >= 100%");
-        new UniswapV3Adapter(address(t), address(t), address(t), 10_000);
+        try new UniswapV3Adapter(address(0xBEEF), address(t), address(t), 100) {
+            revert("deployment should have reverted");
+        } catch Error(string memory why) {
+            assertEq(why, "no code");
+        }
+        try new UniswapV3Adapter(address(t), address(t), address(t), 10_000) {
+            revert("deployment should have reverted");
+        } catch Error(string memory why) {
+            assertEq(why, "tolerance >= 100%");
+        }
     }
 
     function test_Seed_InputChecks() public {

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {StdInvariant} from "forge-std/StdInvariant.sol";
+import {console} from "forge-std/console.sol";
 import {AuctionEngine} from "../../src/AuctionEngine.sol";
 import {EngineBase} from "../AuctionEngine.t.sol";
 import {AuctionHandler} from "./AuctionHandler.sol";
@@ -29,7 +30,7 @@ contract AuctionEngineInvariantTest is EngineBase {
         super.setUp();
         handler = new AuctionHandler(engine, token, adapter, creator);
         targetContract(address(handler));
-        bytes4[] memory s = new bytes4[](22);
+        bytes4[] memory s = new bytes4[](24);
         s[0] = AuctionHandler.openRound.selector;
         s[1] = AuctionHandler.commit.selector;
         s[2] = AuctionHandler.reveal.selector;
@@ -53,7 +54,23 @@ contract AuctionEngineInvariantTest is EngineBase {
         s[19] = AuctionHandler.settle.selector;
         s[20] = AuctionHandler.warp.selector;
         s[21] = AuctionHandler.warp.selector;
+        s[22] = AuctionHandler.withdrawOwed.selector;
+        s[23] = AuctionHandler.claim.selector;
         targetSelector(FuzzSelector({addr: address(handler), selectors: s}));
+    }
+
+    /// Coverage of each run (shown with -vv): how deep the random walk reached, including the v2
+    /// owed-refund paths.
+    function afterInvariant() external view {
+        console.log(
+            "settled %d, refunds %d, deliveries %d", handler.nSettled(), handler.nRefunds(), handler.nDeliveries()
+        );
+        console.log(
+            "owed refunds %d, owed withdrawn %d, must-fail checks %d",
+            handler.nOwed(),
+            handler.nOwedWithdrawn(),
+            handler.mustFailChecked()
+        );
     }
 
     // ─── Reference clearing, from the handler's record of revealed bids ──
@@ -118,14 +135,35 @@ contract AuctionEngineInvariantTest is EngineBase {
 
     // ─── Invariants ─────────────────────────────────────────────────────
 
-    /// The engine holds exactly the MON its rounds account for: nothing stranded, nothing owed uncovered.
-    function invariant_MonBalanceEqualsSumOfRoundBalances() public view {
+    /// The engine holds exactly the MON its rounds account for plus the refunds it owes (v2):
+    /// engine MON == Σ roundBalance + totalOwed. Nothing stranded, nothing owed uncovered.
+    function invariant_MonBalanceEqualsRoundBalancesPlusOwed() public view {
         uint256 sum;
         uint256 n = engine.roundCount();
         for (uint256 r = 1; r <= n; ++r) {
             sum += engine.roundBalance(r);
         }
-        assertEq(address(engine).balance, sum, "engine MON != sum of roundBalance");
+        assertEq(address(engine).balance, sum + engine.totalOwed(), "engine MON != sum of roundBalance + totalOwed");
+    }
+
+    /// Owed refunds (v2): each bidder's `refundsOwed` is exactly what failed pushes credited it minus what
+    /// it withdrew; `totalOwed` is their sum. Only the two contract bidders are ever owed anything.
+    function invariant_OwedRefundsAccountedFor() public view {
+        uint256 nr = handler.roundsLength();
+        uint256 na = handler.actorsLength();
+        uint256 sumOwed;
+        for (uint256 i; i < na; ++i) {
+            address a = handler.actors(i);
+            uint256 credited;
+            for (uint256 k; k < nr; ++k) {
+                credited += handler.ghost(handler.rounds(k), a).owed;
+            }
+            uint256 owed = engine.refundsOwed(a);
+            assertEq(owed, credited - handler.owedWithdrawn(a), "refundsOwed != credited - withdrawn");
+            if (!handler.isContractActor(a)) assertEq(credited, 0, "refund owed to an address that takes MON");
+            sumOwed += owed;
+        }
+        assertEq(engine.totalOwed(), sumOwed, "totalOwed != sum of refundsOwed");
     }
 
     /// Per round: roundBalance = deposits − burned − refunds − LP MON (spent or burned) − proceeds withdrawn,
@@ -216,9 +254,11 @@ contract AuctionEngineInvariantTest is EngineBase {
                     assertEq(paid, due, "paid != ceil(alloc x P)");
                     assertLe(paid, _mulDivUp(alloc, g.price, 1e18), "paid above own bid");
                     assertEq(uint256(paid) + refunded, rd.depositAmount, "paid + refunded != deposit");
-                    assertEq(g.monIn, refunded, "MON received != refund");
+                    assertEq(g.monIn + g.owed, refunded, "MON received + owed != refund");
+                    if (handler.isContractActor(a)) assertEq(g.monIn, 0, "MON pushed to a rejecting bidder");
+                    else assertEq(g.owed, 0, "refund owed to an EOA");
                 } else {
-                    assertEq(g.monIn, 0, "MON before settlement");
+                    assertEq(g.monIn + g.owed, 0, "MON before settlement");
                 }
                 if (engine.tokensClaimed(r, a)) {
                     (uint128 vTotal, uint128 vReleased) = engine.vests(r, a);
@@ -277,7 +317,7 @@ contract AuctionEngineInvariantTest is EngineBase {
                 (,, bool accSettled) = engine.accounts(r, a);
                 assertFalse(accSettled, "unrevealed bidder settled");
                 assertFalse(engine.tokensClaimed(r, a), "unrevealed bidder got tokens");
-                assertEq(g.monIn + g.tokensIn, 0, "unrevealed bidder received something");
+                assertEq(g.monIn + g.owed + g.tokensIn, 0, "unrevealed bidder received something");
             }
         }
     }

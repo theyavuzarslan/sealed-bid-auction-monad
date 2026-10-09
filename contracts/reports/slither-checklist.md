@@ -1,586 +1,589 @@
+'forge clean' running (wd: contracts)
+'forge config --json' running
+'forge build --build-info --deny never --skip ./test/** ./script/** --force' running (wd: contracts)
 **THIS CHECKLIST IS NOT COMPLETE**. Use `--show-ignored-findings` to show all the results.
 Summary
  - [incorrect-exp](#incorrect-exp) (1 results) (High)
  - [reentrancy-balance](#reentrancy-balance) (5 results) (High)
  - [divide-before-multiply](#divide-before-multiply) (10 results) (Medium)
- - [incorrect-equality](#incorrect-equality) (5 results) (Medium)
+ - [incorrect-equality](#incorrect-equality) (4 results) (Medium)
  - [uninitialized-local](#uninitialized-local) (4 results) (Medium)
  - [unused-return](#unused-return) (4 results) (Medium)
  - [calls-loop](#calls-loop) (8 results) (Low)
  - [reentrancy-benign](#reentrancy-benign) (2 results) (Low)
  - [timestamp](#timestamp) (23 results) (Low)
- - [assembly](#assembly) (1 results) (Informational)
+ - [assembly](#assembly) (2 results) (Informational)
 ## incorrect-exp
 Impact: High
 Confidence: Medium
  - [ ] ID-0
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) has bitwise-xor operator ^ instead of the exponentiation operator **: 
-	 - [inv = (3 * d) ^ 2](./src/adapters/UniV3PriceMath.sol#L45)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) has bitwise-xor operator ^ instead of the exponentiation operator **: 
+	 - [inv = (3 * d) ^ 2](./src/adapters/UniV3PriceMath.sol#L50)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
 ## reentrancy-balance
 Impact: High
 Confidence: Medium
  - [ ] ID-1
-Reentrancy in [AuctionEngine.openRound(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L166-L198):
+Reentrancy in [AuctionEngine.openRound(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L211-L246):
 	External call allowing reentrancy:
-	- [p.token.safeTransferFrom(msg.sender,address(this),need)](./src/AuctionEngine.sol#L195)
+	- [p.token.safeTransferFrom(msg.sender,address(this),need)](./src/AuctionEngine.sol#L243)
 	Balance read before the call:
-	- [before = IERC20Minimal(p.token).balanceOf(address(this))](./src/AuctionEngine.sol#L194)
+	- [before = IERC20Minimal(p.token).balanceOf(address(this))](./src/AuctionEngine.sol#L242)
 	Possible stale balance used after the call in a condition:
-	- [require(bool,string)(IERC20Minimal(p.token).balanceOf(address(this)) - before == need,fee-on-transfer token)](./src/AuctionEngine.sol#L196)
+	- [require(bool,string)(IERC20Minimal(p.token).balanceOf(address(this)) - before == need,fee-on-transfer token)](./src/AuctionEngine.sol#L244)
 		- stale variable `before`
 
-./src/AuctionEngine.sol#L166-L198
+./src/AuctionEngine.sol#L211-L246
 
 
  - [ ] ID-2
-Reentrancy in [AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388):
+Reentrancy in [AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456):
 	External call allowing reentrancy:
-	- [token.safeApprove(s.adapter,0)](./src/AuctionEngine.sol#L371)
+	- [token.safeApprove(s.adapter,tok)](./src/AuctionEngine.sol#L437)
 	Balance read before the call:
-	- [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L367)
+	- [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L435)
 	Possible stale balance used after the call in a condition:
-	- [require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent)](./src/AuctionEngine.sol#L374)
+	- [require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent)](./src/AuctionEngine.sol#L442)
 		- stale variable `tokUsed`
 
-./src/AuctionEngine.sol#L362-L388
+./src/AuctionEngine.sol#L430-L456
 
 
  - [ ] ID-3
-Reentrancy in [AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388):
+Reentrancy in [AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456):
 	External call allowing reentrancy:
-	- [(npm,nftId) = IDexAdapter(s.adapter).seed{value: mon}(token,tok,price,s.fee,address(this))](./src/AuctionEngine.sol#L370)
+	- [token.safeApprove(s.adapter,0)](./src/AuctionEngine.sol#L439)
 	Balance read before the call:
-	- [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L367)
+	- [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L435)
 	Possible stale balance used after the call in a condition:
-	- [require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent)](./src/AuctionEngine.sol#L374)
+	- [require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent)](./src/AuctionEngine.sol#L442)
 		- stale variable `tokUsed`
 
-./src/AuctionEngine.sol#L362-L388
+./src/AuctionEngine.sol#L430-L456
 
 
  - [ ] ID-4
-Reentrancy in [UniswapV3Adapter.seed(address,uint256,uint256,uint24,address)](./src/adapters/UniswapV3Adapter.sol#L134-L175):
+Reentrancy in [AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456):
 	External call allowing reentrancy:
-	- [token.safeTransferFrom(msg.sender,address(this),tokenAmount)](./src/adapters/UniswapV3Adapter.sol#L151)
+	- [(npm,nftId) = IDexAdapter(s.adapter).seed{value: mon}(token,tok,price,s.fee,address(this))](./src/AuctionEngine.sol#L438)
 	Balance read before the call:
-	- [tokenBase = IERC20Balance(token).balanceOf(address(this))](./src/adapters/UniswapV3Adapter.sol#L149)
+	- [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L435)
 	Possible stale balance used after the call in a condition:
-	- [require(bool,string)(IERC20Balance(token).balanceOf(address(this)) - tokenBase == tokenAmount,fee-on-transfer token)](./src/adapters/UniswapV3Adapter.sol#L152)
-		- stale variable `tokenBase`
+	- [require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent)](./src/AuctionEngine.sol#L442)
+		- stale variable `tokUsed`
 
-./src/adapters/UniswapV3Adapter.sol#L134-L175
+./src/AuctionEngine.sol#L430-L456
 
 
  - [ ] ID-5
-Reentrancy in [AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388):
+Reentrancy in [UniswapV3Adapter.seed(address,uint256,uint256,uint24,address)](./src/adapters/UniswapV3Adapter.sol#L156-L197):
 	External call allowing reentrancy:
-	- [token.safeApprove(s.adapter,tok)](./src/AuctionEngine.sol#L369)
+	- [token.safeTransferFrom(msg.sender,address(this),tokenAmount)](./src/adapters/UniswapV3Adapter.sol#L173)
 	Balance read before the call:
-	- [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L367)
+	- [tokenBase = IERC20Minimal(token).balanceOf(address(this))](./src/adapters/UniswapV3Adapter.sol#L171)
 	Possible stale balance used after the call in a condition:
-	- [require(bool,string)(tokUsed <= tok && monUsed <= mon,adapter overspent)](./src/AuctionEngine.sol#L374)
-		- stale variable `tokUsed`
+	- [require(bool,string)(IERC20Minimal(token).balanceOf(address(this)) - tokenBase == tokenAmount,fee-on-transfer token)](./src/adapters/UniswapV3Adapter.sol#L174)
+		- stale variable `tokenBase`
 
-./src/AuctionEngine.sol#L362-L388
+./src/adapters/UniswapV3Adapter.sol#L156-L197
 
 
 ## divide-before-multiply
 Impact: Medium
 Confidence: Medium
  - [ ] ID-6
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L40)
-	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L50)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L45)
+	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L53)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
  - [ ] ID-7
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [prod0 = prod0 / twos](./src/adapters/UniV3PriceMath.sol#L41)
-	- [result = prod0 * inv](./src/adapters/UniV3PriceMath.sol#L52)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L45)
+	- [inv = (3 * d) ^ 2](./src/adapters/UniV3PriceMath.sol#L50)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
  - [ ] ID-8
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L40)
-	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L51)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L45)
+	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L56)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
  - [ ] ID-9
-[UniswapV3Adapter._mintFullRange(address,address,uint24,int24,uint256,uint256,address)](./src/adapters/UniswapV3Adapter.sol#L210-L242) performs a multiplication on the result of a division:
-	- [tickUpper = (MAX_TICK / spacing) * spacing](./src/adapters/UniswapV3Adapter.sol#L219)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L45)
+	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L54)
 
-./src/adapters/UniswapV3Adapter.sol#L210-L242
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
  - [ ] ID-10
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L40)
-	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L46)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L45)
+	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L51)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
  - [ ] ID-11
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L40)
-	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L49)
+[AuctionEngine._lpTargets(uint256,AuctionEngine.Round,UniformClearing.Book)](./src/AuctionEngine.sol#L389-L398) performs a multiplication on the result of a division:
+	- [lpMon = (soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS](./src/AuctionEngine.sol#L397)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/AuctionEngine.sol#L389-L398
 
 
  - [ ] ID-12
-[AuctionEngine._lpTargets(uint256,AuctionEngine.Round,UniformClearing.Book)](./src/AuctionEngine.sol#L324-L333) performs a multiplication on the result of a division:
-	- [lpMon = (soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS](./src/AuctionEngine.sol#L332)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L45)
+	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L55)
 
-./src/AuctionEngine.sol#L324-L333
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
  - [ ] ID-13
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L40)
-	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L48)
+[UniswapV3Adapter._mintFullRange(address,address,uint24,int24,uint256,uint256,address)](./src/adapters/UniswapV3Adapter.sol#L259-L291) performs a multiplication on the result of a division:
+	- [tickUpper = (MAX_TICK / spacing) * spacing](./src/adapters/UniswapV3Adapter.sol#L268)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniswapV3Adapter.sol#L259-L291
 
 
  - [ ] ID-14
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L40)
-	- [inv = (3 * d) ^ 2](./src/adapters/UniV3PriceMath.sol#L45)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L45)
+	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L52)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
  - [ ] ID-15
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) performs a multiplication on the result of a division:
-	- [d = d / twos](./src/adapters/UniV3PriceMath.sol#L40)
-	- [inv *= 2 - d * inv](./src/adapters/UniV3PriceMath.sol#L47)
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) performs a multiplication on the result of a division:
+	- [prod0 = prod0 / twos](./src/adapters/UniV3PriceMath.sol#L46)
+	- [result = prod0 * inv](./src/adapters/UniV3PriceMath.sol#L57)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 
 ## incorrect-equality
 Impact: Medium
 Confidence: High
  - [ ] ID-16
-[ExitAuction._exit(uint256,address)](./src/exit/ExitAuction.sol#L219-L247) uses a dangerous strict equality:
-	- [require(bool,string)(got == assets,redeem mismatch)](./src/exit/ExitAuction.sol#L242)
+[UniformClearing.findHint(uint256,uint256)](./src/UniformClearing.sol#L60-L68) uses a dangerous strict equality:
+	- [hint == NONE || hint <= price](./src/UniformClearing.sol#L62)
 
-./src/exit/ExitAuction.sol#L219-L247
+./src/UniformClearing.sol#L60-L68
 
 
  - [ ] ID-17
-[UniformClearing.findHint(uint256,uint256)](./src/UniformClearing.sol#L162-L170) uses a dangerous strict equality:
-	- [hint == NONE || hint <= price](./src/UniformClearing.sol#L164)
+[UniswapV3Adapter.seed(address,uint256,uint256,uint24,address)](./src/adapters/UniswapV3Adapter.sol#L156-L197) uses a dangerous strict equality:
+	- [require(bool,string)(IERC20Minimal(token).balanceOf(address(this)) - tokenBase == tokenAmount,fee-on-transfer token)](./src/adapters/UniswapV3Adapter.sol#L174)
 
-./src/UniformClearing.sol#L162-L170
+./src/adapters/UniswapV3Adapter.sol#L156-L197
 
 
  - [ ] ID-18
-[UniswapV3Adapter.seed(address,uint256,uint256,uint24,address)](./src/adapters/UniswapV3Adapter.sol#L134-L175) uses a dangerous strict equality:
-	- [require(bool,string)(IERC20Balance(token).balanceOf(address(this)) - tokenBase == tokenAmount,fee-on-transfer token)](./src/adapters/UniswapV3Adapter.sol#L152)
+[ExitAuction._exit(uint256,address)](./src/exit/ExitAuction.sol#L266-L297) uses a dangerous strict equality:
+	- [r.exitsClaimed == ledgers[roundId].reveals](./src/exit/ExitAuction.sol#L284)
 
-./src/adapters/UniswapV3Adapter.sol#L134-L175
+./src/exit/ExitAuction.sol#L266-L297
 
 
  - [ ] ID-19
-[AuctionEngine.openRound(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L166-L198) uses a dangerous strict equality:
-	- [require(bool,string)(IERC20Minimal(p.token).balanceOf(address(this)) - before == need,fee-on-transfer token)](./src/AuctionEngine.sol#L196)
+[AuctionEngine.openRound(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L211-L246) uses a dangerous strict equality:
+	- [require(bool,string)(IERC20Minimal(p.token).balanceOf(address(this)) - before == need,fee-on-transfer token)](./src/AuctionEngine.sol#L244)
 
-./src/AuctionEngine.sol#L166-L198
-
-
- - [ ] ID-20
-[ExitAuction._exit(uint256,address)](./src/exit/ExitAuction.sol#L219-L247) uses a dangerous strict equality:
-	- [r.exitsClaimed == ledgers[roundId].reveals](./src/exit/ExitAuction.sol#L237)
-
-./src/exit/ExitAuction.sol#L219-L247
+./src/AuctionEngine.sol#L211-L246
 
 
 ## uninitialized-local
 Impact: Medium
 Confidence: Medium
- - [ ] ID-21
-[UniswapV3Adapter._preparePool(address,address,uint24,uint160).current](./src/adapters/UniswapV3Adapter.sol#L183) is a local variable never initialized
+ - [ ] ID-20
+[UniswapV3Adapter._preparePool(address,address,uint24,uint160).current](./src/adapters/UniswapV3Adapter.sol#L230) is a local variable never initialized
 
-./src/adapters/UniswapV3Adapter.sol#L183
+./src/adapters/UniswapV3Adapter.sol#L230
+
+
+ - [ ] ID-21
+[AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256).tokensUsed](./src/AuctionEngine.sol#L406) is a local variable never initialized
+
+./src/AuctionEngine.sol#L406
 
 
  - [ ] ID-22
-[AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256).tokensUsed](./src/AuctionEngine.sol#L341) is a local variable never initialized
+[AuctionEngine._validate(AuctionEngine.OpenParams).sum](./src/AuctionEngine.sol#L267) is a local variable never initialized
 
-./src/AuctionEngine.sol#L341
+./src/AuctionEngine.sol#L267
 
 
  - [ ] ID-23
-[AuctionEngine._validate(AuctionEngine.OpenParams).sum](./src/AuctionEngine.sol#L217) is a local variable never initialized
+[AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256).monUsed](./src/AuctionEngine.sol#L407) is a local variable never initialized
 
-./src/AuctionEngine.sol#L217
-
-
- - [ ] ID-24
-[AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256).monUsed](./src/AuctionEngine.sol#L342) is a local variable never initialized
-
-./src/AuctionEngine.sol#L342
+./src/AuctionEngine.sol#L407
 
 
 ## unused-return
 Impact: Medium
 Confidence: Medium
- - [ ] ID-25
-[UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L178-L208) ignores return value by [(moved,None,None,None,None,None,None) = IUniswapV3PoolLike(pool).slot0()](./src/adapters/UniswapV3Adapter.sol#L201)
+ - [ ] ID-24
+[UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L228-L255) ignores return value by [IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee))](./src/adapters/UniswapV3Adapter.sol#L244-L251)
 
-./src/adapters/UniswapV3Adapter.sol#L178-L208
+./src/adapters/UniswapV3Adapter.sol#L228-L255
+
+
+ - [ ] ID-25
+[UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L228-L255) ignores return value by [(current,None,None,None,None,None,None) = IUniswapV3PoolLike(pool).slot0()](./src/adapters/UniswapV3Adapter.sol#L231)
+
+./src/adapters/UniswapV3Adapter.sol#L228-L255
 
 
  - [ ] ID-26
-[UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L178-L208) ignores return value by [IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee))](./src/adapters/UniswapV3Adapter.sol#L197-L204)
+[UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L228-L255) ignores return value by [(moved,None,None,None,None,None,None) = IUniswapV3PoolLike(pool).slot0()](./src/adapters/UniswapV3Adapter.sol#L248)
 
-./src/adapters/UniswapV3Adapter.sol#L178-L208
+./src/adapters/UniswapV3Adapter.sol#L228-L255
 
 
  - [ ] ID-27
-[UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L178-L208) ignores return value by [(current,None,None,None,None,None,None) = IUniswapV3PoolLike(pool).slot0()](./src/adapters/UniswapV3Adapter.sol#L184)
+[UniswapV3Adapter._mintFullRange(address,address,uint24,int24,uint256,uint256,address)](./src/adapters/UniswapV3Adapter.sol#L259-L291) ignores return value by [(nftId,None,None,None) = positionManager.mint(INonfungiblePositionManagerLike.MintParams({token0:token0,token1:token1,fee:fee,tickLower:- tickUpper,tickUpper:tickUpper,amount0Desired:amount0,amount1Desired:amount1,amount0Min:0,amount1Min:0,recipient:recipient,deadline:block.timestamp}))](./src/adapters/UniswapV3Adapter.sol#L274-L288)
 
-./src/adapters/UniswapV3Adapter.sol#L178-L208
-
-
- - [ ] ID-28
-[UniswapV3Adapter._mintFullRange(address,address,uint24,int24,uint256,uint256,address)](./src/adapters/UniswapV3Adapter.sol#L210-L242) ignores return value by [(nftId,None,None,None) = positionManager.mint(INonfungiblePositionManagerLike.MintParams({token0:token0,token1:token1,fee:fee,tickLower:- tickUpper,tickUpper:tickUpper,amount0Desired:amount0,amount1Desired:amount1,amount0Min:0,amount1Min:0,recipient:recipient,deadline:block.timestamp}))](./src/adapters/UniswapV3Adapter.sol#L225-L239)
-
-./src/adapters/UniswapV3Adapter.sol#L210-L242
+./src/adapters/UniswapV3Adapter.sol#L259-L291
 
 
 ## calls-loop
 Impact: Low
 Confidence: Medium
- - [ ] ID-29
-[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388) has external calls inside a loop: [require(bool,string)(IERC721Minimal(npm).ownerOf(nftId) == address(this),position not received)](./src/AuctionEngine.sol#L375)
-	Calls stack containing the loop:
-		AuctionEngine.seedLP(uint256)
-		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
-
-./src/AuctionEngine.sol#L362-L388
-
-
- - [ ] ID-30
-[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388) has external calls inside a loop: [lockId = locker.lock(npm,nftId,r.creator,r.creator,block.timestamp + r.lockDuration,r.lockFeeTier)](./src/AuctionEngine.sol#L379-L386)
-	Calls stack containing the loop:
-		AuctionEngine.seedLP(uint256)
-		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
-
-./src/AuctionEngine.sol#L362-L388
-
-
- - [ ] ID-31
-[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388) has external calls inside a loop: [IERC721Minimal(npm).approve(address(locker),nftId)](./src/AuctionEngine.sol#L378)
-	Calls stack containing the loop:
-		AuctionEngine.seedLP(uint256)
-		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
-
-./src/AuctionEngine.sol#L362-L388
-
-
- - [ ] ID-32
-[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388) has external calls inside a loop: [(npm,nftId) = IDexAdapter(s.adapter).seed{value: mon}(token,tok,price,s.fee,address(this))](./src/AuctionEngine.sol#L370)
-	Calls stack containing the loop:
-		AuctionEngine.seedLP(uint256)
-		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
-
-./src/AuctionEngine.sol#L362-L388
-
-
- - [ ] ID-33
-[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388) has external calls inside a loop: [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L367)
-	Calls stack containing the loop:
-		AuctionEngine.seedLP(uint256)
-		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
-
-./src/AuctionEngine.sol#L362-L388
-
-
- - [ ] ID-34
-[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388) has external calls inside a loop: [lockId = locker.lock(npm,nftId,address(this),r.creator,permanentLockEnd,r.lockFeeTier)](./src/AuctionEngine.sol#L379-L386)
-	Calls stack containing the loop:
-		AuctionEngine.seedLP(uint256)
-		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
-
-./src/AuctionEngine.sol#L362-L388
-
-
- - [ ] ID-35
-[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L362-L388) has external calls inside a loop: [tokUsed = tokBefore - IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L372)
-	Calls stack containing the loop:
-		AuctionEngine.seedLP(uint256)
-		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
-
-./src/AuctionEngine.sol#L362-L388
-
-
- - [ ] ID-36
-[AuctionEngine._validate(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L200-L238) has external calls inside a loop: [require(bool,string)(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee),fee tier not supported)](./src/AuctionEngine.sol#L220)
+ - [ ] ID-28
+[AuctionEngine._validate(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L249-L288) has external calls inside a loop: [require(bool,string)(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee),fee tier not supported)](./src/AuctionEngine.sol#L270)
 	Calls stack containing the loop:
 		AuctionEngine.openRound(AuctionEngine.OpenParams)
 
-./src/AuctionEngine.sol#L200-L238
+./src/AuctionEngine.sol#L249-L288
+
+
+ - [ ] ID-29
+[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456) has external calls inside a loop: [require(bool,string)(IERC721Minimal(npm).ownerOf(nftId) == address(this),position not received)](./src/AuctionEngine.sol#L443)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+
+./src/AuctionEngine.sol#L430-L456
+
+
+ - [ ] ID-30
+[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456) has external calls inside a loop: [lockId = locker.lock(npm,nftId,address(this),r.creator,permanentLockEnd,r.lockFeeTier)](./src/AuctionEngine.sol#L447-L454)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+
+./src/AuctionEngine.sol#L430-L456
+
+
+ - [ ] ID-31
+[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456) has external calls inside a loop: [tokUsed = tokBefore - IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L440)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+
+./src/AuctionEngine.sol#L430-L456
+
+
+ - [ ] ID-32
+[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456) has external calls inside a loop: [IERC721Minimal(npm).approve(address(locker),nftId)](./src/AuctionEngine.sol#L446)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+
+./src/AuctionEngine.sol#L430-L456
+
+
+ - [ ] ID-33
+[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456) has external calls inside a loop: [(npm,nftId) = IDexAdapter(s.adapter).seed{value: mon}(token,tok,price,s.fee,address(this))](./src/AuctionEngine.sol#L438)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+
+./src/AuctionEngine.sol#L430-L456
+
+
+ - [ ] ID-34
+[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456) has external calls inside a loop: [tokBefore = IERC20Minimal(token).balanceOf(address(this))](./src/AuctionEngine.sol#L435)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+
+./src/AuctionEngine.sol#L430-L456
+
+
+ - [ ] ID-35
+[AuctionEngine._seedOne(uint256,AuctionEngine.Round,AuctionEngine.DexSplit,uint256,uint256,uint256)](./src/AuctionEngine.sol#L430-L456) has external calls inside a loop: [lockId = locker.lock(npm,nftId,r.creator,r.creator,block.timestamp + r.lockDuration,r.lockFeeTier)](./src/AuctionEngine.sol#L447-L454)
+	Calls stack containing the loop:
+		AuctionEngine.seedLP(uint256)
+		AuctionEngine._seed(uint256,AuctionEngine.Round,uint256,uint256,uint256)
+
+./src/AuctionEngine.sol#L430-L456
 
 
 ## reentrancy-benign
 Impact: Low
 Confidence: Medium
+ - [ ] ID-36
+Reentrancy in [UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L228-L255):
+	External calls:
+	- [IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee))](./src/adapters/UniswapV3Adapter.sol#L244-L251)
+	State variables written after the call(s):
+	- [_repricingPool = address(0)](./src/adapters/UniswapV3Adapter.sol#L252)
+
+./src/adapters/UniswapV3Adapter.sol#L228-L255
+
+
  - [ ] ID-37
-Reentrancy in [UniswapV3Adapter._preparePool(address,address,uint24,uint160)](./src/adapters/UniswapV3Adapter.sol#L178-L208):
+Reentrancy in [UniswapV3Adapter.seed(address,uint256,uint256,uint24,address)](./src/adapters/UniswapV3Adapter.sol#L156-L197):
 	External calls:
-	- [IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee))](./src/adapters/UniswapV3Adapter.sol#L197-L204)
-	State variables written after the call(s):
-	- [_repricingPool = address(0)](./src/adapters/UniswapV3Adapter.sol#L205)
-
-./src/adapters/UniswapV3Adapter.sol#L178-L208
-
-
- - [ ] ID-38
-Reentrancy in [UniswapV3Adapter.seed(address,uint256,uint256,uint24,address)](./src/adapters/UniswapV3Adapter.sol#L134-L175):
-	External calls:
-	- [token.safeTransferFrom(msg.sender,address(this),tokenAmount)](./src/adapters/UniswapV3Adapter.sol#L151)
-	- [IWMON(wmon).deposit{value: msg.value}()](./src/adapters/UniswapV3Adapter.sol#L153)
-	- [pool = _preparePool(token0,token1,fee,target)](./src/adapters/UniswapV3Adapter.sol#L156)
-		- [positionManager.createAndInitializePoolIfNecessary(token0,token1,fee,target)](./src/adapters/UniswapV3Adapter.sol#L187)
-		- [IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee))](./src/adapters/UniswapV3Adapter.sol#L197-L204)
+	- [token.safeTransferFrom(msg.sender,address(this),tokenAmount)](./src/adapters/UniswapV3Adapter.sol#L173)
+	- [IWMON(wmon).deposit{value: msg.value}()](./src/adapters/UniswapV3Adapter.sol#L175)
+	- [pool = _preparePool(token0,token1,fee,target)](./src/adapters/UniswapV3Adapter.sol#L178)
+		- [positionManager.createAndInitializePoolIfNecessary(token0,token1,fee,target)](./src/adapters/UniswapV3Adapter.sol#L234)
+		- [IUniswapV3PoolLike(pool).swap{gas: REPRICE_GAS}(address(this),target < current,1,target,abi.encode(token0,token1,fee))](./src/adapters/UniswapV3Adapter.sol#L244-L251)
 	External calls sending eth:
-	- [IWMON(wmon).deposit{value: msg.value}()](./src/adapters/UniswapV3Adapter.sol#L153)
+	- [IWMON(wmon).deposit{value: msg.value}()](./src/adapters/UniswapV3Adapter.sol#L175)
 	State variables written after the call(s):
-	- [pool = _preparePool(token0,token1,fee,target)](./src/adapters/UniswapV3Adapter.sol#L156)
-		- [_repricingPool = pool](./src/adapters/UniswapV3Adapter.sol#L196)
-		- [_repricingPool = address(0)](./src/adapters/UniswapV3Adapter.sol#L205)
+	- [pool = _preparePool(token0,token1,fee,target)](./src/adapters/UniswapV3Adapter.sol#L178)
+		- [_repricingPool = pool](./src/adapters/UniswapV3Adapter.sol#L243)
+		- [_repricingPool = address(0)](./src/adapters/UniswapV3Adapter.sol#L252)
 
-./src/adapters/UniswapV3Adapter.sol#L134-L175
+./src/adapters/UniswapV3Adapter.sol#L156-L197
 
 
 ## timestamp
 Impact: Low
 Confidence: Medium
- - [ ] ID-39
-[ExitAuction.settle(uint256,uint256)](./src/exit/ExitAuction.sol#L175-L190) uses timestamp for comparisons
+ - [ ] ID-38
+[AuctionEngine._sealTerms(uint256)](./src/AuctionEngine.sol#L293-L302) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.commitEnd != 0,unknown round)](./src/exit/ExitAuction.sol#L177)
-	- [require(bool,string)(block.timestamp >= r.revealEnd,reveal window open)](./src/exit/ExitAuction.sol#L178)
+	- [require(bool,string)(r.creator != address(0),unknown round)](./src/AuctionEngine.sol#L300)
 
-./src/exit/ExitAuction.sol#L175-L190
+./src/AuctionEngine.sol#L293-L302
+
+
+ - [ ] ID-39
+[AuctionEngine.settle(uint256,uint256)](./src/AuctionEngine.sol#L325-L337) uses timestamp for comparisons
+	Dangerous comparisons:
+	- [require(bool,string)(r.creator != address(0),unknown round)](./src/AuctionEngine.sol#L327)
+	- [require(bool,string)(block.timestamp >= r.revealEnd,reveal window open)](./src/AuctionEngine.sol#L328)
+
+./src/AuctionEngine.sol#L325-L337
 
 
  - [ ] ID-40
-[ExitAuction._sealTerms(uint256)](./src/exit/ExitAuction.sol#L150-L159) uses timestamp for comparisons
+[AuctionEngine.claimVested(uint256)](./src/AuctionEngine.sol#L554-L567) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.commitEnd != 0,unknown round)](./src/exit/ExitAuction.sol#L157)
+	- [require(bool,string)(v.total != 0,no vesting)](./src/AuctionEngine.sol#L557)
+	- [require(bool,string)(amount != 0,nothing vested)](./src/AuctionEngine.sol#L560)
 
-./src/exit/ExitAuction.sol#L150-L159
+./src/AuctionEngine.sol#L554-L567
 
 
  - [ ] ID-41
-[AuctionEngine.constructor(address,address[],uint256,uint256)](./src/AuctionEngine.sol#L151-L162) uses timestamp for comparisons
+[AuctionEngine.sweepDust(uint256)](./src/AuctionEngine.sol#L588-L596) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(permanentLockEnd_ > block.timestamp,lock end in past)](./src/AuctionEngine.sol#L153)
+	- [require(bool,string)(r.lpDone && ! r.dustSwept,not sweepable)](./src/AuctionEngine.sol#L591)
 
-./src/AuctionEngine.sol#L151-L162
+./src/AuctionEngine.sol#L588-L596
 
 
  - [ ] ID-42
-[SealingLayer.commit(uint256,bytes32,bytes32[],bytes)](./src/SealingLayer.sol#L28-L47) uses timestamp for comparisons
+[AuctionEngine._deliver(uint256,address)](./src/AuctionEngine.sol#L531-L550) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(block.timestamp < commitEnd,commit window closed)](./src/SealingLayer.sol#L34)
+	- [require(bool,string)(r.claimsOpen,claims not open)](./src/AuctionEngine.sol#L533)
 
-./src/SealingLayer.sol#L28-L47
+./src/AuctionEngine.sol#L531-L550
 
 
  - [ ] ID-43
-[SealingLayer._reveal(uint256,uint96,uint96,bytes32,uint256)](./src/SealingLayer.sol#L61-L71) uses timestamp for comparisons
+[ExitAuction.settle(uint256,uint256)](./src/exit/ExitAuction.sol#L213-L230) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(block.timestamp >= commitEnd && block.timestamp < revealEnd,reveal window closed)](./src/SealingLayer.sol#L63)
+	- [require(bool,string)(r.commitEnd != 0,unknown round)](./src/exit/ExitAuction.sol#L215)
+	- [require(bool,string)(block.timestamp >= r.revealEnd,reveal window open)](./src/exit/ExitAuction.sol#L216)
 
-./src/SealingLayer.sol#L61-L71
+./src/exit/ExitAuction.sol#L213-L230
 
 
  - [ ] ID-44
-[AuctionEngine._onReveal(uint256,address,uint96,uint96,uint256)](./src/AuctionEngine.sol#L253-L263) uses timestamp for comparisons
+[AuctionEngine._tokensOut(AuctionEngine.Round,uint256)](./src/AuctionEngine.sol#L668-L671) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(price % r.tickSize == 0 && price >= r.reservePrice,price off grid or below reserve)](./src/AuctionEngine.sol#L255)
-	- [require(bool,string)(_mulDivUp(price,amount,PRICE_SCALE) < r.depositAmount,bid exceeds deposit)](./src/AuctionEngine.sol#L257)
-	- [require(bool,string)(_mulDivUp(r.reservePrice,amount,PRICE_SCALE) >= r.minBidSize,below minimum bid)](./src/AuctionEngine.sol#L260)
+	- [require(bool,string)(r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve,token accounting)](./src/AuctionEngine.sol#L670)
 
-./src/AuctionEngine.sol#L253-L263
+./src/AuctionEngine.sol#L668-L671
 
 
  - [ ] ID-45
-[AuctionEngine.abandonLP(uint256)](./src/AuctionEngine.sol#L300-L316) uses timestamp for comparisons
+[SealingLayer._reveal(uint256,uint96,uint96,bytes32,uint256)](./src/SealingLayer.sol#L108-L118) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(! r.lpDone,LP already done)](./src/AuctionEngine.sol#L304)
-	- [require(bool,string)(block.timestamp >= uint256(r.settledAt) + lpGracePeriod,grace period not over)](./src/AuctionEngine.sol#L305)
+	- [require(bool,string)(block.timestamp >= commitEnd && block.timestamp < revealEnd,reveal window closed)](./src/SealingLayer.sol#L110)
 
-./src/AuctionEngine.sol#L300-L316
+./src/SealingLayer.sol#L108-L118
 
 
  - [ ] ID-46
-[AuctionEngine.sweepDust(uint256)](./src/AuctionEngine.sol#L499-L507) uses timestamp for comparisons
+[AuctionEngine.abandonLP(uint256)](./src/AuctionEngine.sol#L362-L378) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.lpDone && ! r.dustSwept,not sweepable)](./src/AuctionEngine.sol#L502)
+	- [require(bool,string)(! r.lpDone,LP already done)](./src/AuctionEngine.sol#L366)
+	- [require(bool,string)(block.timestamp >= uint256(r.settledAt) + lpGracePeriod,grace period not over)](./src/AuctionEngine.sol#L367)
 
-./src/AuctionEngine.sol#L499-L507
+./src/AuctionEngine.sol#L362-L378
 
 
  - [ ] ID-47
-[AuctionEngine._deliver(uint256,address)](./src/AuctionEngine.sol#L451-L468) uses timestamp for comparisons
+[ExitAuction._sealTerms(uint256)](./src/exit/ExitAuction.sol#L185-L194) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.claimsOpen,claims not open)](./src/AuctionEngine.sol#L453)
+	- [require(bool,string)(r.commitEnd != 0,unknown round)](./src/exit/ExitAuction.sol#L192)
 
-./src/AuctionEngine.sol#L451-L468
+./src/exit/ExitAuction.sol#L185-L194
 
 
  - [ ] ID-48
-[AuctionEngine._sealTerms(uint256)](./src/AuctionEngine.sol#L242-L251) uses timestamp for comparisons
+[DepositLedger.burnUnrevealed(uint256)](./src/DepositLedger.sol#L69-L80) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.creator != address(0),unknown round)](./src/AuctionEngine.sol#L249)
+	- [require(bool,string)(block.timestamp >= _revealEndOf(roundId),reveal window open)](./src/DepositLedger.sol#L70)
 
-./src/AuctionEngine.sol#L242-L251
+./src/DepositLedger.sol#L69-L80
 
 
  - [ ] ID-49
-[ExitAuction._exit(uint256,address)](./src/exit/ExitAuction.sol#L219-L247) uses timestamp for comparisons
+[AuctionEngine.withdrawProceeds(uint256)](./src/AuctionEngine.sol#L573-L583) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.allocatedTotal <= sold,over-allocated)](./src/exit/ExitAuction.sol#L229)
-	- [require(bool,string)(r.allocatedTotal + r.returnedTotal <= r.escrowed,share accounting)](./src/exit/ExitAuction.sol#L230)
-	- [r.exitsClaimed == ledgers[roundId].reveals](./src/exit/ExitAuction.sol#L237)
-	- [alloc != 0](./src/exit/ExitAuction.sol#L240)
-	- [require(bool,string)(got == assets,redeem mismatch)](./src/exit/ExitAuction.sol#L242)
-	- [payout != 0](./src/exit/ExitAuction.sol#L243)
-	- [donation != 0](./src/exit/ExitAuction.sol#L244)
-	- [back != 0](./src/exit/ExitAuction.sol#L246)
+	- [require(bool,string)(msg.sender == r.creator,not creator)](./src/AuctionEngine.sol#L575)
+	- [require(bool,string)(r.lpDone,LP not done)](./src/AuctionEngine.sol#L576)
 
-./src/exit/ExitAuction.sol#L219-L247
+./src/AuctionEngine.sol#L573-L583
 
 
  - [ ] ID-50
-[ExitAuction._refund(uint256,address)](./src/exit/ExitAuction.sol#L249-L255) uses timestamp for comparisons
+[SealingLayer.commit(uint256,bytes32,bytes32[],bytes)](./src/SealingLayer.sol#L45-L64) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(_books[roundId].settled,not settled)](./src/exit/ExitAuction.sol#L250)
+	- [require(bool,string)(block.timestamp < commitEnd,commit window closed)](./src/SealingLayer.sol#L51)
 
-./src/exit/ExitAuction.sol#L249-L255
+./src/SealingLayer.sol#L45-L64
 
 
  - [ ] ID-51
-[ExitAuction.reservedShares()](./src/exit/ExitAuction.sol#L275-L279) uses timestamp for comparisons
+[ExitAuction.reservedShares()](./src/exit/ExitAuction.sol#L335-L339) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [id != 0 && ! _books[id].settled](./src/exit/ExitAuction.sol#L278)
+	- [id != 0 && ! _books[id].settled](./src/exit/ExitAuction.sol#L338)
 
-./src/exit/ExitAuction.sol#L275-L279
+./src/exit/ExitAuction.sol#L335-L339
 
 
  - [ ] ID-52
-[AuctionEngine._tokensOut(AuctionEngine.Round,uint256)](./src/AuctionEngine.sol#L559-L562) uses timestamp for comparisons
+[AuctionEngine._vestedAmount(AuctionEngine.Round,uint256)](./src/AuctionEngine.sol#L657-L664) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve,token accounting)](./src/AuctionEngine.sol#L561)
+	- [block.timestamp <= start](./src/AuctionEngine.sol#L660)
+	- [elapsed >= r.vestDuration](./src/AuctionEngine.sol#L662)
 
-./src/AuctionEngine.sol#L559-L562
+./src/AuctionEngine.sol#L657-L664
 
 
  - [ ] ID-53
-[AuctionEngine.settle(uint256,uint256)](./src/AuctionEngine.sol#L268-L278) uses timestamp for comparisons
+[AuctionEngine.seedLP(uint256)](./src/AuctionEngine.sol#L344-L356) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(r.creator != address(0),unknown round)](./src/AuctionEngine.sol#L270)
-	- [require(bool,string)(block.timestamp >= r.revealEnd,reveal window open)](./src/AuctionEngine.sol#L271)
+	- [require(bool,string)(! r.lpDone,LP already done)](./src/AuctionEngine.sol#L348)
 
-./src/AuctionEngine.sol#L268-L278
+./src/AuctionEngine.sol#L344-L356
 
 
  - [ ] ID-54
-[ExitAuction.openExitRound()](./src/exit/ExitAuction.sol#L123-L145) uses timestamp for comparisons
+[AuctionEngine.constructor(address,address[],uint256,uint256)](./src/AuctionEngine.sol#L182-L193) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(_books[prev].settled,previous round not settled)](./src/exit/ExitAuction.sol#L126)
-	- [require(bool,string)(block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks,too soon)](./src/exit/ExitAuction.sol#L127)
-	- [capacity > maxExitSharesPerRound](./src/exit/ExitAuction.sol#L133)
-	- [require(bool,string)(capacity != 0,no exit capacity)](./src/exit/ExitAuction.sol#L134)
-	- [idle > owed](./src/exit/ExitAuction.sol#L131)
+	- [require(bool,string)(permanentLockEnd_ > block.timestamp,lock end in past)](./src/AuctionEngine.sol#L184)
 
-./src/exit/ExitAuction.sol#L123-L145
+./src/AuctionEngine.sol#L182-L193
 
 
  - [ ] ID-55
-[ExitAuction._quote(uint256,address)](./src/exit/ExitAuction.sol#L294-L309) uses timestamp for comparisons
+[AuctionEngine._validate(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L249-L288) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [assets < atSettle](./src/exit/ExitAuction.sol#L306)
+	- [require(bool,string)(p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW,commit window too short)](./src/AuctionEngine.sol#L260)
 
-./src/exit/ExitAuction.sol#L294-L309
+./src/AuctionEngine.sol#L249-L288
 
 
  - [ ] ID-56
-[AuctionEngine.seedLP(uint256)](./src/AuctionEngine.sol#L283-L295) uses timestamp for comparisons
+[ExitAuction._quote(uint256,address)](./src/exit/ExitAuction.sol#L354-L369) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(! r.lpDone,LP already done)](./src/AuctionEngine.sol#L287)
+	- [assets < atSettle](./src/exit/ExitAuction.sol#L366)
 
-./src/AuctionEngine.sol#L283-L295
+./src/exit/ExitAuction.sol#L354-L369
 
 
  - [ ] ID-57
-[AuctionEngine._vestedAmount(AuctionEngine.Round,uint256)](./src/AuctionEngine.sol#L550-L557) uses timestamp for comparisons
+[ExitAuction._refund(uint256,address)](./src/exit/ExitAuction.sol#L300-L306) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [block.timestamp <= start](./src/AuctionEngine.sol#L553)
-	- [elapsed >= r.vestDuration](./src/AuctionEngine.sol#L555)
+	- [require(bool,string)(_books[roundId].settled,not settled)](./src/exit/ExitAuction.sol#L301)
 
-./src/AuctionEngine.sol#L550-L557
+./src/exit/ExitAuction.sol#L300-L306
 
 
  - [ ] ID-58
-[AuctionEngine.claimVested(uint256)](./src/AuctionEngine.sol#L471-L482) uses timestamp for comparisons
+[ExitAuction._exit(uint256,address)](./src/exit/ExitAuction.sol#L266-L297) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(v.total != 0,no vesting)](./src/AuctionEngine.sol#L474)
-	- [require(bool,string)(amount != 0,nothing vested)](./src/AuctionEngine.sol#L477)
+	- [require(bool,string)(r.allocatedTotal <= sold,over-allocated)](./src/exit/ExitAuction.sol#L276)
+	- [require(bool,string)(r.allocatedTotal + r.returnedTotal <= r.escrowed,share accounting)](./src/exit/ExitAuction.sol#L277)
+	- [r.exitsClaimed == ledgers[roundId].reveals](./src/exit/ExitAuction.sol#L284)
+	- [alloc != 0](./src/exit/ExitAuction.sol#L287)
+	- [require(bool,string)(got >= assets,redeem short)](./src/exit/ExitAuction.sol#L291)
+	- [payout != 0](./src/exit/ExitAuction.sol#L292)
+	- [toVault != 0](./src/exit/ExitAuction.sol#L294)
+	- [back != 0](./src/exit/ExitAuction.sol#L296)
 
-./src/AuctionEngine.sol#L471-L482
+./src/exit/ExitAuction.sol#L266-L297
 
 
  - [ ] ID-59
-[AuctionEngine.withdrawProceeds(uint256)](./src/AuctionEngine.sol#L486-L496) uses timestamp for comparisons
+[ExitAuction.openExitRound()](./src/exit/ExitAuction.sol#L152-L180) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(msg.sender == r.creator,not creator)](./src/AuctionEngine.sol#L488)
-	- [require(bool,string)(r.lpDone,LP not done)](./src/AuctionEngine.sol#L489)
+	- [require(bool,string)(_books[prev].settled,previous round not settled)](./src/exit/ExitAuction.sol#L155)
+	- [require(bool,string)(block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks,too soon)](./src/exit/ExitAuction.sol#L156)
+	- [capacity > maxExitSharesPerRound](./src/exit/ExitAuction.sol#L162)
+	- [require(bool,string)(capacity != 0,no exit capacity)](./src/exit/ExitAuction.sol#L163)
+	- [idle > owed](./src/exit/ExitAuction.sol#L160)
 
-./src/AuctionEngine.sol#L486-L496
+./src/exit/ExitAuction.sol#L152-L180
 
 
  - [ ] ID-60
-[AuctionEngine._validate(AuctionEngine.OpenParams)](./src/AuctionEngine.sol#L200-L238) uses timestamp for comparisons
+[AuctionEngine._onReveal(uint256,address,uint96,uint96,uint256)](./src/AuctionEngine.sol#L307-L317) uses timestamp for comparisons
 	Dangerous comparisons:
-	- [require(bool,string)(p.commitEnd > block.timestamp && p.revealEnd > p.commitEnd,bad windows)](./src/AuctionEngine.sol#L211)
+	- [require(bool,string)(price % r.tickSize == 0 && price >= r.reservePrice,price off grid or below reserve)](./src/AuctionEngine.sol#L309)
+	- [require(bool,string)(_mulDivUp(price,amount,PRICE_SCALE) < r.depositAmount,bid exceeds deposit)](./src/AuctionEngine.sol#L311)
+	- [require(bool,string)(_mulDivUp(r.reservePrice,amount,PRICE_SCALE) >= r.minBidSize,below minimum bid)](./src/AuctionEngine.sol#L314)
 
-./src/AuctionEngine.sol#L200-L238
-
-
- - [ ] ID-61
-[DepositLedger.burnUnrevealed(uint256)](./src/DepositLedger.sol#L45-L56) uses timestamp for comparisons
-	Dangerous comparisons:
-	- [require(bool,string)(block.timestamp >= _revealEndOf(roundId),reveal window open)](./src/DepositLedger.sol#L46)
-
-./src/DepositLedger.sol#L45-L56
+./src/AuctionEngine.sol#L307-L317
 
 
 ## assembly
 Impact: Informational
 Confidence: High
- - [ ] ID-62
-[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L18-L54) uses assembly
-	- [INLINE ASM](./src/adapters/UniV3PriceMath.sol#L22-L26)
-	- [INLINE ASM](./src/adapters/UniV3PriceMath.sol#L33-L37)
-	- [INLINE ASM](./src/adapters/UniV3PriceMath.sol#L39-L43)
+ - [ ] ID-61
+[DepositLedger._pushRefund(address,uint256)](./src/DepositLedger.sol#L99-L111) uses assembly
+	- [INLINE ASM](./src/DepositLedger.sol#L103-L105)
 
-./src/adapters/UniV3PriceMath.sol#L18-L54
+./src/DepositLedger.sol#L99-L111
+
+
+ - [ ] ID-62
+[UniV3PriceMath.mulDiv(uint256,uint256,uint256)](./src/adapters/UniV3PriceMath.sol#L21-L59) uses assembly
+	- [INLINE ASM](./src/adapters/UniV3PriceMath.sol#L27-L31)
+	- [INLINE ASM](./src/adapters/UniV3PriceMath.sol#L38-L42)
+	- [INLINE ASM](./src/adapters/UniV3PriceMath.sol#L44-L48)
+
+./src/adapters/UniV3PriceMath.sol#L21-L59
 
 

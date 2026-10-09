@@ -1,730 +1,519 @@
 forge lint src --severity high med low info gas code-size
-forge 1.8.3 (cae51ad), 9 Oct 2026. Raw findings: 496 in src/ (264 outside src/vendor, which is unmodified OpenZeppelin v5.1.0).
-No high-severity lint fired. Triage: contracts/STATIC-ANALYSIS.md, section 'forge lint'.
+forge 1.8.3 (cae51ad), 9 Oct 2026, branch contracts-v2 (v2 sources).
+Raw findings: 481 in src/ (249 outside src/vendor, which is unmodified OpenZeppelin v5.1.0).
+Errors outside vendor: 0.
 
 == Counts outside src/vendor (severity, lint id) ==
-  15  warning  unsafe-typecast
   11  warning  block-timestamp
-   8  warning  reentrancy-events
-   8  warning  require-revert-in-loop
+   9  warning  reentrancy-events
    8  warning  calls-loop
-   4  warning  uninitialized-local
+   8  warning  require-revert-in-loop
    4  warning  reentrancy-no-eth
-   4  warning  arbitrary-send-eth
+   4  warning  uninitialized-local
+   3  warning  arbitrary-send-eth
    3  warning  unused-return
-   2  warning  missing-zero-check
-   2  warning  incorrect-strict-equality
    2  warning  divide-before-multiply
+   2  warning  incorrect-strict-equality
+   2  warning  missing-zero-check
    1  warning  arbitrary-send-erc20
    1  warning  reentrancy-balance
- 134  note     custom-errors
+ 137  note     custom-errors
   19  note     screaming-snake-case-immutable
-  14  note     multi-contract-file
-   3  note     inline-assembly
-   3  note     literal-instead-of-constant
-   3  note     named-struct-fields
+  13  note     multi-contract-file
+   4  note     inline-assembly
    3  note     internal-function-used-once
+   3  note     named-struct-fields
    2  note     low-level-calls
-   2  note     unwrapped-modifier-logic
    2  note     mixed-case-function
+   2  note     unwrapped-modifier-logic
    1  note     asm-keccak256
-   1  note     mixed-case-variable
    1  note     costly-loop
-   1  note     pragma-inconsistent
    1  note     missing-inheritance
+   1  note     mixed-case-variable
    1  note     modifier-used-only-once
+   1  note     pragma-inconsistent
 
 == Every warning outside src/vendor, full diagnostic ==
 warning[arbitrary-send-erc20]: `transferFrom` uses an arbitrary `from`; require it to equal `msg.sender` or `address(this)`
-    ╭▸ src/exit/ExitAuction.sol:169:9
+    ╭▸ src/exit/ExitAuction.sol:204:9
     │
-169 │         address(vault).safeTransferFrom(bidder, address(this), amount);
+204 │         address(vault).safeTransferFrom(bidder, address(this), amount);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/arbitrary-send-erc20
 
 warning[arbitrary-send-eth]: ETH is sent to a user-controlled destination; restrict the destination or the caller
-    ╭▸ src/AuctionEngine.sol:370:40
+    ╭▸ src/AuctionEngine.sol:438:40
     │
-370 │         (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, address(this));
+438 │         (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, address(this));
     │                                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/arbitrary-send-eth
 
 warning[arbitrary-send-eth]: ETH is sent to a user-controlled destination; restrict the destination or the caller
-    ╭▸ src/AuctionEngine.sol:448:26
+    ╭▸ src/AuctionEngine.sol:582:9
     │
-448 │         if (refund != 0) SafeTransferLib.sendValue(bidder, refund);
-    │                          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    │
-    ╰ help: https://getfoundry.sh/forge/linting/arbitrary-send-eth
-
-warning[arbitrary-send-eth]: ETH is sent to a user-controlled destination; restrict the destination or the caller
-    ╭▸ src/AuctionEngine.sol:495:9
-    │
-495 │         SafeTransferLib.sendValue(r.creator, amount);
+582 │         SafeTransferLib.sendValue(r.creator, amount);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/arbitrary-send-eth
 
 warning[arbitrary-send-eth]: ETH is sent to a user-controlled destination; restrict the destination or the caller
-    ╭▸ src/exit/ExitAuction.sol:254:9
-    │
-254 │         SafeTransferLib.sendValue(bidder, refund);
-    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    │
-    ╰ help: https://getfoundry.sh/forge/linting/arbitrary-send-eth
+   ╭▸ src/DepositLedger.sol:91:9
+   │
+91 │         SafeTransferLib.sendValue(to, amount);
+   │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/arbitrary-send-eth
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-    ╭▸ src/AuctionEngine.sol:153:17
+    ╭▸ src/AuctionEngine.sol:184:17
     │
-153 │         require(permanentLockEnd_ > block.timestamp, "lock end in past");
+184 │         require(permanentLockEnd_ > block.timestamp, "lock end in past");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-    ╭▸ src/AuctionEngine.sol:211:17
+    ╭▸ src/AuctionEngine.sol:260:17
     │
-211 │         require(p.commitEnd > block.timestamp && p.revealEnd > p.commitEnd, "bad windows");
-    │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+260 │         require(p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW, "commit window too short");
+    │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-    ╭▸ src/AuctionEngine.sol:271:17
+    ╭▸ src/AuctionEngine.sol:328:17
     │
-271 │         require(block.timestamp >= r.revealEnd, "reveal window open");
+328 │         require(block.timestamp >= r.revealEnd, "reveal window open");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-    ╭▸ src/AuctionEngine.sol:305:17
+    ╭▸ src/AuctionEngine.sol:367:17
     │
-305 │         require(block.timestamp >= uint256(r.settledAt) + lpGracePeriod, "grace period not over");
+367 │         require(block.timestamp >= uint256(r.settledAt) + lpGracePeriod, "grace period not over");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-    ╭▸ src/AuctionEngine.sol:553:13
+    ╭▸ src/AuctionEngine.sol:660:13
     │
-553 │         if (block.timestamp <= start) return tge;
+660 │         if (block.timestamp <= start) return tge;
     │             ━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-    ╭▸ src/AuctionEngine.sol:555:13
+    ╭▸ src/AuctionEngine.sol:662:13
     │
-555 │         if (elapsed >= r.vestDuration) return total;
+662 │         if (elapsed >= r.vestDuration) return total;
     │             ━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-   ╭▸ src/DepositLedger.sol:46:17
+   ╭▸ src/DepositLedger.sol:70:17
    │
-46 │         require(block.timestamp >= _revealEndOf(roundId), "reveal window open");
+70 │         require(block.timestamp >= _revealEndOf(roundId), "reveal window open");
    │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    │
    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-   ╭▸ src/SealingLayer.sol:34:17
+   ╭▸ src/SealingLayer.sol:51:17
    │
-34 │         require(block.timestamp < commitEnd, "commit window closed");
+51 │         require(block.timestamp < commitEnd, "commit window closed");
    │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
    │
    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-   ╭▸ src/SealingLayer.sol:63:17
-   │
-63 │         require(block.timestamp >= commitEnd && block.timestamp < revealEnd, "reveal window closed");
-   │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   │
-   ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
-
-warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-   ╭▸ src/SealingLayer.sol:63:49
-   │
-63 │         require(block.timestamp >= commitEnd && block.timestamp < revealEnd, "reveal window closed");
-   │                                                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   │
-   ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
-
-warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
-    ╭▸ src/exit/ExitAuction.sol:178:17
+    ╭▸ src/SealingLayer.sol:110:17
     │
-178 │         require(block.timestamp >= r.revealEnd, "reveal window open");
+110 │         require(block.timestamp >= commitEnd && block.timestamp < revealEnd, "reveal window closed");
+    │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
+
+warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
+    ╭▸ src/SealingLayer.sol:110:49
+    │
+110 │         require(block.timestamp >= commitEnd && block.timestamp < revealEnd, "reveal window closed");
+    │                                                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
+
+warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
+    ╭▸ src/exit/ExitAuction.sol:216:17
+    │
+216 │         require(block.timestamp >= r.revealEnd, "reveal window open");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
 
 warning[calls-loop]: external call inside a loop
-    ╭▸ src/AuctionEngine.sol:220:25
+    ╭▸ src/AuctionEngine.sol:270:25
     │
-220 │                 require(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee), "fee tier not supported");
+270 │                 require(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee), "fee tier not supported");
     │                         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[calls-loop]: external call inside a loop
-    ╭▸ src/AuctionEngine.sol:367:29
+    ╭▸ src/AuctionEngine.sol:435:29
     │
-367 │         uint256 tokBefore = IERC20Minimal(token).balanceOf(address(this));
+435 │         uint256 tokBefore = IERC20Minimal(token).balanceOf(address(this));
     │                             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[calls-loop]: external call inside a loop
-    ╭▸ src/AuctionEngine.sol:370:40
+    ╭▸ src/AuctionEngine.sol:438:40
     │
-370 │         (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, address(this));
+438 │         (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, address(this));
     │                                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[calls-loop]: external call inside a loop
-    ╭▸ src/AuctionEngine.sol:372:31
+    ╭▸ src/AuctionEngine.sol:440:31
     │
-372 │         tokUsed = tokBefore - IERC20Minimal(token).balanceOf(address(this));
+440 │         tokUsed = tokBefore - IERC20Minimal(token).balanceOf(address(this));
     │                               ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[calls-loop]: external call inside a loop
-    ╭▸ src/AuctionEngine.sol:375:17
+    ╭▸ src/AuctionEngine.sol:443:17
     │
-375 │         require(IERC721Minimal(npm).ownerOf(nftId) == address(this), "position not received");
+443 │         require(IERC721Minimal(npm).ownerOf(nftId) == address(this), "position not received");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[calls-loop]: external call inside a loop
-    ╭▸ src/AuctionEngine.sol:378:9
+    ╭▸ src/AuctionEngine.sol:446:9
     │
-378 │         IERC721Minimal(npm).approve(address(locker), nftId);
+446 │         IERC721Minimal(npm).approve(address(locker), nftId);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[calls-loop]: external call inside a loop
-    ╭▸ src/AuctionEngine.sol:379:26
+    ╭▸ src/AuctionEngine.sol:447:26
     │
-379 │           uint256 lockId = locker.lock(
+447 │           uint256 lockId = locker.lock(
     │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-380 │ ┃             npm,
-381 │ ┃             nftId,
-382 │ ┃             permanent ? address(this) : r.creator,
+448 │ ┃             npm,
+449 │ ┃             nftId,
+450 │ ┃             permanent ? address(this) : r.creator,
     ‡ ┃
-385 │ ┃             r.lockFeeTier
-386 │ ┃         );
+453 │ ┃             r.lockFeeTier
+454 │ ┃         );
     │ ┗━━━━━━━━━┛
     │
     ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[calls-loop]: external call inside a loop
-   ╭▸ src/lib/SafeTransferLib.sol:26:39
+   ╭▸ src/lib/SafeTransferLib.sol:39:39
    │
-26 │         (bool ok, bytes memory ret) = token.call(data);
+39 │         (bool ok, bytes memory ret) = token.call(data);
    │                                       ━━━━━━━━━━━━━━━━
    │
    ╰ help: https://getfoundry.sh/forge/linting/calls-loop
 
 warning[divide-before-multiply]: division before multiplication may lose precision
-    ╭▸ src/AuctionEngine.sol:332:17
+    ╭▸ src/AuctionEngine.sol:397:17
     │
-332 │         lpMon = (soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS;
+397 │         lpMon = (soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS;
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/divide-before-multiply
 
 warning[divide-before-multiply]: division before multiplication may lose precision
-    ╭▸ src/adapters/UniswapV3Adapter.sol:219:27
+    ╭▸ src/adapters/UniswapV3Adapter.sol:268:27
     │
-219 │         int24 tickUpper = (MAX_TICK / spacing) * spacing;
+268 │         int24 tickUpper = (MAX_TICK / spacing) * spacing;
     │                           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/divide-before-multiply
 
 warning[incorrect-strict-equality]: dangerous strict equality check on an externally-influenced value
-    ╭▸ src/AuctionEngine.sol:196:17
+    ╭▸ src/AuctionEngine.sol:244:17
     │
-196 │         require(IERC20Minimal(p.token).balanceOf(address(this)) - before == need, "fee-on-transfer token");
+244 │         require(IERC20Minimal(p.token).balanceOf(address(this)) - before == need, "fee-on-transfer token");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/incorrect-strict-equality
 
 warning[incorrect-strict-equality]: dangerous strict equality check on an externally-influenced value
-    ╭▸ src/adapters/UniswapV3Adapter.sol:152:17
+    ╭▸ src/adapters/UniswapV3Adapter.sol:174:17
     │
-152 │         require(IERC20Balance(token).balanceOf(address(this)) - tokenBase == tokenAmount, "fee-on-transfer token");
+174 │         require(IERC20Minimal(token).balanceOf(address(this)) - tokenBase == tokenAmount, "fee-on-transfer token");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/incorrect-strict-equality
 
 warning[missing-zero-check]: address parameter is used in a state write or value transfer without a zero-address check
-    ╭▸ src/adapters/UniswapV3Adapter.sol:117:61
+    ╭▸ src/adapters/UniswapV3Adapter.sol:141:61
     │
-117 │     constructor(address factory_, address positionManager_, address wmon_, uint256 toleranceBps_) {
+141 │     constructor(address factory_, address positionManager_, address wmon_, uint256 toleranceBps_) {
     │                                                             ━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/missing-zero-check
 
 warning[missing-zero-check]: address parameter is used in a state write or value transfer without a zero-address check
-   ╭▸ src/exit/DemoVault.sol:51:29
+   ╭▸ src/exit/DemoVault.sol:64:29
    │
-51 │     function setExitAuction(address exitAuction_) external {
+64 │     function setExitAuction(address exitAuction_) external {
    │                             ━━━━━━━━━━━━━━━━━━━━
    │
    ╰ help: https://getfoundry.sh/forge/linting/missing-zero-check
 
 warning[reentrancy-balance]: external call can be reentered before a stale contract balance is checked
-    ╭▸ src/AuctionEngine.sol:370:40
+    ╭▸ src/AuctionEngine.sol:438:40
     │
-370 │         (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, address(this));
+438 │         (address npm, uint256 nftId) = IDexAdapter(s.adapter).seed{value: mon}(token, tok, price, s.fee, address(this));
     │                                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-balance
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-    ╭▸ src/AuctionEngine.sol:294:9
+    ╭▸ src/AuctionEngine.sol:355:9
     │
-294 │         emit ClaimsOpened(roundId, seeded);
+355 │         emit ClaimsOpened(roundId, seeded);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-    ╭▸ src/AuctionEngine.sol:387:9
+    ╭▸ src/AuctionEngine.sol:455:9
     │
-387 │         emit LPSeeded(roundId, s.adapter, npm, nftId, tokUsed, monUsed, lockId);
+455 │         emit LPSeeded(roundId, s.adapter, npm, nftId, tokUsed, monUsed, lockId);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-    ╭▸ src/AuctionEngine.sol:463:9
+    ╭▸ src/AuctionEngine.sol:545:9
     │
-463 │         emit TokensClaimed(roundId, bidder, release);
+545 │         emit TokensClaimed(roundId, bidder, release);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-    ╭▸ src/adapters/UniswapV3Adapter.sol:168:9
+    ╭▸ src/DepositLedger.sol:109:13
     │
-168 │         emit Seeded(pool, token, nftId, tokenAmount - tokenLeft, msg.value - wmonLeft, recipient);
-    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+109 │             emit RefundOwed(bidder, amount);
+    │             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-    ╭▸ src/adapters/UniswapV3Adapter.sol:202:17
+    ╭▸ src/adapters/UniswapV3Adapter.sol:249:17
     │
-202 │                 emit PoolRepriced(pool, current, moved);
+249 │                 emit PoolRepriced(pool, current, moved);
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-    ╭▸ src/exit/ExitAuction.sol:238:9
+    ╭▸ src/adapters/UniswapV3Adapter.sol:190:9
     │
-238 │         emit ExitClaimed(roundId, bidder, alloc, back, assets, payout, donation);
-    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+190 │         emit Seeded(pool, token, nftId, tokenAmount - tokenLeft, msg.value - wmonLeft, recipient);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-    ╭▸ src/exit/ExitAuction.sol:253:9
+    ╭▸ src/exit/ExitAuction.sol:304:9
     │
-253 │         emit DepositRefunded(roundId, bidder, refund);
+304 │         emit DepositRefunded(roundId, bidder, refund);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
-   ╭▸ src/launch/TokenFactory.sol:37:9
+    ╭▸ src/exit/ExitAuction.sol:285:9
+    │
+285 │         emit ExitClaimed(roundId, bidder, alloc, back, assets, payout, donation);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+   ╭▸ src/launch/TokenFactory.sol:52:9
    │
-37 │         emit TokenCreated(token, msg.sender, name, symbol, supply);
+52 │         emit TokenCreated(token, msg.sender, name, symbol, supply);
    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    │
    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
 
 warning[reentrancy-no-eth]: external call can be reentered before `roundBalance` is updated
-    ╭▸ src/AuctionEngine.sol:378:9
+    ╭▸ src/AuctionEngine.sol:446:9
     │
-378 │         IERC721Minimal(npm).approve(address(locker), nftId);
+446 │         IERC721Minimal(npm).approve(address(locker), nftId);
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-no-eth
 
 warning[reentrancy-no-eth]: external call can be reentered before `roundBalance` is updated
-    ╭▸ src/AuctionEngine.sol:379:26
+    ╭▸ src/AuctionEngine.sol:447:26
     │
-379 │           uint256 lockId = locker.lock(
+447 │           uint256 lockId = locker.lock(
     │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-380 │ ┃             npm,
-381 │ ┃             nftId,
-382 │ ┃             permanent ? address(this) : r.creator,
+448 │ ┃             npm,
+449 │ ┃             nftId,
+450 │ ┃             permanent ? address(this) : r.creator,
     ‡ ┃
-385 │ ┃             r.lockFeeTier
-386 │ ┃         );
+453 │ ┃             r.lockFeeTier
+454 │ ┃         );
     │ ┗━━━━━━━━━┛
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-no-eth
 
 warning[reentrancy-no-eth]: external call can be reentered before `ledgers` is updated
-    ╭▸ src/exit/ExitAuction.sol:241:27
+    ╭▸ src/exit/ExitAuction.sol:288:27
     │
-241 │             uint256 got = vault.redeem(alloc, address(this), address(this));
+288 │             uint256 got = vault.redeem(alloc, address(this), address(this));
     │                           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-no-eth
 
 warning[reentrancy-no-eth]: external call can be reentered before `_lock` is updated
-    ╭▸ src/exit/ExitAuction.sol:241:27
+    ╭▸ src/exit/ExitAuction.sol:288:27
     │
-241 │             uint256 got = vault.redeem(alloc, address(this), address(this));
+288 │             uint256 got = vault.redeem(alloc, address(this), address(this));
     │                           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-no-eth
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-    ╭▸ src/AuctionEngine.sol:159:13
+    ╭▸ src/AuctionEngine.sol:190:13
     │
-159 │             require(adapters_[i].code.length != 0, "adapter has no code");
+190 │             require(adapters_[i].code.length != 0, "adapter has no code");
     │             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-    ╭▸ src/AuctionEngine.sol:219:17
+    ╭▸ src/AuctionEngine.sol:269:17
     │
-219 │                 require(isAdapter[p.dexSplits[i].adapter], "adapter not allowed");
+269 │                 require(isAdapter[p.dexSplits[i].adapter], "adapter not allowed");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-    ╭▸ src/AuctionEngine.sol:220:17
+    ╭▸ src/AuctionEngine.sol:270:17
     │
-220 │                 require(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee), "fee tier not supported");
+270 │                 require(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee), "fee tier not supported");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-    ╭▸ src/AuctionEngine.sol:221:17
+    ╭▸ src/AuctionEngine.sol:271:17
     │
-221 │                 require(p.dexSplits[i].bps != 0, "zero split");
+271 │                 require(p.dexSplits[i].bps != 0, "zero split");
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-    ╭▸ src/AuctionEngine.sol:374:9
+    ╭▸ src/AuctionEngine.sol:442:9
     │
-374 │         require(tokUsed <= tok && monUsed <= mon, "adapter overspent");
+442 │         require(tokUsed <= tok && monUsed <= mon, "adapter overspent");
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-    ╭▸ src/AuctionEngine.sol:375:9
+    ╭▸ src/AuctionEngine.sol:443:9
     │
-375 │         require(IERC721Minimal(npm).ownerOf(nftId) == address(this), "position not received");
+443 │         require(IERC721Minimal(npm).ownerOf(nftId) == address(this), "position not received");
     │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-   ╭▸ src/lib/SafeTransferLib.sol:25:9
+   ╭▸ src/lib/SafeTransferLib.sol:38:9
    │
-25 │         require(token.code.length != 0, err);
+38 │         require(token.code.length != 0, err);
    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    │
    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[require-revert-in-loop]: `require` or `revert` inside a loop
-   ╭▸ src/lib/SafeTransferLib.sol:27:9
+   ╭▸ src/lib/SafeTransferLib.sol:40:9
    │
-27 │         require(ok && (ret.length == 0 || abi.decode(ret, (bool))), err);
+40 │         require(ok && (ret.length == 0 || abi.decode(ret, (bool))), err);
    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    │
    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
 
 warning[uninitialized-local]: local variable is read before being initialized
-    ╭▸ src/AuctionEngine.sol:222:17
+    ╭▸ src/AuctionEngine.sol:272:17
     │
-222 │                 sum += p.dexSplits[i].bps;
+272 │                 sum += p.dexSplits[i].bps;
     │                 ━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
 
 warning[uninitialized-local]: local variable is read before being initialized
-    ╭▸ src/AuctionEngine.sol:351:13
+    ╭▸ src/AuctionEngine.sol:417:13
     │
-351 │             tokensUsed += t;
+417 │             monUsed += m;
+    │             ━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[uninitialized-local]: local variable is read before being initialized
+    ╭▸ src/AuctionEngine.sol:416:13
+    │
+416 │             tokensUsed += t;
     │             ━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
 
 warning[uninitialized-local]: local variable is read before being initialized
-    ╭▸ src/AuctionEngine.sol:352:13
+    ╭▸ src/adapters/UniswapV3Adapter.sol:232:13
     │
-352 │             monUsed += m;
+232 │         if (current == 0) {
     │             ━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
-
-warning[uninitialized-local]: local variable is read before being initialized
-    ╭▸ src/adapters/UniswapV3Adapter.sol:185:13
-    │
-185 │         if (current == 0) {
-    │             ━━━━━━━
-    │
-    ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/AuctionEngine.sol:176:26
-    │
-176 │         r.tokenReserve = uint128(uint256(p.sellAmount) * p.lpShareBps / BPS);
-    │                          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint128' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/AuctionEngine.sol:274:27
-    │
-274 │             r.settledAt = uint64(block.timestamp);
-    │                           ━━━━━━━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint64' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/AuctionEngine.sol:461:43
-    │
-461 │             vests[roundId][bidder] = Vest(uint128(alloc), uint128(release));
-    │                                           ━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint128' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/AuctionEngine.sol:461:59
-    │
-461 │             vests[roundId][bidder] = Vest(uint128(alloc), uint128(release));
-    │                                                           ━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint128' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/AuctionEngine.sol:478:22
-    │
-478 │         v.released = uint128(vested);
-    │                      ━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint128' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-   ╭▸ src/DepositLedger.sol:66:18
-   │
-66 │         a.paid = uint128(paid);
-   │                  ━━━━━━━━━━━━━
-   │
-   ├ note: consider disabling this lint if you're certain the cast is safe
-   │       
-   │       // casting to 'uint128' is safe because [explain why]
-   │       // forge-lint: disable-next-line(unsafe-typecast)
-   │       
-   │       
-   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-   ╭▸ src/DepositLedger.sol:67:22
-   │
-67 │         a.refunded = uint128(refund);
-   │                      ━━━━━━━━━━━━━━━
-   │
-   ├ note: consider disabling this lint if you're certain the cast is safe
-   │       
-   │       // casting to 'uint128' is safe because [explain why]
-   │       // forge-lint: disable-next-line(unsafe-typecast)
-   │       
-   │       
-   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-   ╭▸ src/adapters/UniV3PriceMath.sol:98:16
-   │
-98 │         return uint160(root);
-   │                ━━━━━━━━━━━━━
-   │
-   ├ note: consider disabling this lint if you're certain the cast is safe
-   │       
-   │       // casting to 'uint160' is safe because [explain why]
-   │       // forge-lint: disable-next-line(unsafe-typecast)
-   │       
-   │       
-   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/adapters/UniswapV3Adapter.sol:255:48
-    │
-255 │         if (amount0Delta > 0) _payPool(token0, uint256(amount0Delta));
-    │                                                ━━━━━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint256' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/adapters/UniswapV3Adapter.sol:256:48
-    │
-256 │         if (amount1Delta > 0) _payPool(token1, uint256(amount1Delta));
-    │                                                ━━━━━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint256' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/exit/ExitAuction.sol:139:22
-    │
-139 │         r.capacity = uint128(capacity);
-    │                      ━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint128' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/exit/ExitAuction.sol:140:23
-    │
-140 │         r.commitEnd = uint64(block.timestamp + commitDuration);
-    │                       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint64' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/exit/ExitAuction.sol:142:25
-    │
-142 │         r.openedBlock = uint64(block.number);
-    │                         ━━━━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint64' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/exit/ExitAuction.sol:143:28
-    │
-143 │         _initBook(roundId, uint128(capacity));
-    │                            ━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint128' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
-
-warning[unsafe-typecast]: typecast can truncate values
-    ╭▸ src/exit/ExitAuction.sol:183:30
-    │
-183 │             r.settledBlock = uint64(block.number);
-    │                              ━━━━━━━━━━━━━━━━━━━━
-    │
-    ├ note: consider disabling this lint if you're certain the cast is safe
-    │       
-    │       // casting to 'uint64' is safe because [explain why]
-    │       // forge-lint: disable-next-line(unsafe-typecast)
-    │       
-    │       
-    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
 
 warning[unused-return]: return value of an external call is not used
-    ╭▸ src/adapters/UniswapV3Adapter.sol:184:33
+    ╭▸ src/adapters/UniswapV3Adapter.sol:231:33
     │
-184 │         if (pool != address(0)) (current,,,,,,) = IUniswapV3PoolLike(pool).slot0();
+231 │         if (pool != address(0)) (current,,,,,,) = IUniswapV3PoolLike(pool).slot0();
     │                                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/unused-return
 
 warning[unused-return]: return value of an external call is not used
-    ╭▸ src/adapters/UniswapV3Adapter.sol:201:17
+    ╭▸ src/adapters/UniswapV3Adapter.sol:248:17
     │
-201 │                 (moved,,,,,,) = IUniswapV3PoolLike(pool).slot0();
+248 │                 (moved,,,,,,) = IUniswapV3PoolLike(pool).slot0();
     │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     │
     ╰ help: https://getfoundry.sh/forge/linting/unused-return
 
 warning[unused-return]: return value of an external call is not used
-    ╭▸ src/adapters/UniswapV3Adapter.sol:225:9
+    ╭▸ src/adapters/UniswapV3Adapter.sol:274:9
     │
-225 │ ┏         (nftId,,,) = positionManager.mint(
-226 │ ┃             INonfungiblePositionManagerLike.MintParams({
-227 │ ┃                 token0: token0,
-228 │ ┃                 token1: token1,
+274 │ ┏         (nftId,,,) = positionManager.mint(
+275 │ ┃             INonfungiblePositionManagerLike.MintParams({
+276 │ ┃                 token0: token0,
+277 │ ┃                 token1: token1,
     ‡ ┃
-238 │ ┃             })
-239 │ ┃         );
+287 │ ┃             })
+288 │ ┃         );
     │ ┗━━━━━━━━━┛
     │
     ╰ help: https://getfoundry.sh/forge/linting/unused-return

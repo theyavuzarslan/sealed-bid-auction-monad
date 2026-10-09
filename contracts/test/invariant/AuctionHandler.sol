@@ -5,12 +5,30 @@ import {Test} from "forge-std/Test.sol";
 import {AuctionEngine} from "../../src/AuctionEngine.sol";
 import {MockToken, MockAdapter} from "../mocks/Mocks.sol";
 
+/// A bidder that cannot take MON: its `receive` reverts. Every refund pushed to it becomes owed (v2, O1).
+contract RejectingActor {
+    receive() external payable {
+        revert("no MON");
+    }
+}
+
+/// A bidder that burns every unit of gas it is forwarded on `receive`. The engine's 50,000-gas push
+/// fails, so its refunds become owed too. Never used as a `withdrawOwed` destination: that call forwards
+/// all gas, and the loop would run until the test's gas limit.
+contract GasBurningActor {
+    receive() external payable {
+        while (true) {}
+    }
+}
+
 /// @notice Drives the engine through random interleavings of every external action across several
 ///         concurrent rounds: open, commit (valid and invalid bids, wrong deposit, double commit),
 ///         reveal (with no hint, `findHint`, or an arbitrary hint; wrong salt; someone else's bid),
 ///         warp, settle in random step sizes, seedLP (with a partially-filling or failing adapter),
 ///         abandonLP, claim / claimRefund / claimTokens by anyone, claimVested, burnUnrevealed,
-///         withdrawProceeds, sweepDust and disposeUnsold.
+///         withdrawProceeds, sweepDust, disposeUnsold and withdrawOwed. Two of the twelve bidders are
+///         contracts that cannot take MON (one reverts, one burns all forwarded gas), so refunds become
+///         owed (v2) and `withdrawOwed` is exercised.
 ///
 ///         Every engine call is made with a precise model of whether it must succeed. A call the model
 ///         says must succeed is made directly (a revert fails the run, `fail_on_revert = true`); a call
@@ -22,7 +40,8 @@ contract AuctionHandler is Test {
     uint256 constant NO_HINT = type(uint256).max;
     uint256 constant GRACE = 1 days;
     uint256 constant MAX_ROUNDS = 4;
-    uint256 constant N_ACTORS = 10;
+    uint256 constant N_EOAS = 10;
+    uint256 constant N_ACTORS = 12; // 10 EOAs, then a RejectingActor and a GasBurningActor
     uint96 constant MIN_BID = 0.01 ether;
     uint96 constant TICK = 0.001 ether;
 
@@ -43,6 +62,7 @@ contract AuctionHandler is Test {
         bool valid; // the bid satisfies the engine's reveal rules
         bool revealed;
         uint256 monIn; // MON the engine sent to this bidder
+        uint256 owed; // refund credited to refundsOwed instead (the push failed)
         uint256 tokensIn; // tokens the engine sent to this bidder (claim + vesting)
         uint256 refunds; // number of refund payouts
         uint256 deliveries; // number of claim-time token deliveries
@@ -63,6 +83,9 @@ contract AuctionHandler is Test {
     mapping(uint256 => mapping(address => G)) internal _g;
     mapping(uint256 => RG) internal _rg;
 
+    /// Per actor: owed refunds withdrawn with `withdrawOwed`.
+    mapping(address => uint256) public owedWithdrawn;
+
     uint256 public doubleClaims; // a refund or delivery to someone already paid out
     uint256 public unrevealedPayouts; // any MON or tokens to a bidder who never revealed
     uint256 public mustFailChecked; // calls the model said must revert, and did
@@ -77,17 +100,23 @@ contract AuctionHandler is Test {
     uint256 public nBurned;
     uint256 public nWithdrawn;
     uint256 public nSwept;
+    uint256 public nOwed; // refunds that became owed
+    uint256 public nOwedWithdrawn;
 
     constructor(AuctionEngine engine_, MockToken token_, MockAdapter adapter_, address creator_) {
         engine = engine_;
         token = token_;
         adapter = adapter_;
         creator = creator_;
-        for (uint256 i; i < N_ACTORS; ++i) {
+        for (uint256 i; i < N_EOAS; ++i) {
             address a = address(uint160(uint256(keccak256(abi.encode("even.invariant.actor", i)))));
             actors.push(a);
             vm.deal(a, 1_000_000 ether);
         }
+        actors.push(address(new RejectingActor()));
+        actors.push(address(new GasBurningActor()));
+        vm.deal(actors[N_EOAS], 1_000_000 ether);
+        vm.deal(actors[N_EOAS + 1], 1_000_000 ether);
         _openRound(0); // Degen
         _openRound(1 | (1 << 96) | (1 << 104)); // Raise with LP and vesting
     }
@@ -196,6 +225,11 @@ contract AuctionHandler is Test {
     }
 
     /// The engine's reveal rules (`_onReveal`), restated.
+    /// Whether `a` is one of the contract bidders that cannot take MON.
+    function isContractActor(address a) public view returns (bool) {
+        return a == actors[N_EOAS] || a == actors[N_EOAS + 1];
+    }
+
     function _isValid(AuctionEngine.Round memory rd, uint256 price, uint256 amount) internal pure returns (bool) {
         return price % rd.tickSize == 0 && price >= rd.reservePrice && amount != 0
             && _mulDivUp(price, amount, 1e18) < rd.depositAmount
@@ -470,6 +504,7 @@ contract AuctionHandler is Test {
         bool tokClaimed = engine.tokensClaimed(r, a);
 
         uint256 m0 = a.balance;
+        uint256 o0 = engine.refundsOwed(a);
         uint256 t0 = token.balanceOf(a);
         uint256 e0 = token.balanceOf(address(engine));
         uint256 h = _h(how) % 3;
@@ -512,6 +547,7 @@ contract AuctionHandler is Test {
         }
 
         uint256 mon = a.balance - m0;
+        uint256 owedNow = engine.refundsOwed(a) - o0;
         uint256 tok = token.balanceOf(a) - t0;
         require(e0 - token.balanceOf(address(engine)) == tok, "tokens left the engine to someone else");
         (,, bool nowSettled) = engine.accounts(r, a);
@@ -519,11 +555,13 @@ contract AuctionHandler is Test {
             g.refunds += 1;
             nRefunds += 1;
         }
-        if (mon != 0) {
+        if (mon != 0 || owedNow != 0) {
             if (accSettled) doubleClaims += 1;
             if (!g.revealed) unrevealedPayouts += 1;
             g.monIn += mon;
-            _rg[r].refunded += mon;
+            g.owed += owedNow;
+            _rg[r].refunded += mon + owedNow;
+            if (owedNow != 0) nOwed += 1;
         }
         if (!tokClaimed && engine.tokensClaimed(r, a)) {
             g.deliveries += 1;
@@ -647,5 +685,37 @@ contract AuctionHandler is Test {
         uint256 e0 = token.balanceOf(address(engine));
         engine.disposeUnsold(r);
         _rg[r].disposed += e0 - token.balanceOf(address(engine));
+    }
+
+    /// A bidder withdraws its owed refunds (v2). Mostly a contract bidder with something owed, to an EOA;
+    /// sometimes to the RejectingActor itself (must fail: the transfer reverts), sometimes a bidder with
+    /// nothing owed (must fail).
+    function withdrawOwed(uint256 as_, uint256 ts) external {
+        address a = _h(as_) % 4 == 0 ? actors[as_ % N_ACTORS] : actors[N_EOAS + as_ % 2];
+        uint256 owed = engine.refundsOwed(a);
+        bool toRejecter = _h(ts) % 5 == 0;
+        address to = toRejecter ? actors[N_EOAS] : actors[ts % N_EOAS];
+        if (owed == 0 || toRejecter) {
+            uint256 totalBefore = engine.totalOwed();
+            vm.prank(a);
+            try engine.withdrawOwed(to) {
+                _mustFail(true, "withdrawOwed with nothing owed or to a MON-rejecting address");
+            } catch {
+                _mustFail(false, "");
+            }
+            require(
+                engine.refundsOwed(a) == owed && engine.totalOwed() == totalBefore, "failed withdrawOwed changed state"
+            );
+            return;
+        }
+        uint256 b0 = to.balance;
+        uint256 total0 = engine.totalOwed();
+        vm.prank(a);
+        engine.withdrawOwed(to);
+        require(to.balance - b0 == owed, "withdrawOwed amount");
+        require(engine.refundsOwed(a) == 0, "owed not cleared");
+        require(total0 - engine.totalOwed() == owed, "totalOwed not reduced by the withdrawal");
+        owedWithdrawn[a] += owed;
+        nOwedWithdrawn += 1;
     }
 }
