@@ -166,6 +166,20 @@ contract ClearingProofs is Test {
         assert(x1 + x2 >= h.lowerBound(ID));
     }
 
+    /// The same three propositions with amounts and supply bounded to uint8.
+    function prove_P1_P1b_P2_Allocations_2Bids_Amounts8(uint8 supply, uint96 p1, uint8 a1, uint96 p2, uint8 a2) public {
+        vm.assume(supply != 0 && a1 != 0 && a2 != 0);
+        h.init(ID, supply);
+        h.add(ID, p1, a1);
+        h.add(ID, p2, a2);
+        assert(h.step(ID, 8));
+        uint256 x1 = h.alloc(ID, p1, a1);
+        uint256 x2 = h.alloc(ID, p2, a2);
+        assert(x1 <= a1 && x2 <= a2);
+        assert(x1 + x2 <= supply);
+        assert(x1 + x2 >= h.lowerBound(ID));
+    }
+
     // ─── P6a: the clearing price is one of the bid prices ───────────────
 
     function prove_P6a_ClearingPriceIsABidPrice_3Bids(
@@ -231,6 +245,39 @@ contract ClearingProofs is Test {
         uint96 p2,
         uint96 a2,
         uint96 p3,
+        uint96 a3
+    ) public {
+        _book3(supply, p1, a1, p2, a2, p3, a3);
+        (uint256 p,,) = h.result(ID);
+        uint256 above = (p1 > p ? uint256(a1) : 0) + (p2 > p ? uint256(a2) : 0) + (p3 > p ? uint256(a3) : 0);
+        assert(above < supply);
+    }
+
+    /// P6a and P8c with prices bounded to uint8 (amounts and supply stay uint96). The uint96-price runs
+    /// return candidate counterexamples that do not replay; these narrow the price domain.
+    function prove_P6a_ClearingPriceIsABidPrice_3Bids_Prices8(
+        uint96 supply,
+        uint8 p1,
+        uint96 a1,
+        uint8 p2,
+        uint96 a2,
+        uint8 p3,
+        uint96 a3
+    ) public {
+        _book3(supply, p1, a1, p2, a2, p3, a3);
+        (uint256 p,,) = h.result(ID);
+        assert(p == p1 || p == p2 || p == p3);
+        assert(p <= _max3(p1, p2, p3));
+        assert(p >= _min3(p1, p2, p3));
+    }
+
+    function prove_P8c_DemandAbovePriceBelowSupply_3Bids_Prices8(
+        uint96 supply,
+        uint8 p1,
+        uint96 a1,
+        uint8 p2,
+        uint96 a2,
+        uint8 p3,
         uint96 a3
     ) public {
         _book3(supply, p1, a1, p2, a2, p3, a3);

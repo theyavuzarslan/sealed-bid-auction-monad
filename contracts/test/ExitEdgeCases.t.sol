@@ -60,6 +60,12 @@ contract ExitEdgeCasesTest is ExitBase {
         } catch Error(string memory why) {
             assertEq(why, "bad tick");
         }
+        c.tickBps = uint16(BPS + 1);
+        try new ExitAuction(vault, c) {
+            revert("deployment should have reverted");
+        } catch Error(string memory why) {
+            assertEq(why, "bad tick");
+        }
         c = _config();
         c.minExitShares = 0;
         try new ExitAuction(vault, c) {
@@ -77,6 +83,12 @@ contract ExitEdgeCasesTest is ExitBase {
         c = _config();
         c.tickBps = uint16(BPS - 1);
         new ExitAuction(vault, c); // the largest tick is accepted
+    }
+
+    /// Before the first round, a round can open in the current block; nothing is reserved.
+    function test_Views_BeforeTheFirstRound() public view {
+        assertEq(auction.nextOpenBlock(), block.number);
+        assertEq(auction.reservedShares(), 0);
     }
 
     /// Windows and the opening block are stored as now + duration and block.number.

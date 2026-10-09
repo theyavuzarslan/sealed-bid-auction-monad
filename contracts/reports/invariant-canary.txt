@@ -1,0 +1,23 @@
+Invariant suite: do the random walks reach the v2 owed-refund paths?
+
+Method: two temporary "canary" invariants were added to a scratch copy of test/invariant/AuctionEngine.invariant.t.sol
+and the default campaign was run (32 runs x depth 128, forge 1.8.3, 9 Oct 2026). A canary fails as soon as the
+handler has seen the event it guards against, which proves the event is reached:
+
+    function invariant_canary_NoOwedRefundYet() public view {
+        assertEq(handler.nOwed(), 0, "CANARY: an owed refund was credited");
+    }
+    function invariant_canary_NoOwedWithdrawalYet() public view {
+        assertEq(handler.nOwedWithdrawn(), 0, "CANARY: an owed refund was withdrawn");
+    }
+
+Result:
+    [FAIL: CANARY: an owed refund was credited: 1 != 0] invariant_canary_NoOwedRefundYet
+    [FAIL: CANARY: an owed refund was withdrawn: 1 != 0] invariant_canary_NoOwedWithdrawalYet
+    every real invariant: [PASS]
+    AuctionEngineInvariantTest invariants (runs: 32, calls: 4096, reverts: 0)
+
+So within the default campaign a refund push to a MON-rejecting or gas-burning bidder contract fails and is
+credited as owed, and an owed refund is withdrawn; the real invariants (engine MON == sum of roundBalance +
+totalOwed, refundsOwed == credited - withdrawn, totalOwed == sum of refundsOwed, ...) hold throughout. The
+canaries are not in the repository.

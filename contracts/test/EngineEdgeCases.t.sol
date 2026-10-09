@@ -71,9 +71,11 @@ contract GreedyToken {
 /// An adapter that seeds normally but mints the position to someone other than the engine.
 contract MisdirectingAdapter {
     MockPositionManager public immutable npm;
+    address public immutable to;
 
-    constructor(MockPositionManager npm_) {
+    constructor(MockPositionManager npm_, address to_) {
         npm = npm_;
+        to = to_;
     }
 
     function supportsFee(uint24) external pure returns (bool) {
@@ -86,7 +88,7 @@ contract MisdirectingAdapter {
         returns (address, uint256 nftId)
     {
         MockToken(token).transferFrom(msg.sender, address(this), tokenAmount);
-        nftId = npm.mint(address(0xD1));
+        nftId = npm.mint(to);
         return (address(npm), nftId);
     }
 }
@@ -177,6 +179,8 @@ contract EngineEdgeCasesTest is EngineBase {
         p = _params(AuctionEngine.Preset.Degen);
         p.minBidSize = p.depositAmount;
         _expectOpenRevert(p, "deposit must exceed min bid");
+        p.minBidSize = p.depositAmount + 1;
+        _expectOpenRevert(p, "deposit must exceed min bid");
 
         // Some amount at the reserve price must cost in [minBidSize, deposit): with deposit − minBidSize
         // = 2 wei, the highest reserve is exactly 2 MON per token.
@@ -249,6 +253,8 @@ contract EngineEdgeCasesTest is EngineBase {
         p = _params(AuctionEngine.Preset.Raise);
         p.vestDuration = 30 days;
         p.tgeBps = 10_000;
+        _expectOpenRevert(p, "tge must be below 100%");
+        p.tgeBps = 10_001;
         _expectOpenRevert(p, "tge must be below 100%");
         p.tgeBps = 9999;
         _open(p);
@@ -410,8 +416,15 @@ contract EngineEdgeCasesTest is EngineBase {
         engine.seedLP(r);
     }
 
+    /// The position must be owned by the engine exactly: an owner below or above its address is refused.
     function test_LP_PositionMustReachTheEngine() public {
-        MisdirectingAdapter bad = new MisdirectingAdapter(npm);
+        _seedThrough(address(0xD1));
+        _seedThrough(address(type(uint160).max));
+    }
+
+    function _seedThrough(address owner) internal {
+        uint256 snap = vm.snapshotState();
+        MisdirectingAdapter bad = new MisdirectingAdapter(npm, owner);
         address[] memory adapters = new address[](1);
         adapters[0] = address(bad);
         engine = new AuctionEngine(address(locker), adapters, LOCK_END, GRACE);
@@ -425,6 +438,7 @@ contract EngineEdgeCasesTest is EngineBase {
         engine.settle(r, 10);
         vm.expectRevert("position not received");
         engine.seedLP(r);
+        vm.revertToState(snap);
     }
 
     /// The engine takes MON from an adapter only while it is seeding; after `seedLP`, never.

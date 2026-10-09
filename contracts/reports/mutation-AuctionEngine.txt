@@ -1,0 +1,1114 @@
+Mutation testing of contracts/src/AuctionEngine.sol (v2, branch contracts-v2)
+Method: contracts/reports/mutation-summary.md. Operators: forge 1.8.3's set (binary operator, require condition,
+assignment/initializer literal, unary not) without the bitwise/shift/power replacements of arithmetic operators.
+
+Mutants: 834 generated, 2 invalid (do not compile), 832 valid.
+Before (suite at the start of the pass): 646 killed, 186 survived: 77.6%
+After (tests added in this pass):        759 killed, 73 survived: 91.2%
+Every surviving mutant below is classified; unclassified: 0.
+
+== Surviving mutants ==
+#4 line 183 (constructor): `locker_.code.length != 0` -> `locker_.code.length > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#18 line 185 (constructor): `lpGracePeriod_ != 0` -> `lpGracePeriod_ > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#23 line 189 (constructor): `i < adapters_.length` -> `i != adapters_.length`
+    Loop counter: `i < n` and `i != n` stop at the same step.
+#32 line 190 (constructor): `adapters_[i].code.length != 0` -> `adapters_[i].code.length > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#61 line 236 (openRound): `i < p.dexSplits.length` -> `i != p.dexSplits.length`
+    Loop counter: `i < n` and `i != n` stop at the same step.
+#87 line 250 (_validate): `p.token.code.length != 0` -> `p.token.code.length > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#94 line 251 (_validate): `p.sellAmount != 0` -> `p.sellAmount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#101 line 252 (_validate): `p.tickSize != 0` -> `p.tickSize > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#109 line 253 (_validate): `p.reservePrice != 0` -> `p.reservePrice > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#114 line 253 (_validate): `p.reservePrice % p.tickSize == 0` -> `p.reservePrice % p.tickSize <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#126 line 254 (_validate): `p.minBidSize != 0` -> `p.minBidSize > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#180 line 263 (_validate): `p.lpShareBps == 0` -> `p.lpShareBps <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#186 line 264 (_validate): `p.dexSplits.length == 0` -> `p.dexSplits.length <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#195 line 266 (_validate): `p.dexSplits.length != 0` -> `p.dexSplits.length > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#203 line 268 (_validate): `i < p.dexSplits.length` -> `i != p.dexSplits.length`
+    Loop counter: `i < n` and `i != n` stop at the same step.
+#216 line 271 (_validate): `p.dexSplits[i].bps != 0` -> `p.dexSplits[i].bps > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#232 line 275 (_validate): `bytes(p.lockFeeTier).length != 0` -> `bytes(p.lockFeeTier).length > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#237 line 277 (_validate): `p.preset == Preset.Degen` -> `p.preset <= Preset.Degen`
+    Enum with two values: Degen is the smallest, Raise the largest.
+#244 line 278 (_validate): `p.lpShareBps != 0` -> `p.lpShareBps > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#250 line 279 (_validate): `p.allowlistRoot == bytes32(0)` -> `p.allowlistRoot <= bytes32(0)`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#257 line 280 (_validate): `p.tgeBps == 0` -> `p.tgeBps <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#265 line 280 (_validate): `p.cliff == 0` -> `p.cliff <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#270 line 280 (_validate): `p.vestDuration == 0` -> `p.vestDuration <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#276 line 281 (_validate): `p.lockDuration == 0` -> `p.lockDuration <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#282 line 283 (_validate): `p.vestDuration == 0` -> `p.vestDuration <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#288 line 283 (_validate): `p.tgeBps == 0` -> `p.tgeBps <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#295 line 283 (_validate): `p.cliff == 0` -> `p.cliff <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#308 line 285 (_validate): `p.lpShareBps != 0` -> `p.lpShareBps > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#320 line 286 (_validate): `p.lockDuration == 0` -> `p.lockDuration <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#328 line 300 (_sealTerms): `r.creator != address(0)` -> `r.creator > address(0)`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#334 line 309 (_onReveal): `price % r.tickSize == 0` -> `price % r.tickSize <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#352 line 310 (_onReveal): `amount != 0` -> `amount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#373 line 327 (settle): `r.creator != address(0)` -> `r.creator > address(0)`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#395 line 350 (seedLP): `lpTokens != 0` -> `lpTokens > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#400 line 350 (seedLP): `lpMon != 0` -> `lpMon > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#427 line 374 (abandonLP): `lpMon != 0` -> `lpMon > 0`
+    Debiting 0 MON changes nothing.
+#428 line 374 (abandonLP): `lpMon != 0` -> `lpMon >= 0`
+    Debiting 0 MON changes nothing.
+#432 line 377 (abandonLP): `lpMon != 0` -> `lpMon > 0`
+    Sending 0 MON to 0x…dEaD changes nothing.
+#433 line 377 (abandonLP): `lpMon != 0` -> `lpMon >= 0`
+    Sending 0 MON to 0x…dEaD changes nothing.
+#436 line 395 (_lpTargets): `r.lpShareBps == 0` -> `r.lpShareBps < 0`
+    With `lpShareBps == 0` the formulas below give (0, 0) anyway.
+#437 line 395 (_lpTargets): `r.lpShareBps == 0` -> `r.lpShareBps <= 0`
+    With `lpShareBps == 0` the formulas below give (0, 0) anyway.
+#438 line 395 (_lpTargets): `r.lpShareBps == 0 || soldLB == 0` -> `r.lpShareBps == 0 && soldLB == 0`
+    Either factor being zero makes both LP sides zero; the early return is a shortcut.
+#442 line 395 (_lpTargets): `soldLB == 0` -> `soldLB < 0`
+    With `soldLB == 0` the formulas below give (0, 0) anyway.
+#443 line 395 (_lpTargets): `soldLB == 0` -> `soldLB <= 0`
+    With `soldLB == 0` the formulas below give (0, 0) anyway.
+#475 line 408 (_seed): `i < splits.length` -> `i != splits.length`
+    Loop counter: `i < n` and `i != n` stop at the same step.
+#484 line 410 (_seed): `i == splits.length - 1` -> `i >= splits.length - 1`
+    `i` never exceeds `splits.length - 1`, so `>=` is `==`.
+#518 line 424 (_seed): `lpMon > monUsed` -> `lpMon != monUsed`
+    `monUsed <= lpMon` (overspend check), so `!=` is `>`.
+#522 line 424 (_seed): `lpMon > monUsed` -> `lpMon >= monUsed`
+    At equality the credit is 0 either way.
+#561 line 445 (_seedOne): `r.preset == Preset.Degen` -> `r.preset <= Preset.Degen`
+    Enum with two values: Degen is the smallest, Raise the largest.
+#588 line 466 (_disposeOwed): `amount != 0` -> `amount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#593 line 477 (_unsoldRecipient): `b.sold == 0` -> `b.sold <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#601 line 477 (_unsoldRecipient): `r.preset == Preset.Raise` -> `r.preset >= Preset.Raise`
+    Enum with two values: Degen is the smallest, Raise the largest.
+#610 line 518 (_refund): `_books[roundId].settled` -> `true`
+    `_allocation` repeats the settled check with the same revert reason.
+#632 line 539 (_deliver): `r.vestDuration != 0` -> `r.vestDuration > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#637 line 539 (_deliver): `alloc != 0` -> `alloc > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#638 line 539 (_deliver): `alloc != 0` -> `alloc >= 0`
+    A zero allocation records a zero vesting schedule and sends nothing: same state.
+#651 line 546 (_deliver): `release != 0` -> `release > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#652 line 546 (_deliver): `release != 0` -> `release >= 0`
+    A zero release sends 0 tokens and adds 0 to `tokensOut`.
+#658 line 557 (claimVested): `v.total != 0` -> `v.total > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#670 line 560 (claimVested): `amount != 0` -> `amount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#688 line 578 (withdrawProceeds): `amount != 0` -> `amount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#702 line 592 (sweepDust): `l.claims == l.reveals` -> `l.claims >= l.reveals`
+    `claims` can never exceed `reveals`.
+#714 line 595 (sweepDust): `r.unsoldOwed != 0` -> `r.unsoldOwed > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#726 line 637 (vestedOf): `v.total == 0` -> `v.total < 0`
+    With total 0 the general path also returns (0, 0).
+#727 line 637 (vestedOf): `v.total == 0` -> `v.total <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#740 line 652 (_creatorAvailable): `r.collected > lpCost` -> `r.collected >= lpCost`
+    At equality the entitlement is 0 either way.
+#745 line 653 (_creatorAvailable): `entitled > r.withdrawn` -> `entitled != r.withdrawn`
+    `entitled >= withdrawn` always, so `!=` is `>`.
+#749 line 653 (_creatorAvailable): `entitled > r.withdrawn` -> `entitled >= r.withdrawn`
+    At equality the result is 0 either way.
+#769 line 660 (_vestedAmount): `block.timestamp <= start` -> `block.timestamp < start`
+    At `block.timestamp == start` both formulas give the TGE share.
+#774 line 661 (_vestedAmount): `block.timestamp - start` -> `block.timestamp % start`
+    Equivalent in practice: `t % start == t - start` while `start <= t < 2·start`, i.e. for every timestamp before 2083 (start ≥ settlement time ≈ 1.79e9).
+#782 line 662 (_vestedAmount): `elapsed >= r.vestDuration` -> `elapsed > r.vestDuration`
+    At `elapsed == vestDuration` both branches give `total`.
+#807 line 670 (_tokensOut): `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `true`
+    Defence in depth, unreachable: no path sends a round more tokens than it pulled (invariant `TokensAccountedFor`).
+#819 line 676 (_mulDivUp): `x == 0` -> `x <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+
+== Killed by the tests added in this pass ==
+#5 line 183 (constructor): `locker_.code.length != 0` -> `locker_.code.length >= 0`   killed by test_Constructor_EveryCheck
+#6 line 183 (constructor): `locker_.code.length != 0` -> `true`   killed by test_Constructor_EveryCheck
+#8 line 184 (constructor): `permanentLockEnd_ > block.timestamp` -> `permanentLockEnd_ != block.timestamp`   killed by test_Constructor_EveryCheck
+#12 line 184 (constructor): `permanentLockEnd_ > block.timestamp` -> `permanentLockEnd_ >= block.timestamp`   killed by test_Constructor_EveryCheck
+#13 line 184 (constructor): `permanentLockEnd_ > block.timestamp` -> `true`   killed by test_Constructor_EveryCheck
+#19 line 185 (constructor): `lpGracePeriod_ != 0` -> `lpGracePeriod_ >= 0`   killed by test_Constructor_EveryCheck
+#20 line 185 (constructor): `lpGracePeriod_ != 0` -> `true`   killed by test_Constructor_EveryCheck
+#33 line 190 (constructor): `adapters_[i].code.length != 0` -> `adapters_[i].code.length >= 0`   killed by test_Constructor_EveryCheck
+#34 line 190 (constructor): `adapters_[i].code.length != 0` -> `true`   killed by test_Constructor_EveryCheck
+#80 line 244 (openRound): `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `IERC20Minimal(p.token).balanceOf(address(this)) - before >= need`   killed by test_OpenRules_TokenCreditingMoreIsRejected
+#88 line 250 (_validate): `p.token.code.length != 0` -> `p.token.code.length >= 0`   killed by test_OpenRules_Amounts
+#89 line 250 (_validate): `p.token.code.length != 0` -> `true`   killed by test_OpenRules_Amounts
+#95 line 251 (_validate): `p.sellAmount != 0` -> `p.sellAmount >= 0`   killed by test_OpenRules_Amounts
+#96 line 251 (_validate): `p.sellAmount != 0` -> `true`   killed by test_OpenRules_Amounts
+#102 line 252 (_validate): `p.tickSize != 0` -> `p.tickSize >= 0`   killed by test_OpenRules_Amounts
+#103 line 252 (_validate): `p.tickSize != 0` -> `true`   killed by test_OpenRules_Amounts
+#110 line 253 (_validate): `p.reservePrice != 0` -> `p.reservePrice >= 0`   killed by test_OpenRules_Amounts
+#122 line 254 (_validate): `p.minBidSize != 0 && p.depositAmount > p.minBidSize` -> `p.minBidSize != 0 || p.depositAmount > p.minBidSize`   killed by test_OpenRules_Amounts
+#127 line 254 (_validate): `p.minBidSize != 0` -> `p.minBidSize >= 0`   killed by test_OpenRules_Amounts
+#128 line 254 (_validate): `p.minBidSize != 0 && p.depositAmount > p.minBidSize` -> `true`   killed by test_OpenRules_Amounts
+#129 line 254 (_validate): `p.depositAmount > p.minBidSize` -> `p.depositAmount != p.minBidSize`   killed by test_OpenRules_Amounts
+#133 line 254 (_validate): `p.depositAmount > p.minBidSize` -> `p.depositAmount >= p.minBidSize`   killed by test_OpenRules_Amounts
+#137 line 258 (_validate): `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `uint256(p.reservePrice) < (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE`   killed by test_OpenRules_Amounts
+#141 line 258 (_validate): `(uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `(uint256(p.depositAmount) - p.minBidSize) % PRICE_SCALE`   killed by test_LP_TokenSideZero_NotSeeded
+#142 line 258 (_validate): `(uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `(uint256(p.depositAmount) - p.minBidSize) + PRICE_SCALE`   killed by test_OpenRules_Amounts
+#148 line 258 (_validate): `uint256(p.depositAmount) - p.minBidSize` -> `uint256(p.depositAmount) / p.minBidSize`   killed by test_OpenRules_Amounts
+#172 line 262 (_validate): `p.lpShareBps <= BPS` -> `p.lpShareBps != BPS`   killed by test_LP_FullShare_SoldOut_WholeReserveUsed
+#173 line 262 (_validate): `p.lpShareBps <= BPS` -> `p.lpShareBps < BPS`   killed by test_LP_FullShare_SoldOut_WholeReserveUsed
+#177 line 262 (_validate): `p.lpShareBps <= BPS` -> `true`   killed by test_OpenRules_LpAndSplits
+#188 line 264 (_validate): `p.dexSplits.length == 0` -> `p.dexSplits.length >= 0`   killed by test_OpenRules_LpAndSplits
+#189 line 264 (_validate): `p.dexSplits.length == 0` -> `true`   killed by test_OpenRules_LpAndSplits
+#191 line 266 (_validate): `p.dexSplits.length != 0 && p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length != 0 || p.dexSplits.length <= MAX_SPLITS`   killed by test_OpenRules_LpAndSplits
+#196 line 266 (_validate): `p.dexSplits.length != 0` -> `p.dexSplits.length >= 0`   killed by test_OpenRules_LpAndSplits
+#197 line 266 (_validate): `p.dexSplits.length != 0 && p.dexSplits.length <= MAX_SPLITS` -> `true`   killed by test_OpenRules_LpAndSplits
+#198 line 266 (_validate): `p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length != MAX_SPLITS`   killed by test_OpenRules_LpAndSplits
+#199 line 266 (_validate): `p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length < MAX_SPLITS`   killed by test_OpenRules_LpAndSplits
+#217 line 271 (_validate): `p.dexSplits[i].bps != 0` -> `p.dexSplits[i].bps >= 0`   killed by test_OpenRules_LpAndSplits
+#218 line 271 (_validate): `p.dexSplits[i].bps != 0` -> `true`   killed by test_OpenRules_LpAndSplits
+#226 line 274 (_validate): `sum == BPS` -> `sum >= BPS`   killed by test_OpenRules_LpAndSplits
+#233 line 275 (_validate): `bytes(p.lockFeeTier).length != 0` -> `bytes(p.lockFeeTier).length >= 0`   killed by test_OpenRules_LpAndSplits
+#234 line 275 (_validate): `bytes(p.lockFeeTier).length != 0` -> `true`   killed by test_OpenRules_LpAndSplits
+#258 line 280 (_validate): `p.tgeBps == 0 && p.cliff == 0 && p.vestDuration == 0` -> `p.tgeBps == 0 && p.cliff == 0 || p.vestDuration == 0`   killed by test_OpenRules_Presets
+#259 line 280 (_validate): `p.tgeBps == 0 && p.cliff == 0` -> `p.tgeBps == 0 || p.cliff == 0`   killed by test_OpenRules_Presets
+#261 line 280 (_validate): `p.tgeBps == 0` -> `p.tgeBps >= 0`   killed by test_OpenRules_Presets
+#262 line 280 (_validate): `p.tgeBps == 0 && p.cliff == 0 && p.vestDuration == 0` -> `true`   killed by test_OpenRules_Presets
+#267 line 280 (_validate): `p.cliff == 0` -> `p.cliff >= 0`   killed by test_OpenRules_Presets
+#272 line 280 (_validate): `p.vestDuration == 0` -> `p.vestDuration >= 0`   killed by test_OpenRules_Presets
+#278 line 281 (_validate): `p.lockDuration == 0` -> `p.lockDuration >= 0`   killed by test_OpenRules_Presets
+#279 line 281 (_validate): `p.lockDuration == 0` -> `true`   killed by test_OpenRules_Presets
+#281 line 283 (_validate): `p.vestDuration == 0` -> `p.vestDuration < 0`   killed by test_OpenRules_Presets
+#289 line 283 (_validate): `p.tgeBps == 0 && p.cliff == 0` -> `p.tgeBps == 0 || p.cliff == 0`   killed by test_OpenRules_Presets
+#291 line 283 (_validate): `p.tgeBps == 0` -> `p.tgeBps >= 0`   killed by test_OpenRules_Presets
+#292 line 283 (_validate): `p.tgeBps == 0 && p.cliff == 0` -> `true`   killed by test_OpenRules_Presets
+#297 line 283 (_validate): `p.cliff == 0` -> `p.cliff >= 0`   killed by test_OpenRules_Presets
+#299 line 284 (_validate): `p.tgeBps < BPS` -> `p.tgeBps != BPS`   killed by test_OpenRules_Presets
+#300 line 284 (_validate): `p.tgeBps < BPS` -> `p.tgeBps <= BPS`   killed by test_OpenRules_Presets
+#304 line 284 (_validate): `p.tgeBps < BPS` -> `true`   killed by test_OpenRules_Presets
+#322 line 286 (_validate): `p.lockDuration == 0` -> `p.lockDuration >= 0`   killed by test_OpenRules_Presets
+#323 line 286 (_validate): `p.lockDuration == 0` -> `true`   killed by test_OpenRules_Presets
+#329 line 300 (_sealTerms): `r.creator != address(0)` -> `r.creator >= address(0)`   killed by test_UnknownRound
+#330 line 300 (_sealTerms): `r.creator != address(0)` -> `true`   killed by test_UnknownRound
+#353 line 310 (_onReveal): `amount != 0` -> `amount >= 0`   killed by test_Reveal_ZeroAmountRefusedForThatReason
+#354 line 310 (_onReveal): `amount != 0` -> `true`   killed by test_Reveal_ZeroAmountRefusedForThatReason
+#374 line 327 (settle): `r.creator != address(0)` -> `r.creator >= address(0)`   killed by test_UnknownRound
+#375 line 327 (settle): `r.creator != address(0)` -> `true`   killed by test_UnknownRound
+#391 line 350 (seedLP): `lpTokens != 0 && lpMon != 0` -> `lpTokens != 0 || lpMon != 0`   killed by test_LP_MonSideZero_NotSeeded
+#396 line 350 (seedLP): `lpTokens != 0` -> `lpTokens >= 0`   killed by test_LP_TokenSideZero_NotSeeded
+#401 line 350 (seedLP): `lpMon != 0` -> `lpMon >= 0`   killed by test_LP_MonSideZero_NotSeeded
+#421 line 370 (abandonLP): `true` -> `false`   killed by test_AbandonLP_RecordsAbandonment
+#480 line 410 (_seed): `i == splits.length - 1` -> `i != splits.length - 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#481 line 410 (_seed): `i == splits.length - 1` -> `i < splits.length - 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#482 line 410 (_seed): `i == splits.length - 1` -> `i <= splits.length - 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#483 line 410 (_seed): `i == splits.length - 1` -> `i > splits.length - 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#485 line 410 (_seed): `splits.length - 1` -> `splits.length % 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#486 line 410 (_seed): `splits.length - 1` -> `splits.length * 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#487 line 410 (_seed): `splits.length - 1` -> `splits.length + 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#488 line 410 (_seed): `splits.length - 1` -> `splits.length / 1`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#490 line 411 (_seed): `lpTokens * s.bps` -> `lpTokens % s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#491 line 411 (_seed): `lpTokens * s.bps / BPS` -> `lpTokens * s.bps % BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#492 line 411 (_seed): `lpTokens * s.bps / BPS` -> `lpTokens * s.bps * BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#493 line 411 (_seed): `lpTokens * s.bps / BPS` -> `lpTokens * s.bps + BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#494 line 411 (_seed): `lpTokens * s.bps / BPS` -> `lpTokens * s.bps - BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#495 line 411 (_seed): `lpTokens * s.bps` -> `lpTokens + s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#496 line 411 (_seed): `lpTokens * s.bps` -> `lpTokens - s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#497 line 411 (_seed): `lpTokens * s.bps` -> `lpTokens / s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#499 line 412 (_seed): `lpMon * s.bps` -> `lpMon % s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#500 line 412 (_seed): `lpMon * s.bps / BPS` -> `lpMon * s.bps % BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#501 line 412 (_seed): `lpMon * s.bps / BPS` -> `lpMon * s.bps * BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#502 line 412 (_seed): `lpMon * s.bps / BPS` -> `lpMon * s.bps + BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#503 line 412 (_seed): `lpMon * s.bps / BPS` -> `lpMon * s.bps - BPS`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#504 line 412 (_seed): `lpMon * s.bps` -> `lpMon + s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#505 line 412 (_seed): `lpMon * s.bps` -> `lpMon - s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#506 line 412 (_seed): `lpMon * s.bps` -> `lpMon / s.bps`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#507 line 413 (_seed): `tokensLeft -= tok` -> `tokensLeft += tok`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#508 line 413 (_seed): `tok` -> `0`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#509 line 414 (_seed): `monLeft -= mon` -> `monLeft += mon`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#510 line 414 (_seed): `mon` -> `0`   killed by test_LP_TwoVenues_LastTakesTheRemainder
+#515 line 419 (_seed): `false` -> `true`   killed by test_LP_NoMonFromAdapterAfterSeeding
+#530 line 440 (_seedOne): `tokBefore - IERC20Minimal(token).balanceOf(address(this))` -> `tokBefore % IERC20Minimal(token).balanceOf(address(this))`   killed by test_LP_FullShare_SoldOut_WholeReserveUsed
+#542 line 442 (_seedOne): `tokUsed <= tok && monUsed <= mon` -> `tokUsed <= tok || monUsed <= mon`   killed by test_LP_AdapterOverspendRejected
+#546 line 442 (_seedOne): `tokUsed <= tok && monUsed <= mon` -> `true`   killed by test_LP_AdapterOverspendRejected
+#555 line 443 (_seedOne): `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `IERC721Minimal(npm).ownerOf(nftId) <= address(this)`   killed by test_LP_PositionMustReachTheEngine
+#557 line 443 (_seedOne): `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `IERC721Minimal(npm).ownerOf(nftId) >= address(this)`   killed by test_LP_PositionMustReachTheEngine
+#558 line 443 (_seedOne): `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `true`   killed by test_LP_PositionMustReachTheEngine
+#654 line 557 (claimVested): `v.total != 0` -> `true`   killed by test_ClaimVested_NoVestingRefusedForThatReason
+#659 line 557 (claimVested): `v.total != 0` -> `v.total >= 0`   killed by test_ClaimVested_NoVestingRefusedForThatReason
+#677 line 575 (withdrawProceeds): `msg.sender == r.creator` -> `msg.sender <= r.creator`   killed by test_WithdrawProceeds_OnlyCreator_OnlyAfterLp
+#682 line 576 (withdrawProceeds): `r.lpDone` -> `true`   killed by test_WithdrawProceeds_OnlyCreator_OnlyAfterLp
+#704 line 593 (sweepDust): `true` -> `false`   killed by test_SweepDust_OnlyOnce
+#717 line 623 (quote): `commitments[roundId][bidder].revealed` -> `true`   killed by test_Quote_MatchesSettlement_AndNeedsAReveal
+#720 line 627 (quote): `uint256(_rounds[roundId].depositAmount) - paid` -> `0`   killed by test_Quote_MatchesSettlement_AndNeedsAReveal
+#722 line 627 (quote): `uint256(_rounds[roundId].depositAmount) - paid` -> `uint256(_rounds[roundId].depositAmount) * paid`   killed by test_Quote_MatchesSettlement_AndNeedsAReveal
+#723 line 627 (quote): `uint256(_rounds[roundId].depositAmount) - paid` -> `uint256(_rounds[roundId].depositAmount) + paid`   killed by test_Quote_MatchesSettlement_AndNeedsAReveal
+
+== Every mutant ==
+#0    killed        line 183  constructor        `locker_.code.length != 0` -> `!(locker_.code.length != 0)`
+#1    invalid       line 183  constructor        `locker_.code.length != 0` -> `locker_.code.length < 0`
+#2    killed        line 183  constructor        `locker_.code.length != 0` -> `locker_.code.length <= 0`
+#3    killed        line 183  constructor        `locker_.code.length != 0` -> `locker_.code.length == 0`
+#4    survived      line 183  constructor        `locker_.code.length != 0` -> `locker_.code.length > 0`
+#5    killed-after  line 183  constructor        `locker_.code.length != 0` -> `locker_.code.length >= 0`
+#6    killed-after  line 183  constructor        `locker_.code.length != 0` -> `true`
+#7    killed        line 184  constructor        `permanentLockEnd_ > block.timestamp` -> `!(permanentLockEnd_ > block.timestamp)`
+#8    killed-after  line 184  constructor        `permanentLockEnd_ > block.timestamp` -> `permanentLockEnd_ != block.timestamp`
+#9    killed        line 184  constructor        `permanentLockEnd_ > block.timestamp` -> `permanentLockEnd_ < block.timestamp`
+#10   killed        line 184  constructor        `permanentLockEnd_ > block.timestamp` -> `permanentLockEnd_ <= block.timestamp`
+#11   killed        line 184  constructor        `permanentLockEnd_ > block.timestamp` -> `permanentLockEnd_ == block.timestamp`
+#12   killed-after  line 184  constructor        `permanentLockEnd_ > block.timestamp` -> `permanentLockEnd_ >= block.timestamp`
+#13   killed-after  line 184  constructor        `permanentLockEnd_ > block.timestamp` -> `true`
+#14   killed        line 185  constructor        `lpGracePeriod_ != 0` -> `!(lpGracePeriod_ != 0)`
+#15   invalid       line 185  constructor        `lpGracePeriod_ != 0` -> `lpGracePeriod_ < 0`
+#16   killed        line 185  constructor        `lpGracePeriod_ != 0` -> `lpGracePeriod_ <= 0`
+#17   killed        line 185  constructor        `lpGracePeriod_ != 0` -> `lpGracePeriod_ == 0`
+#18   survived      line 185  constructor        `lpGracePeriod_ != 0` -> `lpGracePeriod_ > 0`
+#19   killed-after  line 185  constructor        `lpGracePeriod_ != 0` -> `lpGracePeriod_ >= 0`
+#20   killed-after  line 185  constructor        `lpGracePeriod_ != 0` -> `true`
+#21   killed        line 187  constructor        `permanentLockEnd_` -> `0`
+#22   killed        line 188  constructor        `lpGracePeriod_` -> `0`
+#23   survived      line 189  constructor        `i < adapters_.length` -> `i != adapters_.length`
+#24   killed        line 189  constructor        `i < adapters_.length` -> `i <= adapters_.length`
+#25   killed        line 189  constructor        `i < adapters_.length` -> `i == adapters_.length`
+#26   killed        line 189  constructor        `i < adapters_.length` -> `i > adapters_.length`
+#27   killed        line 189  constructor        `i < adapters_.length` -> `i >= adapters_.length`
+#28   killed        line 190  constructor        `adapters_[i].code.length != 0` -> `!(adapters_[i].code.length != 0)`
+#29   killed        line 190  constructor        `adapters_[i].code.length != 0` -> `adapters_[i].code.length < 0`
+#30   killed        line 190  constructor        `adapters_[i].code.length != 0` -> `adapters_[i].code.length <= 0`
+#31   killed        line 190  constructor        `adapters_[i].code.length != 0` -> `adapters_[i].code.length == 0`
+#32   survived      line 190  constructor        `adapters_[i].code.length != 0` -> `adapters_[i].code.length > 0`
+#33   killed-after  line 190  constructor        `adapters_[i].code.length != 0` -> `adapters_[i].code.length >= 0`
+#34   killed-after  line 190  constructor        `adapters_[i].code.length != 0` -> `true`
+#35   killed        line 191  constructor        `true` -> `false`
+#36   killed        line 197  receive            `_seeding && isAdapter[msg.sender]` -> `!(_seeding && isAdapter[msg.sender])`
+#37   killed        line 197  receive            `_seeding && isAdapter[msg.sender]` -> `_seeding || isAdapter[msg.sender]`
+#38   killed        line 197  receive            `_seeding && isAdapter[msg.sender]` -> `true`
+#39   killed        line 213  openRound          `++roundCount` -> `0`
+#40   killed        line 218  openRound          `p.lpShareBps` -> `0`
+#41   killed        line 219  openRound          `p.tgeBps` -> `0`
+#42   killed        line 220  openRound          `p.sellAmount` -> `0`
+#43   killed        line 224  openRound          `uint128(uint256(p.sellAmount) * p.lpShareBps / BPS)` -> `0`
+#44   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps` -> `uint256(p.sellAmount) % p.lpShareBps`
+#45   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps / BPS` -> `uint256(p.sellAmount) * p.lpShareBps % BPS`
+#46   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps / BPS` -> `uint256(p.sellAmount) * p.lpShareBps * BPS`
+#47   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps / BPS` -> `uint256(p.sellAmount) * p.lpShareBps + BPS`
+#48   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps / BPS` -> `uint256(p.sellAmount) * p.lpShareBps - BPS`
+#49   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps` -> `uint256(p.sellAmount) + p.lpShareBps`
+#50   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps` -> `uint256(p.sellAmount) - p.lpShareBps`
+#51   killed        line 224  openRound          `uint256(p.sellAmount) * p.lpShareBps` -> `uint256(p.sellAmount) / p.lpShareBps`
+#52   killed        line 225  openRound          `p.depositAmount` -> `0`
+#53   killed        line 226  openRound          `p.minBidSize` -> `0`
+#54   killed        line 227  openRound          `p.tickSize` -> `0`
+#55   killed        line 228  openRound          `p.reservePrice` -> `0`
+#56   killed        line 229  openRound          `p.commitEnd` -> `0`
+#57   killed        line 230  openRound          `p.revealEnd` -> `0`
+#58   killed        line 231  openRound          `p.lockDuration` -> `0`
+#59   killed        line 232  openRound          `p.cliff` -> `0`
+#60   killed        line 233  openRound          `p.vestDuration` -> `0`
+#61   survived      line 236  openRound          `i < p.dexSplits.length` -> `i != p.dexSplits.length`
+#62   killed        line 236  openRound          `i < p.dexSplits.length` -> `i <= p.dexSplits.length`
+#63   killed        line 236  openRound          `i < p.dexSplits.length` -> `i == p.dexSplits.length`
+#64   killed        line 236  openRound          `i < p.dexSplits.length` -> `i > p.dexSplits.length`
+#65   killed        line 236  openRound          `i < p.dexSplits.length` -> `i >= p.dexSplits.length`
+#66   killed        line 241  openRound          `uint256(p.sellAmount) + r.tokenReserve` -> `0`
+#67   killed        line 241  openRound          `uint256(p.sellAmount) + r.tokenReserve` -> `uint256(p.sellAmount) % r.tokenReserve`
+#68   killed        line 241  openRound          `uint256(p.sellAmount) + r.tokenReserve` -> `uint256(p.sellAmount) * r.tokenReserve`
+#69   killed        line 241  openRound          `uint256(p.sellAmount) + r.tokenReserve` -> `uint256(p.sellAmount) - r.tokenReserve`
+#70   killed        line 241  openRound          `uint256(p.sellAmount) + r.tokenReserve` -> `uint256(p.sellAmount) / r.tokenReserve`
+#71   killed        line 242  openRound          `IERC20Minimal(p.token).balanceOf(address(this))` -> `0`
+#72   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `!(IERC20Minimal(p.token).balanceOf(address(this)) - before == need)`
+#73   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before` -> `IERC20Minimal(p.token).balanceOf(address(this)) % before`
+#74   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before` -> `IERC20Minimal(p.token).balanceOf(address(this)) * before`
+#75   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before` -> `IERC20Minimal(p.token).balanceOf(address(this)) + before`
+#76   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `IERC20Minimal(p.token).balanceOf(address(this)) - before != need`
+#77   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `IERC20Minimal(p.token).balanceOf(address(this)) - before < need`
+#78   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `IERC20Minimal(p.token).balanceOf(address(this)) - before <= need`
+#79   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `IERC20Minimal(p.token).balanceOf(address(this)) - before > need`
+#80   killed-after  line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `IERC20Minimal(p.token).balanceOf(address(this)) - before >= need`
+#81   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before` -> `IERC20Minimal(p.token).balanceOf(address(this)) / before`
+#82   killed        line 244  openRound          `IERC20Minimal(p.token).balanceOf(address(this)) - before == need` -> `true`
+#83   killed        line 250  _validate          `p.token.code.length != 0` -> `!(p.token.code.length != 0)`
+#84   killed        line 250  _validate          `p.token.code.length != 0` -> `p.token.code.length < 0`
+#85   killed        line 250  _validate          `p.token.code.length != 0` -> `p.token.code.length <= 0`
+#86   killed        line 250  _validate          `p.token.code.length != 0` -> `p.token.code.length == 0`
+#87   survived      line 250  _validate          `p.token.code.length != 0` -> `p.token.code.length > 0`
+#88   killed-after  line 250  _validate          `p.token.code.length != 0` -> `p.token.code.length >= 0`
+#89   killed-after  line 250  _validate          `p.token.code.length != 0` -> `true`
+#90   killed        line 251  _validate          `p.sellAmount != 0` -> `!(p.sellAmount != 0)`
+#91   killed        line 251  _validate          `p.sellAmount != 0` -> `p.sellAmount < 0`
+#92   killed        line 251  _validate          `p.sellAmount != 0` -> `p.sellAmount <= 0`
+#93   killed        line 251  _validate          `p.sellAmount != 0` -> `p.sellAmount == 0`
+#94   survived      line 251  _validate          `p.sellAmount != 0` -> `p.sellAmount > 0`
+#95   killed-after  line 251  _validate          `p.sellAmount != 0` -> `p.sellAmount >= 0`
+#96   killed-after  line 251  _validate          `p.sellAmount != 0` -> `true`
+#97   killed        line 252  _validate          `p.tickSize != 0` -> `!(p.tickSize != 0)`
+#98   killed        line 252  _validate          `p.tickSize != 0` -> `p.tickSize < 0`
+#99   killed        line 252  _validate          `p.tickSize != 0` -> `p.tickSize <= 0`
+#100  killed        line 252  _validate          `p.tickSize != 0` -> `p.tickSize == 0`
+#101  survived      line 252  _validate          `p.tickSize != 0` -> `p.tickSize > 0`
+#102  killed-after  line 252  _validate          `p.tickSize != 0` -> `p.tickSize >= 0`
+#103  killed-after  line 252  _validate          `p.tickSize != 0` -> `true`
+#104  killed        line 253  _validate          `p.reservePrice != 0 && p.reservePrice % p.tickSize == 0` -> `!(p.reservePrice != 0 && p.reservePrice % p.tickSize == 0)`
+#105  killed        line 253  _validate          `p.reservePrice != 0 && p.reservePrice % p.tickSize == 0` -> `p.reservePrice != 0 || p.reservePrice % p.tickSize == 0`
+#106  killed        line 253  _validate          `p.reservePrice != 0` -> `p.reservePrice < 0`
+#107  killed        line 253  _validate          `p.reservePrice != 0` -> `p.reservePrice <= 0`
+#108  killed        line 253  _validate          `p.reservePrice != 0` -> `p.reservePrice == 0`
+#109  survived      line 253  _validate          `p.reservePrice != 0` -> `p.reservePrice > 0`
+#110  killed-after  line 253  _validate          `p.reservePrice != 0` -> `p.reservePrice >= 0`
+#111  killed        line 253  _validate          `p.reservePrice != 0 && p.reservePrice % p.tickSize == 0` -> `true`
+#112  killed        line 253  _validate          `p.reservePrice % p.tickSize == 0` -> `p.reservePrice % p.tickSize != 0`
+#113  killed        line 253  _validate          `p.reservePrice % p.tickSize == 0` -> `p.reservePrice % p.tickSize < 0`
+#114  survived      line 253  _validate          `p.reservePrice % p.tickSize == 0` -> `p.reservePrice % p.tickSize <= 0`
+#115  killed        line 253  _validate          `p.reservePrice % p.tickSize == 0` -> `p.reservePrice % p.tickSize > 0`
+#116  killed        line 253  _validate          `p.reservePrice % p.tickSize == 0` -> `p.reservePrice % p.tickSize >= 0`
+#117  killed        line 253  _validate          `p.reservePrice % p.tickSize` -> `p.reservePrice * p.tickSize`
+#118  killed        line 253  _validate          `p.reservePrice % p.tickSize` -> `p.reservePrice + p.tickSize`
+#119  killed        line 253  _validate          `p.reservePrice % p.tickSize` -> `p.reservePrice - p.tickSize`
+#120  killed        line 253  _validate          `p.reservePrice % p.tickSize` -> `p.reservePrice / p.tickSize`
+#121  killed        line 254  _validate          `p.minBidSize != 0 && p.depositAmount > p.minBidSize` -> `!(p.minBidSize != 0 && p.depositAmount > p.minBidSize)`
+#122  killed-after  line 254  _validate          `p.minBidSize != 0 && p.depositAmount > p.minBidSize` -> `p.minBidSize != 0 || p.depositAmount > p.minBidSize`
+#123  killed        line 254  _validate          `p.minBidSize != 0` -> `p.minBidSize < 0`
+#124  killed        line 254  _validate          `p.minBidSize != 0` -> `p.minBidSize <= 0`
+#125  killed        line 254  _validate          `p.minBidSize != 0` -> `p.minBidSize == 0`
+#126  survived      line 254  _validate          `p.minBidSize != 0` -> `p.minBidSize > 0`
+#127  killed-after  line 254  _validate          `p.minBidSize != 0` -> `p.minBidSize >= 0`
+#128  killed-after  line 254  _validate          `p.minBidSize != 0 && p.depositAmount > p.minBidSize` -> `true`
+#129  killed-after  line 254  _validate          `p.depositAmount > p.minBidSize` -> `p.depositAmount != p.minBidSize`
+#130  killed        line 254  _validate          `p.depositAmount > p.minBidSize` -> `p.depositAmount < p.minBidSize`
+#131  killed        line 254  _validate          `p.depositAmount > p.minBidSize` -> `p.depositAmount <= p.minBidSize`
+#132  killed        line 254  _validate          `p.depositAmount > p.minBidSize` -> `p.depositAmount == p.minBidSize`
+#133  killed-after  line 254  _validate          `p.depositAmount > p.minBidSize` -> `p.depositAmount >= p.minBidSize`
+#134  killed        line 258  _validate          `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `!(uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE)`
+#135  killed        line 258  _validate          `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `true`
+#136  killed        line 258  _validate          `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `uint256(p.reservePrice) != (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE`
+#137  killed-after  line 258  _validate          `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `uint256(p.reservePrice) < (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE`
+#138  killed        line 258  _validate          `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `uint256(p.reservePrice) == (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE`
+#139  killed        line 258  _validate          `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `uint256(p.reservePrice) > (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE`
+#140  killed        line 258  _validate          `uint256(p.reservePrice) <= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `uint256(p.reservePrice) >= (uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE`
+#141  killed-after  line 258  _validate          `(uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `(uint256(p.depositAmount) - p.minBidSize) % PRICE_SCALE`
+#142  killed-after  line 258  _validate          `(uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `(uint256(p.depositAmount) - p.minBidSize) + PRICE_SCALE`
+#143  killed        line 258  _validate          `(uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `(uint256(p.depositAmount) - p.minBidSize) - PRICE_SCALE`
+#144  killed        line 258  _validate          `(uint256(p.depositAmount) - p.minBidSize) * PRICE_SCALE` -> `(uint256(p.depositAmount) - p.minBidSize) / PRICE_SCALE`
+#145  killed        line 258  _validate          `uint256(p.depositAmount) - p.minBidSize` -> `uint256(p.depositAmount) % p.minBidSize`
+#146  killed        line 258  _validate          `uint256(p.depositAmount) - p.minBidSize` -> `uint256(p.depositAmount) * p.minBidSize`
+#147  killed        line 258  _validate          `uint256(p.depositAmount) - p.minBidSize` -> `uint256(p.depositAmount) + p.minBidSize`
+#148  killed-after  line 258  _validate          `uint256(p.depositAmount) - p.minBidSize` -> `uint256(p.depositAmount) / p.minBidSize`
+#149  killed        line 260  _validate          `p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW` -> `!(p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW)`
+#150  killed        line 260  _validate          `p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW` -> `p.commitEnd != block.timestamp + MIN_COMMIT_WINDOW`
+#151  killed        line 260  _validate          `p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW` -> `p.commitEnd < block.timestamp + MIN_COMMIT_WINDOW`
+#152  killed        line 260  _validate          `p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW` -> `p.commitEnd <= block.timestamp + MIN_COMMIT_WINDOW`
+#153  killed        line 260  _validate          `p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW` -> `p.commitEnd == block.timestamp + MIN_COMMIT_WINDOW`
+#154  killed        line 260  _validate          `p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW` -> `p.commitEnd > block.timestamp + MIN_COMMIT_WINDOW`
+#155  killed        line 260  _validate          `p.commitEnd >= block.timestamp + MIN_COMMIT_WINDOW` -> `true`
+#156  killed        line 260  _validate          `block.timestamp + MIN_COMMIT_WINDOW` -> `block.timestamp % MIN_COMMIT_WINDOW`
+#157  killed        line 260  _validate          `block.timestamp + MIN_COMMIT_WINDOW` -> `block.timestamp * MIN_COMMIT_WINDOW`
+#158  killed        line 260  _validate          `block.timestamp + MIN_COMMIT_WINDOW` -> `block.timestamp - MIN_COMMIT_WINDOW`
+#159  killed        line 260  _validate          `block.timestamp + MIN_COMMIT_WINDOW` -> `block.timestamp / MIN_COMMIT_WINDOW`
+#160  killed        line 261  _validate          `p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `!(p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW)`
+#161  killed        line 261  _validate          `p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `p.revealEnd != uint256(p.commitEnd) + MIN_REVEAL_WINDOW`
+#162  killed        line 261  _validate          `p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `p.revealEnd < uint256(p.commitEnd) + MIN_REVEAL_WINDOW`
+#163  killed        line 261  _validate          `p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `p.revealEnd <= uint256(p.commitEnd) + MIN_REVEAL_WINDOW`
+#164  killed        line 261  _validate          `p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `p.revealEnd == uint256(p.commitEnd) + MIN_REVEAL_WINDOW`
+#165  killed        line 261  _validate          `p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `p.revealEnd > uint256(p.commitEnd) + MIN_REVEAL_WINDOW`
+#166  killed        line 261  _validate          `p.revealEnd >= uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `true`
+#167  killed        line 261  _validate          `uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `uint256(p.commitEnd) % MIN_REVEAL_WINDOW`
+#168  killed        line 261  _validate          `uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `uint256(p.commitEnd) * MIN_REVEAL_WINDOW`
+#169  killed        line 261  _validate          `uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `uint256(p.commitEnd) - MIN_REVEAL_WINDOW`
+#170  killed        line 261  _validate          `uint256(p.commitEnd) + MIN_REVEAL_WINDOW` -> `uint256(p.commitEnd) / MIN_REVEAL_WINDOW`
+#171  killed        line 262  _validate          `p.lpShareBps <= BPS` -> `!(p.lpShareBps <= BPS)`
+#172  killed-after  line 262  _validate          `p.lpShareBps <= BPS` -> `p.lpShareBps != BPS`
+#173  killed-after  line 262  _validate          `p.lpShareBps <= BPS` -> `p.lpShareBps < BPS`
+#174  killed        line 262  _validate          `p.lpShareBps <= BPS` -> `p.lpShareBps == BPS`
+#175  killed        line 262  _validate          `p.lpShareBps <= BPS` -> `p.lpShareBps > BPS`
+#176  killed        line 262  _validate          `p.lpShareBps <= BPS` -> `p.lpShareBps >= BPS`
+#177  killed-after  line 262  _validate          `p.lpShareBps <= BPS` -> `true`
+#178  killed        line 263  _validate          `p.lpShareBps == 0` -> `p.lpShareBps != 0`
+#179  killed        line 263  _validate          `p.lpShareBps == 0` -> `p.lpShareBps < 0`
+#180  survived      line 263  _validate          `p.lpShareBps == 0` -> `p.lpShareBps <= 0`
+#181  killed        line 263  _validate          `p.lpShareBps == 0` -> `p.lpShareBps > 0`
+#182  killed        line 263  _validate          `p.lpShareBps == 0` -> `p.lpShareBps >= 0`
+#183  killed        line 264  _validate          `p.dexSplits.length == 0` -> `!(p.dexSplits.length == 0)`
+#184  killed        line 264  _validate          `p.dexSplits.length == 0` -> `p.dexSplits.length != 0`
+#185  killed        line 264  _validate          `p.dexSplits.length == 0` -> `p.dexSplits.length < 0`
+#186  survived      line 264  _validate          `p.dexSplits.length == 0` -> `p.dexSplits.length <= 0`
+#187  killed        line 264  _validate          `p.dexSplits.length == 0` -> `p.dexSplits.length > 0`
+#188  killed-after  line 264  _validate          `p.dexSplits.length == 0` -> `p.dexSplits.length >= 0`
+#189  killed-after  line 264  _validate          `p.dexSplits.length == 0` -> `true`
+#190  killed        line 266  _validate          `p.dexSplits.length != 0 && p.dexSplits.length <= MAX_SPLITS` -> `!(p.dexSplits.length != 0 && p.dexSplits.length <= MAX_SPLITS)`
+#191  killed-after  line 266  _validate          `p.dexSplits.length != 0 && p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length != 0 || p.dexSplits.length <= MAX_SPLITS`
+#192  killed        line 266  _validate          `p.dexSplits.length != 0` -> `p.dexSplits.length < 0`
+#193  killed        line 266  _validate          `p.dexSplits.length != 0` -> `p.dexSplits.length <= 0`
+#194  killed        line 266  _validate          `p.dexSplits.length != 0` -> `p.dexSplits.length == 0`
+#195  survived      line 266  _validate          `p.dexSplits.length != 0` -> `p.dexSplits.length > 0`
+#196  killed-after  line 266  _validate          `p.dexSplits.length != 0` -> `p.dexSplits.length >= 0`
+#197  killed-after  line 266  _validate          `p.dexSplits.length != 0 && p.dexSplits.length <= MAX_SPLITS` -> `true`
+#198  killed-after  line 266  _validate          `p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length != MAX_SPLITS`
+#199  killed-after  line 266  _validate          `p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length < MAX_SPLITS`
+#200  killed        line 266  _validate          `p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length == MAX_SPLITS`
+#201  killed        line 266  _validate          `p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length > MAX_SPLITS`
+#202  killed        line 266  _validate          `p.dexSplits.length <= MAX_SPLITS` -> `p.dexSplits.length >= MAX_SPLITS`
+#203  survived      line 268  _validate          `i < p.dexSplits.length` -> `i != p.dexSplits.length`
+#204  killed        line 268  _validate          `i < p.dexSplits.length` -> `i <= p.dexSplits.length`
+#205  killed        line 268  _validate          `i < p.dexSplits.length` -> `i == p.dexSplits.length`
+#206  killed        line 268  _validate          `i < p.dexSplits.length` -> `i > p.dexSplits.length`
+#207  killed        line 268  _validate          `i < p.dexSplits.length` -> `i >= p.dexSplits.length`
+#208  killed        line 269  _validate          `isAdapter[p.dexSplits[i].adapter]` -> `!(isAdapter[p.dexSplits[i].adapter])`
+#209  killed        line 269  _validate          `isAdapter[p.dexSplits[i].adapter]` -> `true`
+#210  killed        line 270  _validate          `IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee)` -> `!(IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee))`
+#211  killed        line 270  _validate          `IDexAdapter(p.dexSplits[i].adapter).supportsFee(p.dexSplits[i].fee)` -> `true`
+#212  killed        line 271  _validate          `p.dexSplits[i].bps != 0` -> `!(p.dexSplits[i].bps != 0)`
+#213  killed        line 271  _validate          `p.dexSplits[i].bps != 0` -> `p.dexSplits[i].bps < 0`
+#214  killed        line 271  _validate          `p.dexSplits[i].bps != 0` -> `p.dexSplits[i].bps <= 0`
+#215  killed        line 271  _validate          `p.dexSplits[i].bps != 0` -> `p.dexSplits[i].bps == 0`
+#216  survived      line 271  _validate          `p.dexSplits[i].bps != 0` -> `p.dexSplits[i].bps > 0`
+#217  killed-after  line 271  _validate          `p.dexSplits[i].bps != 0` -> `p.dexSplits[i].bps >= 0`
+#218  killed-after  line 271  _validate          `p.dexSplits[i].bps != 0` -> `true`
+#219  killed        line 272  _validate          `sum += p.dexSplits[i].bps` -> `sum -= p.dexSplits[i].bps`
+#220  killed        line 272  _validate          `p.dexSplits[i].bps` -> `0`
+#221  killed        line 274  _validate          `sum == BPS` -> `!(sum == BPS)`
+#222  killed        line 274  _validate          `sum == BPS` -> `sum != BPS`
+#223  killed        line 274  _validate          `sum == BPS` -> `sum < BPS`
+#224  killed        line 274  _validate          `sum == BPS` -> `sum <= BPS`
+#225  killed        line 274  _validate          `sum == BPS` -> `sum > BPS`
+#226  killed-after  line 274  _validate          `sum == BPS` -> `sum >= BPS`
+#227  killed        line 274  _validate          `sum == BPS` -> `true`
+#228  killed        line 275  _validate          `bytes(p.lockFeeTier).length != 0` -> `!(bytes(p.lockFeeTier).length != 0)`
+#229  killed        line 275  _validate          `bytes(p.lockFeeTier).length != 0` -> `bytes(p.lockFeeTier).length < 0`
+#230  killed        line 275  _validate          `bytes(p.lockFeeTier).length != 0` -> `bytes(p.lockFeeTier).length <= 0`
+#231  killed        line 275  _validate          `bytes(p.lockFeeTier).length != 0` -> `bytes(p.lockFeeTier).length == 0`
+#232  survived      line 275  _validate          `bytes(p.lockFeeTier).length != 0` -> `bytes(p.lockFeeTier).length > 0`
+#233  killed-after  line 275  _validate          `bytes(p.lockFeeTier).length != 0` -> `bytes(p.lockFeeTier).length >= 0`
+#234  killed-after  line 275  _validate          `bytes(p.lockFeeTier).length != 0` -> `true`
+#235  killed        line 277  _validate          `p.preset == Preset.Degen` -> `p.preset != Preset.Degen`
+#236  killed        line 277  _validate          `p.preset == Preset.Degen` -> `p.preset < Preset.Degen`
+#237  survived      line 277  _validate          `p.preset == Preset.Degen` -> `p.preset <= Preset.Degen`
+#238  killed        line 277  _validate          `p.preset == Preset.Degen` -> `p.preset > Preset.Degen`
+#239  killed        line 277  _validate          `p.preset == Preset.Degen` -> `p.preset >= Preset.Degen`
+#240  killed        line 278  _validate          `p.lpShareBps != 0` -> `!(p.lpShareBps != 0)`
+#241  killed        line 278  _validate          `p.lpShareBps != 0` -> `p.lpShareBps < 0`
+#242  killed        line 278  _validate          `p.lpShareBps != 0` -> `p.lpShareBps <= 0`
+#243  killed        line 278  _validate          `p.lpShareBps != 0` -> `p.lpShareBps == 0`
+#244  survived      line 278  _validate          `p.lpShareBps != 0` -> `p.lpShareBps > 0`
+#245  killed        line 278  _validate          `p.lpShareBps != 0` -> `p.lpShareBps >= 0`
+#246  killed        line 278  _validate          `p.lpShareBps != 0` -> `true`
+#247  killed        line 279  _validate          `p.allowlistRoot == bytes32(0)` -> `!(p.allowlistRoot == bytes32(0))`
+#248  killed        line 279  _validate          `p.allowlistRoot == bytes32(0)` -> `p.allowlistRoot != bytes32(0)`
+#249  killed        line 279  _validate          `p.allowlistRoot == bytes32(0)` -> `p.allowlistRoot < bytes32(0)`
+#250  survived      line 279  _validate          `p.allowlistRoot == bytes32(0)` -> `p.allowlistRoot <= bytes32(0)`
+#251  killed        line 279  _validate          `p.allowlistRoot == bytes32(0)` -> `p.allowlistRoot > bytes32(0)`
+#252  killed        line 279  _validate          `p.allowlistRoot == bytes32(0)` -> `p.allowlistRoot >= bytes32(0)`
+#253  killed        line 279  _validate          `p.allowlistRoot == bytes32(0)` -> `true`
+#254  killed        line 280  _validate          `p.tgeBps == 0 && p.cliff == 0 && p.vestDuration == 0` -> `!(p.tgeBps == 0 && p.cliff == 0 && p.vestDuration == 0)`
+#255  killed        line 280  _validate          `p.tgeBps == 0` -> `p.tgeBps != 0`
+#256  killed        line 280  _validate          `p.tgeBps == 0` -> `p.tgeBps < 0`
+#257  survived      line 280  _validate          `p.tgeBps == 0` -> `p.tgeBps <= 0`
+#258  killed-after  line 280  _validate          `p.tgeBps == 0 && p.cliff == 0 && p.vestDuration == 0` -> `p.tgeBps == 0 && p.cliff == 0 || p.vestDuration == 0`
+#259  killed-after  line 280  _validate          `p.tgeBps == 0 && p.cliff == 0` -> `p.tgeBps == 0 || p.cliff == 0`
+#260  killed        line 280  _validate          `p.tgeBps == 0` -> `p.tgeBps > 0`
+#261  killed-after  line 280  _validate          `p.tgeBps == 0` -> `p.tgeBps >= 0`
+#262  killed-after  line 280  _validate          `p.tgeBps == 0 && p.cliff == 0 && p.vestDuration == 0` -> `true`
+#263  killed        line 280  _validate          `p.cliff == 0` -> `p.cliff != 0`
+#264  killed        line 280  _validate          `p.cliff == 0` -> `p.cliff < 0`
+#265  survived      line 280  _validate          `p.cliff == 0` -> `p.cliff <= 0`
+#266  killed        line 280  _validate          `p.cliff == 0` -> `p.cliff > 0`
+#267  killed-after  line 280  _validate          `p.cliff == 0` -> `p.cliff >= 0`
+#268  killed        line 280  _validate          `p.vestDuration == 0` -> `p.vestDuration != 0`
+#269  killed        line 280  _validate          `p.vestDuration == 0` -> `p.vestDuration < 0`
+#270  survived      line 280  _validate          `p.vestDuration == 0` -> `p.vestDuration <= 0`
+#271  killed        line 280  _validate          `p.vestDuration == 0` -> `p.vestDuration > 0`
+#272  killed-after  line 280  _validate          `p.vestDuration == 0` -> `p.vestDuration >= 0`
+#273  killed        line 281  _validate          `p.lockDuration == 0` -> `!(p.lockDuration == 0)`
+#274  killed        line 281  _validate          `p.lockDuration == 0` -> `p.lockDuration != 0`
+#275  killed        line 281  _validate          `p.lockDuration == 0` -> `p.lockDuration < 0`
+#276  survived      line 281  _validate          `p.lockDuration == 0` -> `p.lockDuration <= 0`
+#277  killed        line 281  _validate          `p.lockDuration == 0` -> `p.lockDuration > 0`
+#278  killed-after  line 281  _validate          `p.lockDuration == 0` -> `p.lockDuration >= 0`
+#279  killed-after  line 281  _validate          `p.lockDuration == 0` -> `true`
+#280  killed        line 283  _validate          `p.vestDuration == 0` -> `p.vestDuration != 0`
+#281  killed-after  line 283  _validate          `p.vestDuration == 0` -> `p.vestDuration < 0`
+#282  survived      line 283  _validate          `p.vestDuration == 0` -> `p.vestDuration <= 0`
+#283  killed        line 283  _validate          `p.vestDuration == 0` -> `p.vestDuration > 0`
+#284  killed        line 283  _validate          `p.vestDuration == 0` -> `p.vestDuration >= 0`
+#285  killed        line 283  _validate          `p.tgeBps == 0 && p.cliff == 0` -> `!(p.tgeBps == 0 && p.cliff == 0)`
+#286  killed        line 283  _validate          `p.tgeBps == 0` -> `p.tgeBps != 0`
+#287  killed        line 283  _validate          `p.tgeBps == 0` -> `p.tgeBps < 0`
+#288  survived      line 283  _validate          `p.tgeBps == 0` -> `p.tgeBps <= 0`
+#289  killed-after  line 283  _validate          `p.tgeBps == 0 && p.cliff == 0` -> `p.tgeBps == 0 || p.cliff == 0`
+#290  killed        line 283  _validate          `p.tgeBps == 0` -> `p.tgeBps > 0`
+#291  killed-after  line 283  _validate          `p.tgeBps == 0` -> `p.tgeBps >= 0`
+#292  killed-after  line 283  _validate          `p.tgeBps == 0 && p.cliff == 0` -> `true`
+#293  killed        line 283  _validate          `p.cliff == 0` -> `p.cliff != 0`
+#294  killed        line 283  _validate          `p.cliff == 0` -> `p.cliff < 0`
+#295  survived      line 283  _validate          `p.cliff == 0` -> `p.cliff <= 0`
+#296  killed        line 283  _validate          `p.cliff == 0` -> `p.cliff > 0`
+#297  killed-after  line 283  _validate          `p.cliff == 0` -> `p.cliff >= 0`
+#298  killed        line 284  _validate          `p.tgeBps < BPS` -> `!(p.tgeBps < BPS)`
+#299  killed-after  line 284  _validate          `p.tgeBps < BPS` -> `p.tgeBps != BPS`
+#300  killed-after  line 284  _validate          `p.tgeBps < BPS` -> `p.tgeBps <= BPS`
+#301  killed        line 284  _validate          `p.tgeBps < BPS` -> `p.tgeBps == BPS`
+#302  killed        line 284  _validate          `p.tgeBps < BPS` -> `p.tgeBps > BPS`
+#303  killed        line 284  _validate          `p.tgeBps < BPS` -> `p.tgeBps >= BPS`
+#304  killed-after  line 284  _validate          `p.tgeBps < BPS` -> `true`
+#305  killed        line 285  _validate          `p.lpShareBps != 0` -> `p.lpShareBps < 0`
+#306  killed        line 285  _validate          `p.lpShareBps != 0` -> `p.lpShareBps <= 0`
+#307  killed        line 285  _validate          `p.lpShareBps != 0` -> `p.lpShareBps == 0`
+#308  survived      line 285  _validate          `p.lpShareBps != 0` -> `p.lpShareBps > 0`
+#309  killed        line 285  _validate          `p.lpShareBps != 0` -> `p.lpShareBps >= 0`
+#310  killed        line 285  _validate          `p.lockDuration >= MIN_RAISE_LOCK` -> `!(p.lockDuration >= MIN_RAISE_LOCK)`
+#311  killed        line 285  _validate          `p.lockDuration >= MIN_RAISE_LOCK` -> `p.lockDuration != MIN_RAISE_LOCK`
+#312  killed        line 285  _validate          `p.lockDuration >= MIN_RAISE_LOCK` -> `p.lockDuration < MIN_RAISE_LOCK`
+#313  killed        line 285  _validate          `p.lockDuration >= MIN_RAISE_LOCK` -> `p.lockDuration <= MIN_RAISE_LOCK`
+#314  killed        line 285  _validate          `p.lockDuration >= MIN_RAISE_LOCK` -> `p.lockDuration == MIN_RAISE_LOCK`
+#315  killed        line 285  _validate          `p.lockDuration >= MIN_RAISE_LOCK` -> `p.lockDuration > MIN_RAISE_LOCK`
+#316  killed        line 285  _validate          `p.lockDuration >= MIN_RAISE_LOCK` -> `true`
+#317  killed        line 286  _validate          `p.lockDuration == 0` -> `!(p.lockDuration == 0)`
+#318  killed        line 286  _validate          `p.lockDuration == 0` -> `p.lockDuration != 0`
+#319  killed        line 286  _validate          `p.lockDuration == 0` -> `p.lockDuration < 0`
+#320  survived      line 286  _validate          `p.lockDuration == 0` -> `p.lockDuration <= 0`
+#321  killed        line 286  _validate          `p.lockDuration == 0` -> `p.lockDuration > 0`
+#322  killed-after  line 286  _validate          `p.lockDuration == 0` -> `p.lockDuration >= 0`
+#323  killed-after  line 286  _validate          `p.lockDuration == 0` -> `true`
+#324  killed        line 300  _sealTerms         `r.creator != address(0)` -> `!(r.creator != address(0))`
+#325  killed        line 300  _sealTerms         `r.creator != address(0)` -> `r.creator < address(0)`
+#326  killed        line 300  _sealTerms         `r.creator != address(0)` -> `r.creator <= address(0)`
+#327  killed        line 300  _sealTerms         `r.creator != address(0)` -> `r.creator == address(0)`
+#328  survived      line 300  _sealTerms         `r.creator != address(0)` -> `r.creator > address(0)`
+#329  killed-after  line 300  _sealTerms         `r.creator != address(0)` -> `r.creator >= address(0)`
+#330  killed-after  line 300  _sealTerms         `r.creator != address(0)` -> `true`
+#331  killed        line 309  _onReveal          `price % r.tickSize == 0 && price >= r.reservePrice` -> `!(price % r.tickSize == 0 && price >= r.reservePrice)`
+#332  killed        line 309  _onReveal          `price % r.tickSize == 0` -> `price % r.tickSize != 0`
+#333  killed        line 309  _onReveal          `price % r.tickSize == 0` -> `price % r.tickSize < 0`
+#334  survived      line 309  _onReveal          `price % r.tickSize == 0` -> `price % r.tickSize <= 0`
+#335  killed        line 309  _onReveal          `price % r.tickSize == 0 && price >= r.reservePrice` -> `price % r.tickSize == 0 || price >= r.reservePrice`
+#336  killed        line 309  _onReveal          `price % r.tickSize == 0` -> `price % r.tickSize > 0`
+#337  killed        line 309  _onReveal          `price % r.tickSize == 0` -> `price % r.tickSize >= 0`
+#338  killed        line 309  _onReveal          `price % r.tickSize` -> `price * r.tickSize`
+#339  killed        line 309  _onReveal          `price % r.tickSize` -> `price + r.tickSize`
+#340  killed        line 309  _onReveal          `price % r.tickSize` -> `price - r.tickSize`
+#341  killed        line 309  _onReveal          `price % r.tickSize` -> `price / r.tickSize`
+#342  killed        line 309  _onReveal          `price % r.tickSize == 0 && price >= r.reservePrice` -> `true`
+#343  killed        line 309  _onReveal          `price >= r.reservePrice` -> `price != r.reservePrice`
+#344  killed        line 309  _onReveal          `price >= r.reservePrice` -> `price < r.reservePrice`
+#345  killed        line 309  _onReveal          `price >= r.reservePrice` -> `price <= r.reservePrice`
+#346  killed        line 309  _onReveal          `price >= r.reservePrice` -> `price == r.reservePrice`
+#347  killed        line 309  _onReveal          `price >= r.reservePrice` -> `price > r.reservePrice`
+#348  killed        line 310  _onReveal          `amount != 0` -> `!(amount != 0)`
+#349  killed        line 310  _onReveal          `amount != 0` -> `amount < 0`
+#350  killed        line 310  _onReveal          `amount != 0` -> `amount <= 0`
+#351  killed        line 310  _onReveal          `amount != 0` -> `amount == 0`
+#352  survived      line 310  _onReveal          `amount != 0` -> `amount > 0`
+#353  killed-after  line 310  _onReveal          `amount != 0` -> `amount >= 0`
+#354  killed-after  line 310  _onReveal          `amount != 0` -> `true`
+#355  killed        line 311  _onReveal          `_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount` -> `!(_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount)`
+#356  killed        line 311  _onReveal          `_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount` -> `_mulDivUp(price, amount, PRICE_SCALE) != r.depositAmount`
+#357  killed        line 311  _onReveal          `_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount` -> `_mulDivUp(price, amount, PRICE_SCALE) <= r.depositAmount`
+#358  killed        line 311  _onReveal          `_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount` -> `_mulDivUp(price, amount, PRICE_SCALE) == r.depositAmount`
+#359  killed        line 311  _onReveal          `_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount` -> `_mulDivUp(price, amount, PRICE_SCALE) > r.depositAmount`
+#360  killed        line 311  _onReveal          `_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount` -> `_mulDivUp(price, amount, PRICE_SCALE) >= r.depositAmount`
+#361  killed        line 311  _onReveal          `_mulDivUp(price, amount, PRICE_SCALE) < r.depositAmount` -> `true`
+#362  killed        line 314  _onReveal          `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize` -> `!(_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize)`
+#363  killed        line 314  _onReveal          `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize` -> `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) != r.minBidSize`
+#364  killed        line 314  _onReveal          `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize` -> `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) < r.minBidSize`
+#365  killed        line 314  _onReveal          `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize` -> `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) <= r.minBidSize`
+#366  killed        line 314  _onReveal          `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize` -> `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) == r.minBidSize`
+#367  killed        line 314  _onReveal          `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize` -> `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) > r.minBidSize`
+#368  killed        line 314  _onReveal          `_mulDivUp(r.reservePrice, amount, PRICE_SCALE) >= r.minBidSize` -> `true`
+#369  killed        line 327  settle             `r.creator != address(0)` -> `!(r.creator != address(0))`
+#370  killed        line 327  settle             `r.creator != address(0)` -> `r.creator < address(0)`
+#371  killed        line 327  settle             `r.creator != address(0)` -> `r.creator <= address(0)`
+#372  killed        line 327  settle             `r.creator != address(0)` -> `r.creator == address(0)`
+#373  survived      line 327  settle             `r.creator != address(0)` -> `r.creator > address(0)`
+#374  killed-after  line 327  settle             `r.creator != address(0)` -> `r.creator >= address(0)`
+#375  killed-after  line 327  settle             `r.creator != address(0)` -> `true`
+#376  killed        line 328  settle             `block.timestamp >= r.revealEnd` -> `!(block.timestamp >= r.revealEnd)`
+#377  killed        line 328  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp != r.revealEnd`
+#378  killed        line 328  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp < r.revealEnd`
+#379  killed        line 328  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp <= r.revealEnd`
+#380  killed        line 328  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp == r.revealEnd`
+#381  killed        line 328  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp > r.revealEnd`
+#382  killed        line 328  settle             `block.timestamp >= r.revealEnd` -> `true`
+#383  killed        line 329  settle             `_settleStep(roundId, maxSteps)` -> `false`
+#384  killed        line 329  settle             `_settleStep(roundId, maxSteps)` -> `true`
+#385  killed        line 333  settle             `uint64(block.timestamp)` -> `0`
+#386  killed        line 347  seedLP             `b.settled` -> `!(b.settled)`
+#387  killed        line 347  seedLP             `b.settled` -> `true`
+#388  killed        line 348  seedLP             `!r.lpDone` -> `!(!r.lpDone)`
+#389  killed        line 348  seedLP             `!r.lpDone` -> `r.lpDone`
+#390  killed        line 348  seedLP             `!r.lpDone` -> `true`
+#391  killed-after  line 350  seedLP             `lpTokens != 0 && lpMon != 0` -> `lpTokens != 0 || lpMon != 0`
+#392  killed        line 350  seedLP             `lpTokens != 0` -> `lpTokens < 0`
+#393  killed        line 350  seedLP             `lpTokens != 0` -> `lpTokens <= 0`
+#394  killed        line 350  seedLP             `lpTokens != 0` -> `lpTokens == 0`
+#395  survived      line 350  seedLP             `lpTokens != 0` -> `lpTokens > 0`
+#396  killed-after  line 350  seedLP             `lpTokens != 0` -> `lpTokens >= 0`
+#397  killed        line 350  seedLP             `lpMon != 0` -> `lpMon < 0`
+#398  killed        line 350  seedLP             `lpMon != 0` -> `lpMon <= 0`
+#399  killed        line 350  seedLP             `lpMon != 0` -> `lpMon == 0`
+#400  survived      line 350  seedLP             `lpMon != 0` -> `lpMon > 0`
+#401  killed-after  line 350  seedLP             `lpMon != 0` -> `lpMon >= 0`
+#402  killed        line 352  seedLP             `true` -> `false`
+#403  killed        line 353  seedLP             `true` -> `false`
+#404  killed        line 365  abandonLP          `b.settled` -> `!(b.settled)`
+#405  killed        line 365  abandonLP          `b.settled` -> `true`
+#406  killed        line 366  abandonLP          `!r.lpDone` -> `!(!r.lpDone)`
+#407  killed        line 366  abandonLP          `!r.lpDone` -> `r.lpDone`
+#408  killed        line 366  abandonLP          `!r.lpDone` -> `true`
+#409  killed        line 367  abandonLP          `block.timestamp >= uint256(r.settledAt) + lpGracePeriod` -> `!(block.timestamp >= uint256(r.settledAt) + lpGracePeriod)`
+#410  killed        line 367  abandonLP          `block.timestamp >= uint256(r.settledAt) + lpGracePeriod` -> `block.timestamp != uint256(r.settledAt) + lpGracePeriod`
+#411  killed        line 367  abandonLP          `block.timestamp >= uint256(r.settledAt) + lpGracePeriod` -> `block.timestamp < uint256(r.settledAt) + lpGracePeriod`
+#412  killed        line 367  abandonLP          `block.timestamp >= uint256(r.settledAt) + lpGracePeriod` -> `block.timestamp <= uint256(r.settledAt) + lpGracePeriod`
+#413  killed        line 367  abandonLP          `block.timestamp >= uint256(r.settledAt) + lpGracePeriod` -> `block.timestamp == uint256(r.settledAt) + lpGracePeriod`
+#414  killed        line 367  abandonLP          `block.timestamp >= uint256(r.settledAt) + lpGracePeriod` -> `block.timestamp > uint256(r.settledAt) + lpGracePeriod`
+#415  killed        line 367  abandonLP          `block.timestamp >= uint256(r.settledAt) + lpGracePeriod` -> `true`
+#416  killed        line 367  abandonLP          `uint256(r.settledAt) + lpGracePeriod` -> `uint256(r.settledAt) % lpGracePeriod`
+#417  killed        line 367  abandonLP          `uint256(r.settledAt) + lpGracePeriod` -> `uint256(r.settledAt) * lpGracePeriod`
+#418  killed        line 367  abandonLP          `uint256(r.settledAt) + lpGracePeriod` -> `uint256(r.settledAt) - lpGracePeriod`
+#419  killed        line 367  abandonLP          `uint256(r.settledAt) + lpGracePeriod` -> `uint256(r.settledAt) / lpGracePeriod`
+#420  killed        line 369  abandonLP          `true` -> `false`
+#421  killed-after  line 370  abandonLP          `true` -> `false`
+#422  killed        line 371  abandonLP          `true` -> `false`
+#423  killed        line 372  abandonLP          `lpMon` -> `0`
+#424  killed        line 374  abandonLP          `lpMon != 0` -> `lpMon < 0`
+#425  killed        line 374  abandonLP          `lpMon != 0` -> `lpMon <= 0`
+#426  killed        line 374  abandonLP          `lpMon != 0` -> `lpMon == 0`
+#427  survived      line 374  abandonLP          `lpMon != 0` -> `lpMon > 0`
+#428  survived      line 374  abandonLP          `lpMon != 0` -> `lpMon >= 0`
+#429  killed        line 377  abandonLP          `lpMon != 0` -> `lpMon < 0`
+#430  killed        line 377  abandonLP          `lpMon != 0` -> `lpMon <= 0`
+#431  killed        line 377  abandonLP          `lpMon != 0` -> `lpMon == 0`
+#432  survived      line 377  abandonLP          `lpMon != 0` -> `lpMon > 0`
+#433  survived      line 377  abandonLP          `lpMon != 0` -> `lpMon >= 0`
+#434  killed        line 394  _lpTargets         `_soldLowerBound(roundId)` -> `0`
+#435  killed        line 395  _lpTargets         `r.lpShareBps == 0` -> `r.lpShareBps != 0`
+#436  survived      line 395  _lpTargets         `r.lpShareBps == 0` -> `r.lpShareBps < 0`
+#437  survived      line 395  _lpTargets         `r.lpShareBps == 0` -> `r.lpShareBps <= 0`
+#438  survived      line 395  _lpTargets         `r.lpShareBps == 0 || soldLB == 0` -> `r.lpShareBps == 0 && soldLB == 0`
+#439  killed        line 395  _lpTargets         `r.lpShareBps == 0` -> `r.lpShareBps > 0`
+#440  killed        line 395  _lpTargets         `r.lpShareBps == 0` -> `r.lpShareBps >= 0`
+#441  killed        line 395  _lpTargets         `soldLB == 0` -> `soldLB != 0`
+#442  survived      line 395  _lpTargets         `soldLB == 0` -> `soldLB < 0`
+#443  survived      line 395  _lpTargets         `soldLB == 0` -> `soldLB <= 0`
+#444  killed        line 395  _lpTargets         `soldLB == 0` -> `soldLB > 0`
+#445  killed        line 395  _lpTargets         `soldLB == 0` -> `soldLB >= 0`
+#446  killed        line 396  _lpTargets         `soldLB * r.lpShareBps / BPS` -> `0`
+#447  killed        line 396  _lpTargets         `soldLB * r.lpShareBps` -> `soldLB % r.lpShareBps`
+#448  killed        line 396  _lpTargets         `soldLB * r.lpShareBps / BPS` -> `soldLB * r.lpShareBps % BPS`
+#449  killed        line 396  _lpTargets         `soldLB * r.lpShareBps / BPS` -> `soldLB * r.lpShareBps * BPS`
+#450  killed        line 396  _lpTargets         `soldLB * r.lpShareBps / BPS` -> `soldLB * r.lpShareBps + BPS`
+#451  killed        line 396  _lpTargets         `soldLB * r.lpShareBps / BPS` -> `soldLB * r.lpShareBps - BPS`
+#452  killed        line 396  _lpTargets         `soldLB * r.lpShareBps` -> `soldLB + r.lpShareBps`
+#453  killed        line 396  _lpTargets         `soldLB * r.lpShareBps` -> `soldLB - r.lpShareBps`
+#454  killed        line 396  _lpTargets         `soldLB * r.lpShareBps` -> `soldLB / r.lpShareBps`
+#455  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps` -> `(soldLB * b.clearingPrice / PRICE_SCALE) % r.lpShareBps`
+#456  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS` -> `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps % BPS`
+#457  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS` -> `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps * BPS`
+#458  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS` -> `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps + BPS`
+#459  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS` -> `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps - BPS`
+#460  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps` -> `(soldLB * b.clearingPrice / PRICE_SCALE) + r.lpShareBps`
+#461  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps` -> `(soldLB * b.clearingPrice / PRICE_SCALE) - r.lpShareBps`
+#462  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps` -> `(soldLB * b.clearingPrice / PRICE_SCALE) / r.lpShareBps`
+#463  killed        line 397  _lpTargets         `(soldLB * b.clearingPrice / PRICE_SCALE) * r.lpShareBps / BPS` -> `0`
+#464  killed        line 397  _lpTargets         `soldLB * b.clearingPrice` -> `soldLB % b.clearingPrice`
+#465  killed        line 397  _lpTargets         `soldLB * b.clearingPrice / PRICE_SCALE` -> `soldLB * b.clearingPrice % PRICE_SCALE`
+#466  killed        line 397  _lpTargets         `soldLB * b.clearingPrice / PRICE_SCALE` -> `soldLB * b.clearingPrice * PRICE_SCALE`
+#467  killed        line 397  _lpTargets         `soldLB * b.clearingPrice / PRICE_SCALE` -> `soldLB * b.clearingPrice + PRICE_SCALE`
+#468  killed        line 397  _lpTargets         `soldLB * b.clearingPrice / PRICE_SCALE` -> `soldLB * b.clearingPrice - PRICE_SCALE`
+#469  killed        line 397  _lpTargets         `soldLB * b.clearingPrice` -> `soldLB + b.clearingPrice`
+#470  killed        line 397  _lpTargets         `soldLB * b.clearingPrice` -> `soldLB - b.clearingPrice`
+#471  killed        line 397  _lpTargets         `soldLB * b.clearingPrice` -> `soldLB / b.clearingPrice`
+#472  killed        line 402  _seed              `true` -> `false`
+#473  killed        line 404  _seed              `lpTokens` -> `0`
+#474  killed        line 405  _seed              `lpMon` -> `0`
+#475  survived      line 408  _seed              `i < splits.length` -> `i != splits.length`
+#476  killed        line 408  _seed              `i < splits.length` -> `i <= splits.length`
+#477  killed        line 408  _seed              `i < splits.length` -> `i == splits.length`
+#478  killed        line 408  _seed              `i < splits.length` -> `i > splits.length`
+#479  killed        line 408  _seed              `i < splits.length` -> `i >= splits.length`
+#480  killed-after  line 410  _seed              `i == splits.length - 1` -> `i != splits.length - 1`
+#481  killed-after  line 410  _seed              `i == splits.length - 1` -> `i < splits.length - 1`
+#482  killed-after  line 410  _seed              `i == splits.length - 1` -> `i <= splits.length - 1`
+#483  killed-after  line 410  _seed              `i == splits.length - 1` -> `i > splits.length - 1`
+#484  survived      line 410  _seed              `i == splits.length - 1` -> `i >= splits.length - 1`
+#485  killed-after  line 410  _seed              `splits.length - 1` -> `splits.length % 1`
+#486  killed-after  line 410  _seed              `splits.length - 1` -> `splits.length * 1`
+#487  killed-after  line 410  _seed              `splits.length - 1` -> `splits.length + 1`
+#488  killed-after  line 410  _seed              `splits.length - 1` -> `splits.length / 1`
+#489  killed        line 411  _seed              `isLast ? tokensLeft : lpTokens * s.bps / BPS` -> `0`
+#490  killed-after  line 411  _seed              `lpTokens * s.bps` -> `lpTokens % s.bps`
+#491  killed-after  line 411  _seed              `lpTokens * s.bps / BPS` -> `lpTokens * s.bps % BPS`
+#492  killed-after  line 411  _seed              `lpTokens * s.bps / BPS` -> `lpTokens * s.bps * BPS`
+#493  killed-after  line 411  _seed              `lpTokens * s.bps / BPS` -> `lpTokens * s.bps + BPS`
+#494  killed-after  line 411  _seed              `lpTokens * s.bps / BPS` -> `lpTokens * s.bps - BPS`
+#495  killed-after  line 411  _seed              `lpTokens * s.bps` -> `lpTokens + s.bps`
+#496  killed-after  line 411  _seed              `lpTokens * s.bps` -> `lpTokens - s.bps`
+#497  killed-after  line 411  _seed              `lpTokens * s.bps` -> `lpTokens / s.bps`
+#498  killed        line 412  _seed              `isLast ? monLeft : lpMon * s.bps / BPS` -> `0`
+#499  killed-after  line 412  _seed              `lpMon * s.bps` -> `lpMon % s.bps`
+#500  killed-after  line 412  _seed              `lpMon * s.bps / BPS` -> `lpMon * s.bps % BPS`
+#501  killed-after  line 412  _seed              `lpMon * s.bps / BPS` -> `lpMon * s.bps * BPS`
+#502  killed-after  line 412  _seed              `lpMon * s.bps / BPS` -> `lpMon * s.bps + BPS`
+#503  killed-after  line 412  _seed              `lpMon * s.bps / BPS` -> `lpMon * s.bps - BPS`
+#504  killed-after  line 412  _seed              `lpMon * s.bps` -> `lpMon + s.bps`
+#505  killed-after  line 412  _seed              `lpMon * s.bps` -> `lpMon - s.bps`
+#506  killed-after  line 412  _seed              `lpMon * s.bps` -> `lpMon / s.bps`
+#507  killed-after  line 413  _seed              `tokensLeft -= tok` -> `tokensLeft += tok`
+#508  killed-after  line 413  _seed              `tok` -> `0`
+#509  killed-after  line 414  _seed              `monLeft -= mon` -> `monLeft += mon`
+#510  killed-after  line 414  _seed              `mon` -> `0`
+#511  killed        line 416  _seed              `tokensUsed += t` -> `tokensUsed -= t`
+#512  killed        line 416  _seed              `t` -> `0`
+#513  killed        line 417  _seed              `monUsed += m` -> `monUsed -= m`
+#514  killed        line 417  _seed              `m` -> `0`
+#515  killed-after  line 419  _seed              `false` -> `true`
+#516  killed        line 420  _seed              `tokensUsed` -> `0`
+#517  killed        line 421  _seed              `monUsed` -> `0`
+#518  survived      line 424  _seed              `lpMon > monUsed` -> `lpMon != monUsed`
+#519  killed        line 424  _seed              `lpMon > monUsed` -> `lpMon < monUsed`
+#520  killed        line 424  _seed              `lpMon > monUsed` -> `lpMon <= monUsed`
+#521  killed        line 424  _seed              `lpMon > monUsed` -> `lpMon == monUsed`
+#522  survived      line 424  _seed              `lpMon > monUsed` -> `lpMon >= monUsed`
+#523  killed        line 424  _seed              `lpMon - monUsed` -> `lpMon % monUsed`
+#524  killed        line 424  _seed              `lpMon - monUsed` -> `lpMon * monUsed`
+#525  killed        line 424  _seed              `lpMon - monUsed` -> `lpMon + monUsed`
+#526  killed        line 424  _seed              `lpMon - monUsed` -> `lpMon / monUsed`
+#527  killed        line 435  _seedOne           `IERC20Minimal(token).balanceOf(address(this))` -> `0`
+#528  killed        line 436  _seedOne           `address(this).balance` -> `0`
+#529  killed        line 440  _seedOne           `tokBefore - IERC20Minimal(token).balanceOf(address(this))` -> `0`
+#530  killed-after  line 440  _seedOne           `tokBefore - IERC20Minimal(token).balanceOf(address(this))` -> `tokBefore % IERC20Minimal(token).balanceOf(address(this))`
+#531  killed        line 440  _seedOne           `tokBefore - IERC20Minimal(token).balanceOf(address(this))` -> `tokBefore * IERC20Minimal(token).balanceOf(address(this))`
+#532  killed        line 440  _seedOne           `tokBefore - IERC20Minimal(token).balanceOf(address(this))` -> `tokBefore + IERC20Minimal(token).balanceOf(address(this))`
+#533  killed        line 440  _seedOne           `tokBefore - IERC20Minimal(token).balanceOf(address(this))` -> `tokBefore / IERC20Minimal(token).balanceOf(address(this))`
+#534  killed        line 441  _seedOne           `monBefore - address(this).balance` -> `0`
+#535  killed        line 441  _seedOne           `monBefore - address(this).balance` -> `monBefore % address(this).balance`
+#536  killed        line 441  _seedOne           `monBefore - address(this).balance` -> `monBefore * address(this).balance`
+#537  killed        line 441  _seedOne           `monBefore - address(this).balance` -> `monBefore + address(this).balance`
+#538  killed        line 441  _seedOne           `monBefore - address(this).balance` -> `monBefore / address(this).balance`
+#539  killed        line 442  _seedOne           `tokUsed <= tok && monUsed <= mon` -> `!(tokUsed <= tok && monUsed <= mon)`
+#540  killed        line 442  _seedOne           `tokUsed <= tok` -> `tokUsed != tok`
+#541  killed        line 442  _seedOne           `tokUsed <= tok` -> `tokUsed < tok`
+#542  killed-after  line 442  _seedOne           `tokUsed <= tok && monUsed <= mon` -> `tokUsed <= tok || monUsed <= mon`
+#543  killed        line 442  _seedOne           `tokUsed <= tok` -> `tokUsed == tok`
+#544  killed        line 442  _seedOne           `tokUsed <= tok` -> `tokUsed > tok`
+#545  killed        line 442  _seedOne           `tokUsed <= tok` -> `tokUsed >= tok`
+#546  killed-after  line 442  _seedOne           `tokUsed <= tok && monUsed <= mon` -> `true`
+#547  killed        line 442  _seedOne           `monUsed <= mon` -> `monUsed != mon`
+#548  killed        line 442  _seedOne           `monUsed <= mon` -> `monUsed < mon`
+#549  killed        line 442  _seedOne           `monUsed <= mon` -> `monUsed == mon`
+#550  killed        line 442  _seedOne           `monUsed <= mon` -> `monUsed > mon`
+#551  killed        line 442  _seedOne           `monUsed <= mon` -> `monUsed >= mon`
+#552  killed        line 443  _seedOne           `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `!(IERC721Minimal(npm).ownerOf(nftId) == address(this))`
+#553  killed        line 443  _seedOne           `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `IERC721Minimal(npm).ownerOf(nftId) != address(this)`
+#554  killed        line 443  _seedOne           `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `IERC721Minimal(npm).ownerOf(nftId) < address(this)`
+#555  killed-after  line 443  _seedOne           `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `IERC721Minimal(npm).ownerOf(nftId) <= address(this)`
+#556  killed        line 443  _seedOne           `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `IERC721Minimal(npm).ownerOf(nftId) > address(this)`
+#557  killed-after  line 443  _seedOne           `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `IERC721Minimal(npm).ownerOf(nftId) >= address(this)`
+#558  killed-after  line 443  _seedOne           `IERC721Minimal(npm).ownerOf(nftId) == address(this)` -> `true`
+#559  killed        line 445  _seedOne           `r.preset == Preset.Degen` -> `r.preset != Preset.Degen`
+#560  killed        line 445  _seedOne           `r.preset == Preset.Degen` -> `r.preset < Preset.Degen`
+#561  survived      line 445  _seedOne           `r.preset == Preset.Degen` -> `r.preset <= Preset.Degen`
+#562  killed        line 445  _seedOne           `r.preset == Preset.Degen` -> `r.preset > Preset.Degen`
+#563  killed        line 445  _seedOne           `r.preset == Preset.Degen` -> `r.preset >= Preset.Degen`
+#564  killed        line 447  _seedOne           `locker.lock(
+            npm,
+            nftId,
+            permanent ? address(this) : r.creator,
+            r.creator,
+            permanent ? permanentLockEnd : block.timestamp + r.lockDuration,
+            r.lockFeeTier
+        )` -> `0`
+#565  killed        line 452  _seedOne           `block.timestamp + r.lockDuration` -> `block.timestamp % r.lockDuration`
+#566  killed        line 452  _seedOne           `block.timestamp + r.lockDuration` -> `block.timestamp * r.lockDuration`
+#567  killed        line 452  _seedOne           `block.timestamp + r.lockDuration` -> `block.timestamp - r.lockDuration`
+#568  killed        line 452  _seedOne           `block.timestamp + r.lockDuration` -> `block.timestamp / r.lockDuration`
+#569  killed        line 460  _recordUnsold      `r.unsoldOwed += (uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed)` -> `r.unsoldOwed -= (uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed)`
+#570  killed        line 460  _recordUnsold      `(uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed)` -> `(uint256(r.sellAmount) - b.sold) % (uint256(r.tokenReserve) - r.lpTokensUsed)`
+#571  killed        line 460  _recordUnsold      `(uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed)` -> `(uint256(r.sellAmount) - b.sold) * (uint256(r.tokenReserve) - r.lpTokensUsed)`
+#572  killed        line 460  _recordUnsold      `(uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed)` -> `(uint256(r.sellAmount) - b.sold) - (uint256(r.tokenReserve) - r.lpTokensUsed)`
+#573  killed        line 460  _recordUnsold      `(uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed)` -> `(uint256(r.sellAmount) - b.sold) / (uint256(r.tokenReserve) - r.lpTokensUsed)`
+#574  killed        line 460  _recordUnsold      `(uint256(r.sellAmount) - b.sold) + (uint256(r.tokenReserve) - r.lpTokensUsed)` -> `0`
+#575  killed        line 460  _recordUnsold      `uint256(r.sellAmount) - b.sold` -> `uint256(r.sellAmount) % b.sold`
+#576  killed        line 460  _recordUnsold      `uint256(r.sellAmount) - b.sold` -> `uint256(r.sellAmount) * b.sold`
+#577  killed        line 460  _recordUnsold      `uint256(r.sellAmount) - b.sold` -> `uint256(r.sellAmount) + b.sold`
+#578  killed        line 460  _recordUnsold      `uint256(r.sellAmount) - b.sold` -> `uint256(r.sellAmount) / b.sold`
+#579  killed        line 460  _recordUnsold      `uint256(r.tokenReserve) - r.lpTokensUsed` -> `uint256(r.tokenReserve) % r.lpTokensUsed`
+#580  killed        line 460  _recordUnsold      `uint256(r.tokenReserve) - r.lpTokensUsed` -> `uint256(r.tokenReserve) * r.lpTokensUsed`
+#581  killed        line 460  _recordUnsold      `uint256(r.tokenReserve) - r.lpTokensUsed` -> `uint256(r.tokenReserve) + r.lpTokensUsed`
+#582  killed        line 460  _recordUnsold      `uint256(r.tokenReserve) - r.lpTokensUsed` -> `uint256(r.tokenReserve) / r.lpTokensUsed`
+#583  killed        line 465  _disposeOwed       `r.unsoldOwed` -> `0`
+#584  killed        line 466  _disposeOwed       `amount != 0` -> `!(amount != 0)`
+#585  killed        line 466  _disposeOwed       `amount != 0` -> `amount < 0`
+#586  killed        line 466  _disposeOwed       `amount != 0` -> `amount <= 0`
+#587  killed        line 466  _disposeOwed       `amount != 0` -> `amount == 0`
+#588  survived      line 466  _disposeOwed       `amount != 0` -> `amount > 0`
+#589  killed        line 466  _disposeOwed       `amount != 0` -> `amount >= 0`
+#590  killed        line 466  _disposeOwed       `amount != 0` -> `true`
+#591  killed        line 477  _unsoldRecipient   `b.sold == 0` -> `b.sold != 0`
+#592  killed        line 477  _unsoldRecipient   `b.sold == 0` -> `b.sold < 0`
+#593  survived      line 477  _unsoldRecipient   `b.sold == 0` -> `b.sold <= 0`
+#594  killed        line 477  _unsoldRecipient   `b.sold == 0 || r.preset == Preset.Raise` -> `b.sold == 0 && r.preset == Preset.Raise`
+#595  killed        line 477  _unsoldRecipient   `b.sold == 0` -> `b.sold > 0`
+#596  killed        line 477  _unsoldRecipient   `b.sold == 0` -> `b.sold >= 0`
+#597  killed        line 477  _unsoldRecipient   `r.preset == Preset.Raise` -> `r.preset != Preset.Raise`
+#598  killed        line 477  _unsoldRecipient   `r.preset == Preset.Raise` -> `r.preset < Preset.Raise`
+#599  killed        line 477  _unsoldRecipient   `r.preset == Preset.Raise` -> `r.preset <= Preset.Raise`
+#600  killed        line 477  _unsoldRecipient   `r.preset == Preset.Raise` -> `r.preset > Preset.Raise`
+#601  survived      line 477  _unsoldRecipient   `r.preset == Preset.Raise` -> `r.preset >= Preset.Raise`
+#602  killed        line 489  claim              `!refunded` -> `refunded`
+#603  killed        line 490  claim              `_rounds[roundId].claimsOpen && !tokensClaimed[roundId][msg.sender]` -> `_rounds[roundId].claimsOpen || !tokensClaimed[roundId][msg.sender]`
+#604  killed        line 490  claim              `!tokensClaimed[roundId][msg.sender]` -> `tokensClaimed[roundId][msg.sender]`
+#605  killed        line 493  claim              `!refunded` -> `!(!refunded)`
+#606  killed        line 493  claim              `!refunded` -> `refunded`
+#607  killed        line 493  claim              `!refunded` -> `true`
+#608  killed        line 510  claimTokens        `!accounts[roundId][bidder].settled` -> `accounts[roundId][bidder].settled`
+#609  killed        line 518  _refund            `_books[roundId].settled` -> `!(_books[roundId].settled)`
+#610  survived      line 518  _refund            `_books[roundId].settled` -> `true`
+#611  killed        line 519  _refund            `commitments[roundId][bidder].revealed` -> `!(commitments[roundId][bidder].revealed)`
+#612  killed        line 519  _refund            `commitments[roundId][bidder].revealed` -> `true`
+#613  killed        line 521  _refund            `_allocation(roundId, bid.price, bid.amount)` -> `0`
+#614  killed        line 522  _refund            `_mulDivUp(alloc, _books[roundId].clearingPrice, PRICE_SCALE)` -> `0`
+#615  killed        line 523  _refund            `_settleAccount(roundId, bidder, paid)` -> `0`
+#616  killed        line 524  _refund            `r.collected += paid` -> `r.collected -= paid`
+#617  killed        line 524  _refund            `paid` -> `0`
+#618  killed        line 525  _refund            `r.allocatedTotal += alloc` -> `r.allocatedTotal -= alloc`
+#619  killed        line 525  _refund            `alloc` -> `0`
+#620  killed        line 533  _deliver           `r.claimsOpen` -> `!(r.claimsOpen)`
+#621  killed        line 533  _deliver           `r.claimsOpen` -> `true`
+#622  killed        line 534  _deliver           `!tokensClaimed[roundId][bidder]` -> `!(!tokensClaimed[roundId][bidder])`
+#623  killed        line 534  _deliver           `!tokensClaimed[roundId][bidder]` -> `tokensClaimed[roundId][bidder]`
+#624  killed        line 534  _deliver           `!tokensClaimed[roundId][bidder]` -> `true`
+#625  killed        line 535  _deliver           `true` -> `false`
+#626  killed        line 537  _deliver           `_allocation(roundId, bid.price, bid.amount)` -> `0`
+#627  killed        line 538  _deliver           `alloc` -> `0`
+#628  killed        line 539  _deliver           `r.vestDuration != 0 && alloc != 0` -> `r.vestDuration != 0 || alloc != 0`
+#629  killed        line 539  _deliver           `r.vestDuration != 0` -> `r.vestDuration < 0`
+#630  killed        line 539  _deliver           `r.vestDuration != 0` -> `r.vestDuration <= 0`
+#631  killed        line 539  _deliver           `r.vestDuration != 0` -> `r.vestDuration == 0`
+#632  survived      line 539  _deliver           `r.vestDuration != 0` -> `r.vestDuration > 0`
+#633  killed        line 539  _deliver           `r.vestDuration != 0` -> `r.vestDuration >= 0`
+#634  killed        line 539  _deliver           `alloc != 0` -> `alloc < 0`
+#635  killed        line 539  _deliver           `alloc != 0` -> `alloc <= 0`
+#636  killed        line 539  _deliver           `alloc != 0` -> `alloc == 0`
+#637  survived      line 539  _deliver           `alloc != 0` -> `alloc > 0`
+#638  survived      line 539  _deliver           `alloc != 0` -> `alloc >= 0`
+#639  killed        line 540  _deliver           `alloc * r.tgeBps / BPS` -> `0`
+#640  killed        line 540  _deliver           `alloc * r.tgeBps` -> `alloc % r.tgeBps`
+#641  killed        line 540  _deliver           `alloc * r.tgeBps / BPS` -> `alloc * r.tgeBps % BPS`
+#642  killed        line 540  _deliver           `alloc * r.tgeBps / BPS` -> `alloc * r.tgeBps * BPS`
+#643  killed        line 540  _deliver           `alloc * r.tgeBps / BPS` -> `alloc * r.tgeBps + BPS`
+#644  killed        line 540  _deliver           `alloc * r.tgeBps / BPS` -> `alloc * r.tgeBps - BPS`
+#645  killed        line 540  _deliver           `alloc * r.tgeBps` -> `alloc + r.tgeBps`
+#646  killed        line 540  _deliver           `alloc * r.tgeBps` -> `alloc - r.tgeBps`
+#647  killed        line 540  _deliver           `alloc * r.tgeBps` -> `alloc / r.tgeBps`
+#648  killed        line 546  _deliver           `release != 0` -> `release < 0`
+#649  killed        line 546  _deliver           `release != 0` -> `release <= 0`
+#650  killed        line 546  _deliver           `release != 0` -> `release == 0`
+#651  survived      line 546  _deliver           `release != 0` -> `release > 0`
+#652  survived      line 546  _deliver           `release != 0` -> `release >= 0`
+#653  killed        line 557  claimVested        `v.total != 0` -> `!(v.total != 0)`
+#654  killed-after  line 557  claimVested        `v.total != 0` -> `true`
+#655  killed        line 557  claimVested        `v.total != 0` -> `v.total < 0`
+#656  killed        line 557  claimVested        `v.total != 0` -> `v.total <= 0`
+#657  killed        line 557  claimVested        `v.total != 0` -> `v.total == 0`
+#658  survived      line 557  claimVested        `v.total != 0` -> `v.total > 0`
+#659  killed-after  line 557  claimVested        `v.total != 0` -> `v.total >= 0`
+#660  killed        line 558  claimVested        `_vestedAmount(r, v.total)` -> `0`
+#661  killed        line 559  claimVested        `vested - v.released` -> `0`
+#662  killed        line 559  claimVested        `vested - v.released` -> `vested % v.released`
+#663  killed        line 559  claimVested        `vested - v.released` -> `vested * v.released`
+#664  killed        line 559  claimVested        `vested - v.released` -> `vested + v.released`
+#665  killed        line 559  claimVested        `vested - v.released` -> `vested / v.released`
+#666  killed        line 560  claimVested        `amount != 0` -> `!(amount != 0)`
+#667  killed        line 560  claimVested        `amount != 0` -> `amount < 0`
+#668  killed        line 560  claimVested        `amount != 0` -> `amount <= 0`
+#669  killed        line 560  claimVested        `amount != 0` -> `amount == 0`
+#670  survived      line 560  claimVested        `amount != 0` -> `amount > 0`
+#671  killed        line 560  claimVested        `amount != 0` -> `amount >= 0`
+#672  killed        line 560  claimVested        `amount != 0` -> `true`
+#673  killed        line 563  claimVested        `uint128(vested)` -> `0`
+#674  killed        line 575  withdrawProceeds   `msg.sender == r.creator` -> `!(msg.sender == r.creator)`
+#675  killed        line 575  withdrawProceeds   `msg.sender == r.creator` -> `msg.sender != r.creator`
+#676  killed        line 575  withdrawProceeds   `msg.sender == r.creator` -> `msg.sender < r.creator`
+#677  killed-after  line 575  withdrawProceeds   `msg.sender == r.creator` -> `msg.sender <= r.creator`
+#678  killed        line 575  withdrawProceeds   `msg.sender == r.creator` -> `msg.sender > r.creator`
+#679  killed        line 575  withdrawProceeds   `msg.sender == r.creator` -> `msg.sender >= r.creator`
+#680  killed        line 575  withdrawProceeds   `msg.sender == r.creator` -> `true`
+#681  killed        line 576  withdrawProceeds   `r.lpDone` -> `!(r.lpDone)`
+#682  killed-after  line 576  withdrawProceeds   `r.lpDone` -> `true`
+#683  killed        line 577  withdrawProceeds   `_creatorAvailable(r)` -> `0`
+#684  killed        line 578  withdrawProceeds   `amount != 0` -> `!(amount != 0)`
+#685  killed        line 578  withdrawProceeds   `amount != 0` -> `amount < 0`
+#686  killed        line 578  withdrawProceeds   `amount != 0` -> `amount <= 0`
+#687  killed        line 578  withdrawProceeds   `amount != 0` -> `amount == 0`
+#688  survived      line 578  withdrawProceeds   `amount != 0` -> `amount > 0`
+#689  killed        line 578  withdrawProceeds   `amount != 0` -> `amount >= 0`
+#690  killed        line 578  withdrawProceeds   `amount != 0` -> `true`
+#691  killed        line 579  withdrawProceeds   `r.withdrawn += amount` -> `r.withdrawn -= amount`
+#692  killed        line 579  withdrawProceeds   `amount` -> `0`
+#693  killed        line 591  sweepDust          `r.lpDone && !r.dustSwept` -> `!(r.lpDone && !r.dustSwept)`
+#694  killed        line 591  sweepDust          `r.lpDone && !r.dustSwept` -> `r.lpDone || !r.dustSwept`
+#695  killed        line 591  sweepDust          `r.lpDone && !r.dustSwept` -> `true`
+#696  killed        line 591  sweepDust          `!r.dustSwept` -> `r.dustSwept`
+#697  killed        line 592  sweepDust          `l.claims == l.reveals` -> `!(l.claims == l.reveals)`
+#698  killed        line 592  sweepDust          `l.claims == l.reveals` -> `l.claims != l.reveals`
+#699  killed        line 592  sweepDust          `l.claims == l.reveals` -> `l.claims < l.reveals`
+#700  killed        line 592  sweepDust          `l.claims == l.reveals` -> `l.claims <= l.reveals`
+#701  killed        line 592  sweepDust          `l.claims == l.reveals` -> `l.claims > l.reveals`
+#702  survived      line 592  sweepDust          `l.claims == l.reveals` -> `l.claims >= l.reveals`
+#703  killed        line 592  sweepDust          `l.claims == l.reveals` -> `true`
+#704  killed-after  line 593  sweepDust          `true` -> `false`
+#705  killed        line 594  sweepDust          `r.unsoldOwed += _books[roundId].sold - r.allocatedTotal` -> `r.unsoldOwed -= _books[roundId].sold - r.allocatedTotal`
+#706  killed        line 594  sweepDust          `_books[roundId].sold - r.allocatedTotal` -> `0`
+#707  killed        line 594  sweepDust          `_books[roundId].sold - r.allocatedTotal` -> `_books[roundId].sold % r.allocatedTotal`
+#708  killed        line 594  sweepDust          `_books[roundId].sold - r.allocatedTotal` -> `_books[roundId].sold * r.allocatedTotal`
+#709  killed        line 594  sweepDust          `_books[roundId].sold - r.allocatedTotal` -> `_books[roundId].sold + r.allocatedTotal`
+#710  killed        line 594  sweepDust          `_books[roundId].sold - r.allocatedTotal` -> `_books[roundId].sold / r.allocatedTotal`
+#711  killed        line 595  sweepDust          `r.unsoldOwed != 0` -> `r.unsoldOwed < 0`
+#712  killed        line 595  sweepDust          `r.unsoldOwed != 0` -> `r.unsoldOwed <= 0`
+#713  killed        line 595  sweepDust          `r.unsoldOwed != 0` -> `r.unsoldOwed == 0`
+#714  survived      line 595  sweepDust          `r.unsoldOwed != 0` -> `r.unsoldOwed > 0`
+#715  killed        line 595  sweepDust          `r.unsoldOwed != 0` -> `r.unsoldOwed >= 0`
+#716  killed        line 623  quote              `commitments[roundId][bidder].revealed` -> `!(commitments[roundId][bidder].revealed)`
+#717  killed-after  line 623  quote              `commitments[roundId][bidder].revealed` -> `true`
+#718  killed        line 625  quote              `_allocation(roundId, bid.price, bid.amount)` -> `0`
+#719  killed        line 626  quote              `_mulDivUp(allocated, _books[roundId].clearingPrice, PRICE_SCALE)` -> `0`
+#720  killed-after  line 627  quote              `uint256(_rounds[roundId].depositAmount) - paid` -> `0`
+#721  killed        line 627  quote              `uint256(_rounds[roundId].depositAmount) - paid` -> `uint256(_rounds[roundId].depositAmount) % paid`
+#722  killed-after  line 627  quote              `uint256(_rounds[roundId].depositAmount) - paid` -> `uint256(_rounds[roundId].depositAmount) * paid`
+#723  killed-after  line 627  quote              `uint256(_rounds[roundId].depositAmount) - paid` -> `uint256(_rounds[roundId].depositAmount) + paid`
+#724  killed        line 627  quote              `uint256(_rounds[roundId].depositAmount) - paid` -> `uint256(_rounds[roundId].depositAmount) / paid`
+#725  killed        line 637  vestedOf           `v.total == 0` -> `v.total != 0`
+#726  survived      line 637  vestedOf           `v.total == 0` -> `v.total < 0`
+#727  survived      line 637  vestedOf           `v.total == 0` -> `v.total <= 0`
+#728  killed        line 637  vestedOf           `v.total == 0` -> `v.total > 0`
+#729  killed        line 637  vestedOf           `v.total == 0` -> `v.total >= 0`
+#730  killed        line 651  _creatorAvailable  `r.lpMonSpent + r.lpMonBurned` -> `0`
+#731  killed        line 651  _creatorAvailable  `r.lpMonSpent + r.lpMonBurned` -> `r.lpMonSpent % r.lpMonBurned`
+#732  killed        line 651  _creatorAvailable  `r.lpMonSpent + r.lpMonBurned` -> `r.lpMonSpent * r.lpMonBurned`
+#733  killed        line 651  _creatorAvailable  `r.lpMonSpent + r.lpMonBurned` -> `r.lpMonSpent - r.lpMonBurned`
+#734  killed        line 651  _creatorAvailable  `r.lpMonSpent + r.lpMonBurned` -> `r.lpMonSpent / r.lpMonBurned`
+#735  killed        line 652  _creatorAvailable  `r.collected > lpCost ? r.collected - lpCost : 0` -> `0`
+#736  killed        line 652  _creatorAvailable  `r.collected > lpCost` -> `r.collected != lpCost`
+#737  killed        line 652  _creatorAvailable  `r.collected > lpCost` -> `r.collected < lpCost`
+#738  killed        line 652  _creatorAvailable  `r.collected > lpCost` -> `r.collected <= lpCost`
+#739  killed        line 652  _creatorAvailable  `r.collected > lpCost` -> `r.collected == lpCost`
+#740  survived      line 652  _creatorAvailable  `r.collected > lpCost` -> `r.collected >= lpCost`
+#741  killed        line 652  _creatorAvailable  `r.collected - lpCost` -> `r.collected % lpCost`
+#742  killed        line 652  _creatorAvailable  `r.collected - lpCost` -> `r.collected * lpCost`
+#743  killed        line 652  _creatorAvailable  `r.collected - lpCost` -> `r.collected + lpCost`
+#744  killed        line 652  _creatorAvailable  `r.collected - lpCost` -> `r.collected / lpCost`
+#745  survived      line 653  _creatorAvailable  `entitled > r.withdrawn` -> `entitled != r.withdrawn`
+#746  killed        line 653  _creatorAvailable  `entitled > r.withdrawn` -> `entitled < r.withdrawn`
+#747  killed        line 653  _creatorAvailable  `entitled > r.withdrawn` -> `entitled <= r.withdrawn`
+#748  killed        line 653  _creatorAvailable  `entitled > r.withdrawn` -> `entitled == r.withdrawn`
+#749  survived      line 653  _creatorAvailable  `entitled > r.withdrawn` -> `entitled >= r.withdrawn`
+#750  killed        line 653  _creatorAvailable  `entitled - r.withdrawn` -> `entitled % r.withdrawn`
+#751  killed        line 653  _creatorAvailable  `entitled - r.withdrawn` -> `entitled * r.withdrawn`
+#752  killed        line 653  _creatorAvailable  `entitled - r.withdrawn` -> `entitled + r.withdrawn`
+#753  killed        line 653  _creatorAvailable  `entitled - r.withdrawn` -> `entitled / r.withdrawn`
+#754  killed        line 658  _vestedAmount      `total * r.tgeBps / BPS` -> `0`
+#755  killed        line 658  _vestedAmount      `total * r.tgeBps` -> `total % r.tgeBps`
+#756  killed        line 658  _vestedAmount      `total * r.tgeBps / BPS` -> `total * r.tgeBps % BPS`
+#757  killed        line 658  _vestedAmount      `total * r.tgeBps / BPS` -> `total * r.tgeBps * BPS`
+#758  killed        line 658  _vestedAmount      `total * r.tgeBps / BPS` -> `total * r.tgeBps + BPS`
+#759  killed        line 658  _vestedAmount      `total * r.tgeBps / BPS` -> `total * r.tgeBps - BPS`
+#760  killed        line 658  _vestedAmount      `total * r.tgeBps` -> `total + r.tgeBps`
+#761  killed        line 658  _vestedAmount      `total * r.tgeBps` -> `total - r.tgeBps`
+#762  killed        line 658  _vestedAmount      `total * r.tgeBps` -> `total / r.tgeBps`
+#763  killed        line 659  _vestedAmount      `uint256(r.settledAt) + r.cliff` -> `0`
+#764  killed        line 659  _vestedAmount      `uint256(r.settledAt) + r.cliff` -> `uint256(r.settledAt) % r.cliff`
+#765  killed        line 659  _vestedAmount      `uint256(r.settledAt) + r.cliff` -> `uint256(r.settledAt) * r.cliff`
+#766  killed        line 659  _vestedAmount      `uint256(r.settledAt) + r.cliff` -> `uint256(r.settledAt) - r.cliff`
+#767  killed        line 659  _vestedAmount      `uint256(r.settledAt) + r.cliff` -> `uint256(r.settledAt) / r.cliff`
+#768  killed        line 660  _vestedAmount      `block.timestamp <= start` -> `block.timestamp != start`
+#769  survived      line 660  _vestedAmount      `block.timestamp <= start` -> `block.timestamp < start`
+#770  killed        line 660  _vestedAmount      `block.timestamp <= start` -> `block.timestamp == start`
+#771  killed        line 660  _vestedAmount      `block.timestamp <= start` -> `block.timestamp > start`
+#772  killed        line 660  _vestedAmount      `block.timestamp <= start` -> `block.timestamp >= start`
+#773  killed        line 661  _vestedAmount      `block.timestamp - start` -> `0`
+#774  survived      line 661  _vestedAmount      `block.timestamp - start` -> `block.timestamp % start`
+#775  killed        line 661  _vestedAmount      `block.timestamp - start` -> `block.timestamp * start`
+#776  killed        line 661  _vestedAmount      `block.timestamp - start` -> `block.timestamp + start`
+#777  killed        line 661  _vestedAmount      `block.timestamp - start` -> `block.timestamp / start`
+#778  killed        line 662  _vestedAmount      `elapsed >= r.vestDuration` -> `elapsed != r.vestDuration`
+#779  killed        line 662  _vestedAmount      `elapsed >= r.vestDuration` -> `elapsed < r.vestDuration`
+#780  killed        line 662  _vestedAmount      `elapsed >= r.vestDuration` -> `elapsed <= r.vestDuration`
+#781  killed        line 662  _vestedAmount      `elapsed >= r.vestDuration` -> `elapsed == r.vestDuration`
+#782  survived      line 662  _vestedAmount      `elapsed >= r.vestDuration` -> `elapsed > r.vestDuration`
+#783  killed        line 663  _vestedAmount      `tge + (total - tge) * elapsed / r.vestDuration` -> `tge % (total - tge) * elapsed / r.vestDuration`
+#784  killed        line 663  _vestedAmount      `tge + (total - tge) * elapsed / r.vestDuration` -> `tge * (total - tge) * elapsed / r.vestDuration`
+#785  killed        line 663  _vestedAmount      `tge + (total - tge) * elapsed / r.vestDuration` -> `tge - (total - tge) * elapsed / r.vestDuration`
+#786  killed        line 663  _vestedAmount      `tge + (total - tge) * elapsed / r.vestDuration` -> `tge / (total - tge) * elapsed / r.vestDuration`
+#787  killed        line 663  _vestedAmount      `(total - tge) * elapsed` -> `(total - tge) % elapsed`
+#788  killed        line 663  _vestedAmount      `(total - tge) * elapsed / r.vestDuration` -> `(total - tge) * elapsed % r.vestDuration`
+#789  killed        line 663  _vestedAmount      `(total - tge) * elapsed / r.vestDuration` -> `(total - tge) * elapsed * r.vestDuration`
+#790  killed        line 663  _vestedAmount      `(total - tge) * elapsed / r.vestDuration` -> `(total - tge) * elapsed + r.vestDuration`
+#791  killed        line 663  _vestedAmount      `(total - tge) * elapsed / r.vestDuration` -> `(total - tge) * elapsed - r.vestDuration`
+#792  killed        line 663  _vestedAmount      `(total - tge) * elapsed` -> `(total - tge) + elapsed`
+#793  killed        line 663  _vestedAmount      `(total - tge) * elapsed` -> `(total - tge) - elapsed`
+#794  killed        line 663  _vestedAmount      `(total - tge) * elapsed` -> `(total - tge) / elapsed`
+#795  killed        line 663  _vestedAmount      `total - tge` -> `total % tge`
+#796  killed        line 663  _vestedAmount      `total - tge` -> `total * tge`
+#797  killed        line 663  _vestedAmount      `total - tge` -> `total + tge`
+#798  killed        line 663  _vestedAmount      `total - tge` -> `total / tge`
+#799  killed        line 669  _tokensOut         `r.tokensOut += amount` -> `r.tokensOut -= amount`
+#800  killed        line 669  _tokensOut         `amount` -> `0`
+#801  killed        line 670  _tokensOut         `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `!(r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve)`
+#802  killed        line 670  _tokensOut         `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `r.tokensOut != uint256(r.sellAmount) + r.tokenReserve`
+#803  killed        line 670  _tokensOut         `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `r.tokensOut < uint256(r.sellAmount) + r.tokenReserve`
+#804  killed        line 670  _tokensOut         `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `r.tokensOut == uint256(r.sellAmount) + r.tokenReserve`
+#805  killed        line 670  _tokensOut         `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `r.tokensOut > uint256(r.sellAmount) + r.tokenReserve`
+#806  killed        line 670  _tokensOut         `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `r.tokensOut >= uint256(r.sellAmount) + r.tokenReserve`
+#807  survived      line 670  _tokensOut         `r.tokensOut <= uint256(r.sellAmount) + r.tokenReserve` -> `true`
+#808  killed        line 670  _tokensOut         `uint256(r.sellAmount) + r.tokenReserve` -> `uint256(r.sellAmount) % r.tokenReserve`
+#809  killed        line 670  _tokensOut         `uint256(r.sellAmount) + r.tokenReserve` -> `uint256(r.sellAmount) * r.tokenReserve`
+#810  killed        line 670  _tokensOut         `uint256(r.sellAmount) + r.tokenReserve` -> `uint256(r.sellAmount) - r.tokenReserve`
+#811  killed        line 670  _tokensOut         `uint256(r.sellAmount) + r.tokenReserve` -> `uint256(r.sellAmount) / r.tokenReserve`
+#812  killed        line 675  _mulDivUp          `a * b` -> `0`
+#813  killed        line 675  _mulDivUp          `a * b` -> `a % b`
+#814  killed        line 675  _mulDivUp          `a * b` -> `a + b`
+#815  killed        line 675  _mulDivUp          `a * b` -> `a - b`
+#816  killed        line 675  _mulDivUp          `a * b` -> `a / b`
+#817  killed        line 676  _mulDivUp          `x == 0` -> `x != 0`
+#818  killed        line 676  _mulDivUp          `x == 0` -> `x < 0`
+#819  survived      line 676  _mulDivUp          `x == 0` -> `x <= 0`
+#820  killed        line 676  _mulDivUp          `x == 0` -> `x > 0`
+#821  killed        line 676  _mulDivUp          `x == 0` -> `x >= 0`
+#822  killed        line 676  _mulDivUp          `(x - 1) / d` -> `(x - 1) % d`
+#823  killed        line 676  _mulDivUp          `(x - 1) / d` -> `(x - 1) * d`
+#824  killed        line 676  _mulDivUp          `(x - 1) / d` -> `(x - 1) + d`
+#825  killed        line 676  _mulDivUp          `(x - 1) / d` -> `(x - 1) - d`
+#826  killed        line 676  _mulDivUp          `(x - 1) / d + 1` -> `(x - 1) / d % 1`
+#827  killed        line 676  _mulDivUp          `(x - 1) / d + 1` -> `(x - 1) / d * 1`
+#828  killed        line 676  _mulDivUp          `(x - 1) / d + 1` -> `(x - 1) / d - 1`
+#829  killed        line 676  _mulDivUp          `(x - 1) / d + 1` -> `(x - 1) / d / 1`
+#830  killed        line 676  _mulDivUp          `x - 1` -> `x % 1`
+#831  killed        line 676  _mulDivUp          `x - 1` -> `x * 1`
+#832  killed        line 676  _mulDivUp          `x - 1` -> `x + 1`
+#833  killed        line 676  _mulDivUp          `x - 1` -> `x / 1`

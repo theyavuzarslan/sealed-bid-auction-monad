@@ -1,0 +1,113 @@
+Mutation testing of contracts/src/DepositLedger.sol (v2, branch contracts-v2)
+Method: contracts/reports/mutation-summary.md. Operators: forge 1.8.3's set (binary operator, require condition,
+assignment/initializer literal, unary not) without the bitwise/shift/power replacements of arithmetic operators.
+
+Mutants: 85 generated, 0 invalid (do not compile), 85 valid.
+Before (suite at the start of the pass): 76 killed, 9 survived: 89.4%
+After (tests added in this pass):        80 killed, 5 survived: 94.1%
+Every surviving mutant below is classified; unclassified: 0.
+
+== Surviving mutants ==
+#3 line 60 (nonReentrant): `_lock == 1` -> `_lock <= 1`
+    `_lock` only ever holds 1 or 2, so `<= 1` is `== 1`.
+#7 line 61 (nonReentrant): `2` -> `0`
+    Any lock value other than 1 blocks re-entry; 0 behaves exactly like 2.
+#35 line 75 (burnUnrevealed): `amount != 0` -> `amount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#44 line 87 (withdrawOwed): `amount != 0` -> `amount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#51 line 100 (_pushRefund): `amount == 0` -> `amount <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+
+== Killed by the tests added in this pass ==
+#50 line 100 (_pushRefund): `amount == 0` -> `amount < 0`   killed by test_PushRefund_ZeroIsANoOp
+#65 line 120 (_settleAccount): `paid < deposit` -> `paid != deposit`   killed by test_SettleAccount_PaidMustBeBelowDeposit
+#66 line 120 (_settleAccount): `paid < deposit` -> `paid <= deposit`   killed by test_SettleAccount_PaidMustBeBelowDeposit
+#70 line 120 (_settleAccount): `paid < deposit` -> `true`   killed by test_SettleAccount_PaidMustBeBelowDeposit
+
+== Every mutant ==
+#0    killed        line 60   nonReentrant       `_lock == 1` -> `!(_lock == 1)`
+#1    killed        line 60   nonReentrant       `_lock == 1` -> `_lock != 1`
+#2    killed        line 60   nonReentrant       `_lock == 1` -> `_lock < 1`
+#3    survived      line 60   nonReentrant       `_lock == 1` -> `_lock <= 1`
+#4    killed        line 60   nonReentrant       `_lock == 1` -> `_lock > 1`
+#5    killed        line 60   nonReentrant       `_lock == 1` -> `_lock >= 1`
+#6    killed        line 60   nonReentrant       `_lock == 1` -> `true`
+#7    survived      line 61   nonReentrant       `2` -> `0`
+#8    killed        line 63   nonReentrant       `1` -> `0`
+#9    killed        line 70   burnUnrevealed     `block.timestamp >= _revealEndOf(roundId)` -> `!(block.timestamp >= _revealEndOf(roundId))`
+#10   killed        line 70   burnUnrevealed     `block.timestamp >= _revealEndOf(roundId)` -> `block.timestamp != _revealEndOf(roundId)`
+#11   killed        line 70   burnUnrevealed     `block.timestamp >= _revealEndOf(roundId)` -> `block.timestamp < _revealEndOf(roundId)`
+#12   killed        line 70   burnUnrevealed     `block.timestamp >= _revealEndOf(roundId)` -> `block.timestamp <= _revealEndOf(roundId)`
+#13   killed        line 70   burnUnrevealed     `block.timestamp >= _revealEndOf(roundId)` -> `block.timestamp == _revealEndOf(roundId)`
+#14   killed        line 70   burnUnrevealed     `block.timestamp >= _revealEndOf(roundId)` -> `block.timestamp > _revealEndOf(roundId)`
+#15   killed        line 70   burnUnrevealed     `block.timestamp >= _revealEndOf(roundId)` -> `true`
+#16   killed        line 72   burnUnrevealed     `l.commits - l.reveals` -> `0`
+#17   killed        line 72   burnUnrevealed     `l.commits - l.reveals` -> `l.commits % l.reveals`
+#18   killed        line 72   burnUnrevealed     `l.commits - l.reveals` -> `l.commits * l.reveals`
+#19   killed        line 72   burnUnrevealed     `l.commits - l.reveals` -> `l.commits + l.reveals`
+#20   killed        line 72   burnUnrevealed     `l.commits - l.reveals` -> `l.commits / l.reveals`
+#21   killed        line 73   burnUnrevealed     `unrevealed * _depositOf(roundId)` -> `0`
+#22   killed        line 73   burnUnrevealed     `unrevealed * _depositOf(roundId)` -> `unrevealed % _depositOf(roundId)`
+#23   killed        line 73   burnUnrevealed     `unrevealed * _depositOf(roundId)` -> `unrevealed + _depositOf(roundId)`
+#24   killed        line 73   burnUnrevealed     `unrevealed * _depositOf(roundId)` -> `unrevealed - _depositOf(roundId)`
+#25   killed        line 73   burnUnrevealed     `unrevealed * _depositOf(roundId)` -> `unrevealed / _depositOf(roundId)`
+#26   killed        line 74   burnUnrevealed     `due - l.burned` -> `0`
+#27   killed        line 74   burnUnrevealed     `due - l.burned` -> `due % l.burned`
+#28   killed        line 74   burnUnrevealed     `due - l.burned` -> `due * l.burned`
+#29   killed        line 74   burnUnrevealed     `due - l.burned` -> `due + l.burned`
+#30   killed        line 74   burnUnrevealed     `due - l.burned` -> `due / l.burned`
+#31   killed        line 75   burnUnrevealed     `amount != 0` -> `!(amount != 0)`
+#32   killed        line 75   burnUnrevealed     `amount != 0` -> `amount < 0`
+#33   killed        line 75   burnUnrevealed     `amount != 0` -> `amount <= 0`
+#34   killed        line 75   burnUnrevealed     `amount != 0` -> `amount == 0`
+#35   survived      line 75   burnUnrevealed     `amount != 0` -> `amount > 0`
+#36   killed        line 75   burnUnrevealed     `amount != 0` -> `amount >= 0`
+#37   killed        line 75   burnUnrevealed     `amount != 0` -> `true`
+#38   killed        line 76   burnUnrevealed     `due` -> `0`
+#39   killed        line 86   withdrawOwed       `refundsOwed[msg.sender]` -> `0`
+#40   killed        line 87   withdrawOwed       `amount != 0` -> `!(amount != 0)`
+#41   killed        line 87   withdrawOwed       `amount != 0` -> `amount < 0`
+#42   killed        line 87   withdrawOwed       `amount != 0` -> `amount <= 0`
+#43   killed        line 87   withdrawOwed       `amount != 0` -> `amount == 0`
+#44   survived      line 87   withdrawOwed       `amount != 0` -> `amount > 0`
+#45   killed        line 87   withdrawOwed       `amount != 0` -> `amount >= 0`
+#46   killed        line 87   withdrawOwed       `amount != 0` -> `true`
+#47   killed        line 89   withdrawOwed       `totalOwed -= amount` -> `totalOwed += amount`
+#48   killed        line 89   withdrawOwed       `amount` -> `0`
+#49   killed        line 100  _pushRefund        `amount == 0` -> `amount != 0`
+#50   killed-after  line 100  _pushRefund        `amount == 0` -> `amount < 0`
+#51   survived      line 100  _pushRefund        `amount == 0` -> `amount <= 0`
+#52   killed        line 100  _pushRefund        `amount == 0` -> `amount > 0`
+#53   killed        line 100  _pushRefund        `amount == 0` -> `amount >= 0`
+#54   killed        line 101  _pushRefund        `REFUND_PUSH_GAS` -> `0`
+#55   killed        line 106  _pushRefund        `!ok` -> `ok`
+#56   killed        line 107  _pushRefund        `refundsOwed[bidder] += amount` -> `refundsOwed[bidder] -= amount`
+#57   killed        line 107  _pushRefund        `amount` -> `0`
+#58   killed        line 108  _pushRefund        `totalOwed += amount` -> `totalOwed -= amount`
+#59   killed        line 108  _pushRefund        `amount` -> `0`
+#60   killed        line 117  _settleAccount     `_depositOf(roundId)` -> `0`
+#61   killed        line 119  _settleAccount     `!a.settled` -> `!(!a.settled)`
+#62   killed        line 119  _settleAccount     `!a.settled` -> `a.settled`
+#63   killed        line 119  _settleAccount     `!a.settled` -> `true`
+#64   killed        line 120  _settleAccount     `paid < deposit` -> `!(paid < deposit)`
+#65   killed-after  line 120  _settleAccount     `paid < deposit` -> `paid != deposit`
+#66   killed-after  line 120  _settleAccount     `paid < deposit` -> `paid <= deposit`
+#67   killed        line 120  _settleAccount     `paid < deposit` -> `paid == deposit`
+#68   killed        line 120  _settleAccount     `paid < deposit` -> `paid > deposit`
+#69   killed        line 120  _settleAccount     `paid < deposit` -> `paid >= deposit`
+#70   killed-after  line 120  _settleAccount     `paid < deposit` -> `true`
+#71   killed        line 121  _settleAccount     `deposit - paid` -> `0`
+#72   killed        line 121  _settleAccount     `deposit - paid` -> `deposit % paid`
+#73   killed        line 121  _settleAccount     `deposit - paid` -> `deposit * paid`
+#74   killed        line 121  _settleAccount     `deposit - paid` -> `deposit + paid`
+#75   killed        line 121  _settleAccount     `deposit - paid` -> `deposit / paid`
+#76   killed        line 122  _settleAccount     `true` -> `false`
+#77   killed        line 126  _settleAccount     `uint128(paid)` -> `0`
+#78   killed        line 128  _settleAccount     `uint128(refund)` -> `0`
+#79   killed        line 129  _settleAccount     `ledgers[roundId].claims += 1` -> `ledgers[roundId].claims -= 1`
+#80   killed        line 129  _settleAccount     `1` -> `0`
+#81   killed        line 135  _credit            `roundBalance[roundId] += amount` -> `roundBalance[roundId] -= amount`
+#82   killed        line 135  _credit            `amount` -> `0`
+#83   killed        line 140  _debit             `roundBalance[roundId] -= amount` -> `roundBalance[roundId] += amount`
+#84   killed        line 140  _debit             `amount` -> `0`

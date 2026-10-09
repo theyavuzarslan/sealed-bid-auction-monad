@@ -1,0 +1,361 @@
+Mutation testing of contracts/src/UniformClearing.sol (v2, branch contracts-v2)
+Method: contracts/reports/mutation-summary.md. Operators: forge 1.8.3's set (binary operator, require condition,
+assignment/initializer literal, unary not) without the bitwise/shift/power replacements of arithmetic operators.
+
+Mutants: 238 generated, 0 invalid (do not compile), 238 valid.
+Before (suite at the start of the pass): 166 killed, 72 survived: 69.7%
+After (tests added in this pass):        201 killed, 37 survived: 84.5%
+Every surviving mutant below is classified; unclassified: 0.
+
+== Surviving mutants ==
+#5 line 62 (findHint): `hint == NONE` -> `hint > NONE`
+    `NONE` is type(uint256).max: `hint > NONE` is never true, and an empty book then still returns NONE from the walk.
+#6 line 62 (findHint): `hint == NONE` -> `hint >= NONE`
+    `NONE` is type(uint256).max: `x < NONE` is `x != NONE`, `x >= NONE` is `x == NONE`.
+#14 line 64 (findHint): `nxt != NONE` -> `nxt < NONE`
+    `NONE` is type(uint256).max: `x < NONE` is `x != NONE`, `x >= NONE` is `x == NONE`.
+#30 line 99 (_initBook): `supply != 0` -> `supply > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#39 line 105 (_initBook): `NONE` -> `0`
+    The initial `cursor` is overwritten by the first settle step before it is read.
+#40 line 106 (_initBook): `NONE` -> `0`
+    The initial `last` is read only for an empty book, where 0 and NONE give the same all-zero result.
+#42 line 111 (_addBid): `price != NONE` -> `price < NONE`
+    `NONE` is type(uint256).max: `x < NONE` is `x != NONE`, `x >= NONE` is `x == NONE`.
+#52 line 112 (_addBid): `amount != 0` -> `amount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#61 line 116 (_addBid): `lvl.qty == 0` -> `lvl.qty <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#78 line 129 (_insertLevel): `head == NONE` -> `head >= NONE`
+    `NONE` is type(uint256).max: `x < NONE` is `x != NONE`, `x >= NONE` is `x == NONE`.
+#83 line 129 (_insertLevel): `price > head` -> `price >= head`
+    `price == head` cannot reach `_insertLevel`: an existing price adds to its level instead.
+#89 line 135 (_insertLevel): `hint != NONE` -> `hint < NONE`
+    Hint validation. A rejected hint only makes the insert walk from the head: same book, more gas.
+#90 line 135 (_insertLevel): `hint != NONE` -> `hint <= NONE`
+    Hint validation (see #89): the remaining conjuncts still reject NONE.
+#91 line 135 (_insertLevel): `hint != NONE` -> `hint == NONE`
+    Hint validation (see #89): every hint is ignored, the walk starts at the head, the book is identical.
+#92 line 135 (_insertLevel): `hint != NONE` -> `hint > NONE`
+    Hint validation (see #89): `hint > NONE` is never true, so hints are ignored; same book.
+#93 line 135 (_insertLevel): `hint != NONE` -> `hint >= NONE`
+    Hint validation (see #89): `hint >= NONE` only admits NONE, which the next conjunct rejects; same book.
+#97 line 135 (_insertLevel): `hint > price` -> `hint == price`
+    Hint validation (see #89): `hint == price` cannot be an existing level here; the walk starts at the head.
+#98 line 135 (_insertLevel): `hint > price` -> `hint >= price`
+    Hint validation (see #89): `hint == price` cannot be an existing level here.
+#99 line 135 (_insertLevel): `_levels[id][hint].qty != 0` -> `_levels[id][hint].qty < 0`
+    Hint validation (see #89): `qty < 0` is never true, so hints are ignored; same book.
+#102 line 135 (_insertLevel): `_levels[id][hint].qty != 0` -> `_levels[id][hint].qty > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#111 line 138 (_insertLevel): `nxt == NONE` -> `nxt >= NONE`
+    `NONE` is type(uint256).max: `x < NONE` is `x != NONE`, `x >= NONE` is `x == NONE`.
+#113 line 138 (_insertLevel): `nxt < price` -> `nxt <= price`
+    `nxt == price` is impossible: the price being inserted is not in the list yet.
+#124 line 149 (_settleStep): `maxSteps != 0` -> `maxSteps > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#138 line 160 (_settleStep): `i < maxSteps` -> `i != maxSteps`
+    Loop counter: `i < n` and `i != n` stop at the same step.
+#147 line 161 (_settleStep): `cursor == NONE` -> `cursor >= NONE`
+    `NONE` is type(uint256).max: `x < NONE` is `x != NONE`, `x >= NONE` is `x == NONE`.
+#148 line 163 (_settleStep): `last != NONE` -> `last < NONE`
+    `NONE` is type(uint256).max: `x < NONE` is `x != NONE`, `x >= NONE` is `x == NONE`.
+#154 line 166 (_settleStep): `low.qty` -> `0`
+    Dead store: in the undersubscribed branch `qtyAtPrice` is never read (only when oversubscribed).
+#155 line 167 (_settleStep): `low.count` -> `0`
+    Dead store: `countAtPrice` is read only when oversubscribed.
+#156 line 168 (_settleStep): `cum - low.qty` -> `0`
+    Dead store: `qtyAbove` is read only when oversubscribed.
+#157 line 168 (_settleStep): `cum - low.qty` -> `cum % low.qty`
+    Dead store: `qtyAbove` is read only when oversubscribed.
+#158 line 168 (_settleStep): `cum - low.qty` -> `cum * low.qty`
+    Dead store: `qtyAbove` is read only when oversubscribed.
+#159 line 168 (_settleStep): `cum - low.qty` -> `cum + low.qty`
+    Dead store: `qtyAbove` is read only when oversubscribed.
+#160 line 168 (_settleStep): `cum - low.qty` -> `cum / low.qty`
+    Dead store: `qtyAbove` is read only when oversubscribed.
+#179 line 181 (_settleStep): `cum + q > supply` -> `cum + q != supply`
+    In this branch `cum + q >= supply`, so `> supply` and `!= supply` agree.
+#201 line 202 (_allocation): `b.totalQty == 0` -> `b.totalQty <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#210 line 205 (_allocation): `price < p` -> `price != p`
+    `price > p` already returned, so `price != p` is `price < p`.
+#233 line 214 (_soldLowerBound): `b.sold > b.countAtPrice` -> `b.sold >= b.countAtPrice`
+    When `sold == countAtPrice` both branches give 0.
+
+== Killed by the tests added in this pass ==
+#0 line 61 (findHint): `_books[id].head` -> `0`   killed by test_FindHint_ReturnsLowestLevelAbove
+#1 line 62 (findHint): `hint == NONE` -> `hint != NONE`   killed by test_FindHint_ReturnsLowestLevelAbove
+#2 line 62 (findHint): `hint == NONE` -> `hint < NONE`   killed by test_FindHint_ReturnsLowestLevelAbove
+#3 line 62 (findHint): `hint == NONE` -> `hint <= NONE`   killed by test_FindHint_ReturnsLowestLevelAbove
+#4 line 62 (findHint): `hint == NONE || hint <= price` -> `hint == NONE && hint <= price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#7 line 62 (findHint): `hint <= price` -> `hint != price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#8 line 62 (findHint): `hint <= price` -> `hint < price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#9 line 62 (findHint): `hint <= price` -> `hint == price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#10 line 62 (findHint): `hint <= price` -> `hint > price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#11 line 62 (findHint): `hint <= price` -> `hint >= price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#12 line 63 (findHint): `_levels[id][hint].next` -> `0`   killed by test_FindHint_ReturnsLowestLevelAbove
+#15 line 64 (findHint): `nxt != NONE` -> `nxt <= NONE`   killed by test_FindHint_ReturnsLowestLevelAbove
+#16 line 64 (findHint): `nxt != NONE` -> `nxt == NONE`   killed by test_FindHint_ReturnsLowestLevelAbove
+#17 line 64 (findHint): `nxt != NONE` -> `nxt > NONE`   killed by test_FindHint_ReturnsLowestLevelAbove
+#18 line 64 (findHint): `nxt != NONE` -> `nxt >= NONE`   killed by test_FindHint_ReturnsLowestLevelAbove
+#19 line 64 (findHint): `nxt > price` -> `nxt != price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#20 line 64 (findHint): `nxt > price` -> `nxt < price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#21 line 64 (findHint): `nxt > price` -> `nxt <= price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#22 line 64 (findHint): `nxt > price` -> `nxt == price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#23 line 64 (findHint): `nxt > price` -> `nxt >= price`   killed by test_FindHint_ReturnsLowestLevelAbove
+#24 line 65 (findHint): `nxt` -> `0`   killed by test_FindHint_ReturnsLowestLevelAbove
+#25 line 66 (findHint): `_levels[id][hint].next` -> `0`   killed by test_FindHint_ReturnsLowestLevelAbove
+#31 line 99 (_initBook): `supply != 0` -> `supply >= 0`   killed by test_InputChecks
+#32 line 99 (_initBook): `supply != 0` -> `true`   killed by test_InputChecks
+#35 line 101 (_initBook): `!b.initialized` -> `true`   killed by test_InputChecks
+#43 line 111 (_addBid): `price != NONE` -> `price <= NONE`   killed by test_InputChecks
+#47 line 111 (_addBid): `price != NONE` -> `true`   killed by test_InputChecks
+#53 line 112 (_addBid): `amount != 0` -> `amount >= 0`   killed by test_InputChecks
+#54 line 112 (_addBid): `amount != 0` -> `true`   killed by test_InputChecks
+#125 line 149 (_settleStep): `maxSteps != 0` -> `maxSteps >= 0`   killed by test_InputChecks
+#126 line 149 (_settleStep): `maxSteps != 0` -> `true`   killed by test_InputChecks
+#149 line 163 (_settleStep): `last != NONE` -> `last <= NONE`   killed by test_EmptyBook_SettlesAtZero
+#170 line 176 (_settleStep): `cum + q >= supply` -> `cum + q > supply`   killed by test_ExactCover_WithLowerLevel_ClearsAtTheCoveringLevel
+#200 line 202 (_allocation): `b.totalQty == 0` -> `b.totalQty < 0`   killed by test_EmptyBook_SettlesAtZero
+#229 line 214 (_soldLowerBound): `b.sold > b.countAtPrice` -> `b.sold != b.countAtPrice`   killed by test_LowerBound_MoreBidsAtPriceThanUnits
+
+== Every mutant ==
+#0    killed-after  line 61   findHint           `_books[id].head` -> `0`
+#1    killed-after  line 62   findHint           `hint == NONE` -> `hint != NONE`
+#2    killed-after  line 62   findHint           `hint == NONE` -> `hint < NONE`
+#3    killed-after  line 62   findHint           `hint == NONE` -> `hint <= NONE`
+#4    killed-after  line 62   findHint           `hint == NONE || hint <= price` -> `hint == NONE && hint <= price`
+#5    survived      line 62   findHint           `hint == NONE` -> `hint > NONE`
+#6    survived      line 62   findHint           `hint == NONE` -> `hint >= NONE`
+#7    killed-after  line 62   findHint           `hint <= price` -> `hint != price`
+#8    killed-after  line 62   findHint           `hint <= price` -> `hint < price`
+#9    killed-after  line 62   findHint           `hint <= price` -> `hint == price`
+#10   killed-after  line 62   findHint           `hint <= price` -> `hint > price`
+#11   killed-after  line 62   findHint           `hint <= price` -> `hint >= price`
+#12   killed-after  line 63   findHint           `_levels[id][hint].next` -> `0`
+#13   killed        line 64   findHint           `nxt != NONE && nxt > price` -> `nxt != NONE || nxt > price`
+#14   survived      line 64   findHint           `nxt != NONE` -> `nxt < NONE`
+#15   killed-after  line 64   findHint           `nxt != NONE` -> `nxt <= NONE`
+#16   killed-after  line 64   findHint           `nxt != NONE` -> `nxt == NONE`
+#17   killed-after  line 64   findHint           `nxt != NONE` -> `nxt > NONE`
+#18   killed-after  line 64   findHint           `nxt != NONE` -> `nxt >= NONE`
+#19   killed-after  line 64   findHint           `nxt > price` -> `nxt != price`
+#20   killed-after  line 64   findHint           `nxt > price` -> `nxt < price`
+#21   killed-after  line 64   findHint           `nxt > price` -> `nxt <= price`
+#22   killed-after  line 64   findHint           `nxt > price` -> `nxt == price`
+#23   killed-after  line 64   findHint           `nxt > price` -> `nxt >= price`
+#24   killed-after  line 65   findHint           `nxt` -> `0`
+#25   killed-after  line 66   findHint           `_levels[id][hint].next` -> `0`
+#26   killed        line 99   _initBook          `supply != 0` -> `!(supply != 0)`
+#27   killed        line 99   _initBook          `supply != 0` -> `supply < 0`
+#28   killed        line 99   _initBook          `supply != 0` -> `supply <= 0`
+#29   killed        line 99   _initBook          `supply != 0` -> `supply == 0`
+#30   survived      line 99   _initBook          `supply != 0` -> `supply > 0`
+#31   killed-after  line 99   _initBook          `supply != 0` -> `supply >= 0`
+#32   killed-after  line 99   _initBook          `supply != 0` -> `true`
+#33   killed        line 101  _initBook          `!b.initialized` -> `!(!b.initialized)`
+#34   killed        line 101  _initBook          `!b.initialized` -> `b.initialized`
+#35   killed-after  line 101  _initBook          `!b.initialized` -> `true`
+#36   killed        line 102  _initBook          `true` -> `false`
+#37   killed        line 103  _initBook          `supply` -> `0`
+#38   killed        line 104  _initBook          `NONE` -> `0`
+#39   survived      line 105  _initBook          `NONE` -> `0`
+#40   survived      line 106  _initBook          `NONE` -> `0`
+#41   killed        line 111  _addBid            `price != NONE` -> `!(price != NONE)`
+#42   survived      line 111  _addBid            `price != NONE` -> `price < NONE`
+#43   killed-after  line 111  _addBid            `price != NONE` -> `price <= NONE`
+#44   killed        line 111  _addBid            `price != NONE` -> `price == NONE`
+#45   killed        line 111  _addBid            `price != NONE` -> `price > NONE`
+#46   killed        line 111  _addBid            `price != NONE` -> `price >= NONE`
+#47   killed-after  line 111  _addBid            `price != NONE` -> `true`
+#48   killed        line 112  _addBid            `amount != 0` -> `!(amount != 0)`
+#49   killed        line 112  _addBid            `amount != 0` -> `amount < 0`
+#50   killed        line 112  _addBid            `amount != 0` -> `amount <= 0`
+#51   killed        line 112  _addBid            `amount != 0` -> `amount == 0`
+#52   survived      line 112  _addBid            `amount != 0` -> `amount > 0`
+#53   killed-after  line 112  _addBid            `amount != 0` -> `amount >= 0`
+#54   killed-after  line 112  _addBid            `amount != 0` -> `true`
+#55   killed        line 114  _addBid            `b.initialized && !b.settling` -> `!(b.initialized && !b.settling)`
+#56   killed        line 114  _addBid            `b.initialized && !b.settling` -> `b.initialized || !b.settling`
+#57   killed        line 114  _addBid            `b.initialized && !b.settling` -> `true`
+#58   killed        line 114  _addBid            `!b.settling` -> `b.settling`
+#59   killed        line 116  _addBid            `lvl.qty == 0` -> `lvl.qty != 0`
+#60   killed        line 116  _addBid            `lvl.qty == 0` -> `lvl.qty < 0`
+#61   survived      line 116  _addBid            `lvl.qty == 0` -> `lvl.qty <= 0`
+#62   killed        line 116  _addBid            `lvl.qty == 0` -> `lvl.qty > 0`
+#63   killed        line 116  _addBid            `lvl.qty == 0` -> `lvl.qty >= 0`
+#64   killed        line 118  _addBid            `b.levelCount += 1` -> `b.levelCount -= 1`
+#65   killed        line 118  _addBid            `1` -> `0`
+#66   killed        line 120  _addBid            `lvl.qty += amount` -> `lvl.qty -= amount`
+#67   killed        line 120  _addBid            `amount` -> `0`
+#68   killed        line 121  _addBid            `lvl.count += 1` -> `lvl.count -= 1`
+#69   killed        line 121  _addBid            `1` -> `0`
+#70   killed        line 122  _addBid            `b.totalQty += amount` -> `b.totalQty -= amount`
+#71   killed        line 122  _addBid            `amount` -> `0`
+#72   killed        line 128  _insertLevel       `b.head` -> `0`
+#73   killed        line 129  _insertLevel       `head == NONE` -> `head != NONE`
+#74   killed        line 129  _insertLevel       `head == NONE` -> `head < NONE`
+#75   killed        line 129  _insertLevel       `head == NONE` -> `head <= NONE`
+#76   killed        line 129  _insertLevel       `head == NONE || price > head` -> `head == NONE && price > head`
+#77   killed        line 129  _insertLevel       `head == NONE` -> `head > NONE`
+#78   survived      line 129  _insertLevel       `head == NONE` -> `head >= NONE`
+#79   killed        line 129  _insertLevel       `price > head` -> `price != head`
+#80   killed        line 129  _insertLevel       `price > head` -> `price < head`
+#81   killed        line 129  _insertLevel       `price > head` -> `price <= head`
+#82   killed        line 129  _insertLevel       `price > head` -> `price == head`
+#83   survived      line 129  _insertLevel       `price > head` -> `price >= head`
+#84   killed        line 130  _insertLevel       `head` -> `0`
+#85   killed        line 131  _insertLevel       `price` -> `0`
+#86   killed        line 134  _insertLevel       `head` -> `0`
+#87   killed        line 135  _insertLevel       `hint != NONE && hint > price && _levels[id][hint].qty != 0` -> `hint != NONE && hint > price || _levels[id][hint].qty != 0`
+#88   killed        line 135  _insertLevel       `hint != NONE && hint > price` -> `hint != NONE || hint > price`
+#89   survived      line 135  _insertLevel       `hint != NONE` -> `hint < NONE`
+#90   survived      line 135  _insertLevel       `hint != NONE` -> `hint <= NONE`
+#91   survived      line 135  _insertLevel       `hint != NONE` -> `hint == NONE`
+#92   survived      line 135  _insertLevel       `hint != NONE` -> `hint > NONE`
+#93   survived      line 135  _insertLevel       `hint != NONE` -> `hint >= NONE`
+#94   killed        line 135  _insertLevel       `hint > price` -> `hint != price`
+#95   killed        line 135  _insertLevel       `hint > price` -> `hint < price`
+#96   killed        line 135  _insertLevel       `hint > price` -> `hint <= price`
+#97   survived      line 135  _insertLevel       `hint > price` -> `hint == price`
+#98   survived      line 135  _insertLevel       `hint > price` -> `hint >= price`
+#99   survived      line 135  _insertLevel       `_levels[id][hint].qty != 0` -> `_levels[id][hint].qty < 0`
+#100  killed        line 135  _insertLevel       `_levels[id][hint].qty != 0` -> `_levels[id][hint].qty <= 0`
+#101  killed        line 135  _insertLevel       `_levels[id][hint].qty != 0` -> `_levels[id][hint].qty == 0`
+#102  survived      line 135  _insertLevel       `_levels[id][hint].qty != 0` -> `_levels[id][hint].qty > 0`
+#103  killed        line 135  _insertLevel       `_levels[id][hint].qty != 0` -> `_levels[id][hint].qty >= 0`
+#104  killed        line 135  _insertLevel       `hint` -> `0`
+#105  killed        line 137  _insertLevel       `_levels[id][cur].next` -> `0`
+#106  killed        line 138  _insertLevel       `nxt == NONE` -> `nxt != NONE`
+#107  killed        line 138  _insertLevel       `nxt == NONE` -> `nxt < NONE`
+#108  killed        line 138  _insertLevel       `nxt == NONE` -> `nxt <= NONE`
+#109  killed        line 138  _insertLevel       `nxt == NONE || nxt < price` -> `nxt == NONE && nxt < price`
+#110  killed        line 138  _insertLevel       `nxt == NONE` -> `nxt > NONE`
+#111  survived      line 138  _insertLevel       `nxt == NONE` -> `nxt >= NONE`
+#112  killed        line 138  _insertLevel       `nxt < price` -> `nxt != price`
+#113  survived      line 138  _insertLevel       `nxt < price` -> `nxt <= price`
+#114  killed        line 138  _insertLevel       `nxt < price` -> `nxt == price`
+#115  killed        line 138  _insertLevel       `nxt < price` -> `nxt > price`
+#116  killed        line 138  _insertLevel       `nxt < price` -> `nxt >= price`
+#117  killed        line 139  _insertLevel       `nxt` -> `0`
+#118  killed        line 141  _insertLevel       `_levels[id][cur].next` -> `0`
+#119  killed        line 142  _insertLevel       `price` -> `0`
+#120  killed        line 149  _settleStep        `maxSteps != 0` -> `!(maxSteps != 0)`
+#121  killed        line 149  _settleStep        `maxSteps != 0` -> `maxSteps < 0`
+#122  killed        line 149  _settleStep        `maxSteps != 0` -> `maxSteps <= 0`
+#123  killed        line 149  _settleStep        `maxSteps != 0` -> `maxSteps == 0`
+#124  survived      line 149  _settleStep        `maxSteps != 0` -> `maxSteps > 0`
+#125  killed-after  line 149  _settleStep        `maxSteps != 0` -> `maxSteps >= 0`
+#126  killed-after  line 149  _settleStep        `maxSteps != 0` -> `true`
+#127  killed        line 151  _settleStep        `b.initialized && !b.settled` -> `!(b.initialized && !b.settled)`
+#128  killed        line 151  _settleStep        `b.initialized && !b.settled` -> `b.initialized || !b.settled`
+#129  killed        line 151  _settleStep        `b.initialized && !b.settled` -> `true`
+#130  killed        line 151  _settleStep        `!b.settled` -> `b.settled`
+#131  killed        line 152  _settleStep        `!b.settling` -> `b.settling`
+#132  killed        line 153  _settleStep        `true` -> `false`
+#133  killed        line 154  _settleStep        `b.head` -> `0`
+#134  killed        line 156  _settleStep        `b.cursor` -> `0`
+#135  killed        line 157  _settleStep        `b.cum` -> `0`
+#136  killed        line 158  _settleStep        `b.last` -> `0`
+#137  killed        line 159  _settleStep        `b.supply` -> `0`
+#138  survived      line 160  _settleStep        `i < maxSteps` -> `i != maxSteps`
+#139  killed        line 160  _settleStep        `i < maxSteps` -> `i <= maxSteps`
+#140  killed        line 160  _settleStep        `i < maxSteps` -> `i == maxSteps`
+#141  killed        line 160  _settleStep        `i < maxSteps` -> `i > maxSteps`
+#142  killed        line 160  _settleStep        `i < maxSteps` -> `i >= maxSteps`
+#143  killed        line 161  _settleStep        `cursor == NONE` -> `cursor != NONE`
+#144  killed        line 161  _settleStep        `cursor == NONE` -> `cursor < NONE`
+#145  killed        line 161  _settleStep        `cursor == NONE` -> `cursor <= NONE`
+#146  killed        line 161  _settleStep        `cursor == NONE` -> `cursor > NONE`
+#147  survived      line 161  _settleStep        `cursor == NONE` -> `cursor >= NONE`
+#148  survived      line 163  _settleStep        `last != NONE` -> `last < NONE`
+#149  killed-after  line 163  _settleStep        `last != NONE` -> `last <= NONE`
+#150  killed        line 163  _settleStep        `last != NONE` -> `last == NONE`
+#151  killed        line 163  _settleStep        `last != NONE` -> `last > NONE`
+#152  killed        line 163  _settleStep        `last != NONE` -> `last >= NONE`
+#153  killed        line 165  _settleStep        `last` -> `0`
+#154  survived      line 166  _settleStep        `low.qty` -> `0`
+#155  survived      line 167  _settleStep        `low.count` -> `0`
+#156  survived      line 168  _settleStep        `cum - low.qty` -> `0`
+#157  survived      line 168  _settleStep        `cum - low.qty` -> `cum % low.qty`
+#158  survived      line 168  _settleStep        `cum - low.qty` -> `cum * low.qty`
+#159  survived      line 168  _settleStep        `cum - low.qty` -> `cum + low.qty`
+#160  survived      line 168  _settleStep        `cum - low.qty` -> `cum / low.qty`
+#161  killed        line 170  _settleStep        `cum` -> `0`
+#162  killed        line 171  _settleStep        `true` -> `false`
+#163  killed        line 175  _settleStep        `lvl.qty` -> `0`
+#164  killed        line 176  _settleStep        `cum + q` -> `cum % q`
+#165  killed        line 176  _settleStep        `cum + q` -> `cum * q`
+#166  killed        line 176  _settleStep        `cum + q >= supply` -> `cum + q != supply`
+#167  killed        line 176  _settleStep        `cum + q >= supply` -> `cum + q < supply`
+#168  killed        line 176  _settleStep        `cum + q >= supply` -> `cum + q <= supply`
+#169  killed        line 176  _settleStep        `cum + q >= supply` -> `cum + q == supply`
+#170  killed-after  line 176  _settleStep        `cum + q >= supply` -> `cum + q > supply`
+#171  killed        line 176  _settleStep        `cum + q` -> `cum - q`
+#172  killed        line 176  _settleStep        `cum + q` -> `cum / q`
+#173  killed        line 177  _settleStep        `cursor` -> `0`
+#174  killed        line 178  _settleStep        `cum` -> `0`
+#175  killed        line 179  _settleStep        `q` -> `0`
+#176  killed        line 180  _settleStep        `lvl.count` -> `0`
+#177  killed        line 181  _settleStep        `cum + q` -> `cum % q`
+#178  killed        line 181  _settleStep        `cum + q` -> `cum * q`
+#179  survived      line 181  _settleStep        `cum + q > supply` -> `cum + q != supply`
+#180  killed        line 181  _settleStep        `cum + q > supply` -> `cum + q < supply`
+#181  killed        line 181  _settleStep        `cum + q > supply` -> `cum + q <= supply`
+#182  killed        line 181  _settleStep        `cum + q > supply` -> `cum + q == supply`
+#183  killed        line 181  _settleStep        `cum + q > supply` -> `cum + q >= supply`
+#184  killed        line 181  _settleStep        `cum + q` -> `cum - q`
+#185  killed        line 181  _settleStep        `cum + q` -> `cum / q`
+#186  killed        line 181  _settleStep        `cum + q > supply` -> `false`
+#187  killed        line 181  _settleStep        `cum + q > supply` -> `true`
+#188  killed        line 182  _settleStep        `supply` -> `0`
+#189  killed        line 183  _settleStep        `true` -> `false`
+#190  killed        line 186  _settleStep        `cum += q` -> `cum -= q`
+#191  killed        line 186  _settleStep        `q` -> `0`
+#192  killed        line 187  _settleStep        `cursor` -> `0`
+#193  killed        line 188  _settleStep        `lvl.next` -> `0`
+#194  killed        line 190  _settleStep        `cursor` -> `0`
+#195  killed        line 191  _settleStep        `cum` -> `0`
+#196  killed        line 192  _settleStep        `last` -> `0`
+#197  killed        line 201  _allocation        `b.settled` -> `!(b.settled)`
+#198  killed        line 201  _allocation        `b.settled` -> `true`
+#199  killed        line 202  _allocation        `b.totalQty == 0` -> `b.totalQty != 0`
+#200  killed-after  line 202  _allocation        `b.totalQty == 0` -> `b.totalQty < 0`
+#201  survived      line 202  _allocation        `b.totalQty == 0` -> `b.totalQty <= 0`
+#202  killed        line 202  _allocation        `b.totalQty == 0` -> `b.totalQty > 0`
+#203  killed        line 202  _allocation        `b.totalQty == 0` -> `b.totalQty >= 0`
+#204  killed        line 203  _allocation        `b.clearingPrice` -> `0`
+#205  killed        line 204  _allocation        `price > p` -> `price != p`
+#206  killed        line 204  _allocation        `price > p` -> `price < p`
+#207  killed        line 204  _allocation        `price > p` -> `price <= p`
+#208  killed        line 204  _allocation        `price > p` -> `price == p`
+#209  killed        line 204  _allocation        `price > p` -> `price >= p`
+#210  survived      line 205  _allocation        `price < p` -> `price != p`
+#211  killed        line 205  _allocation        `price < p` -> `price <= p`
+#212  killed        line 205  _allocation        `price < p` -> `price == p`
+#213  killed        line 205  _allocation        `price < p` -> `price > p`
+#214  killed        line 205  _allocation        `price < p` -> `price >= p`
+#215  killed        line 206  _allocation        `!b.oversubscribed` -> `b.oversubscribed`
+#216  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove)` -> `amount % (uint256(b.supply) - b.qtyAbove)`
+#217  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove) / b.qtyAtPrice` -> `amount * (uint256(b.supply) - b.qtyAbove) % b.qtyAtPrice`
+#218  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove) / b.qtyAtPrice` -> `amount * (uint256(b.supply) - b.qtyAbove) * b.qtyAtPrice`
+#219  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove) / b.qtyAtPrice` -> `amount * (uint256(b.supply) - b.qtyAbove) + b.qtyAtPrice`
+#220  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove) / b.qtyAtPrice` -> `amount * (uint256(b.supply) - b.qtyAbove) - b.qtyAtPrice`
+#221  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove)` -> `amount + (uint256(b.supply) - b.qtyAbove)`
+#222  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove)` -> `amount - (uint256(b.supply) - b.qtyAbove)`
+#223  killed        line 207  _allocation        `amount * (uint256(b.supply) - b.qtyAbove)` -> `amount / (uint256(b.supply) - b.qtyAbove)`
+#224  killed        line 207  _allocation        `uint256(b.supply) - b.qtyAbove` -> `uint256(b.supply) % b.qtyAbove`
+#225  killed        line 207  _allocation        `uint256(b.supply) - b.qtyAbove` -> `uint256(b.supply) * b.qtyAbove`
+#226  killed        line 207  _allocation        `uint256(b.supply) - b.qtyAbove` -> `uint256(b.supply) + b.qtyAbove`
+#227  killed        line 207  _allocation        `uint256(b.supply) - b.qtyAbove` -> `uint256(b.supply) / b.qtyAbove`
+#228  killed        line 213  _soldLowerBound    `!b.oversubscribed` -> `b.oversubscribed`
+#229  killed-after  line 214  _soldLowerBound    `b.sold > b.countAtPrice` -> `b.sold != b.countAtPrice`
+#230  killed        line 214  _soldLowerBound    `b.sold > b.countAtPrice` -> `b.sold < b.countAtPrice`
+#231  killed        line 214  _soldLowerBound    `b.sold > b.countAtPrice` -> `b.sold <= b.countAtPrice`
+#232  killed        line 214  _soldLowerBound    `b.sold > b.countAtPrice` -> `b.sold == b.countAtPrice`
+#233  survived      line 214  _soldLowerBound    `b.sold > b.countAtPrice` -> `b.sold >= b.countAtPrice`
+#234  killed        line 214  _soldLowerBound    `b.sold - b.countAtPrice` -> `b.sold % b.countAtPrice`
+#235  killed        line 214  _soldLowerBound    `b.sold - b.countAtPrice` -> `b.sold * b.countAtPrice`
+#236  killed        line 214  _soldLowerBound    `b.sold - b.countAtPrice` -> `b.sold + b.countAtPrice`
+#237  killed        line 214  _soldLowerBound    `b.sold - b.countAtPrice` -> `b.sold / b.countAtPrice`

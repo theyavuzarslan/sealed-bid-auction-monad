@@ -46,6 +46,7 @@ contract ClearingEdgeCasesTest is Test {
         assertFalse(over);
         assertEq(total, 0);
         assertEq(levels, 0);
+        assertEq(h.alloc(1, 10, 5), 0, "nothing is allocated from an empty book");
     }
 
     /// More bids at P than units for sale: the lower bound on allocations floors at zero instead of

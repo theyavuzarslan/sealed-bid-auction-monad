@@ -83,7 +83,7 @@ Solidity 0.8.28 with Foundry; plain JavaScript (ES modules) and CSS for the web 
 
 ## Security
 
-Two internal reviews with a proof-of-concept test per finding, all fixed or documented ([AUDIT.md](AUDIT.md)); AgentGuard scan triaged in [SUBMISSION.md](SUBMISSION.md#security-scan-agentguard). The contracts have not had an external audit.
+[SECURITY.md](SECURITY.md) has the threat model (the PRD's eight money-path bug classes) and every result with numbers: two internal reviews with a proof-of-concept test per finding ([AUDIT.md](AUDIT.md)) and an independent review of v2; 151 unit, fuzz and invariant tests, also under Monad's execution rules, with the invariants run at 128,000 random calls; a 1,000-bidder scale test; mainnet-fork tests against Uniswap v3 and the GoPlus locker; mutation testing of the money path (90.3% of 1,581 mutants killed, every survivor classified as equivalent or unreachable); symbolic proofs of the clearing and payment propositions within stated bounds ([contracts/PROPERTIES.md](contracts/PROPERTIES.md)); Slither, Aderyn, `forge lint` and AgentGuard, triaged in [contracts/STATIC-ANALYSIS.md](contracts/STATIC-ANALYSIS.md) and [SUBMISSION.md](SUBMISSION.md#security-scan-agentguard). The contracts have not had an external audit.
 
 ## Built during the hackathon, AI disclosure and attribution
 

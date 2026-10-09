@@ -1,0 +1,30 @@
+$ forge test --match-path test/fork/* --fork-url https://rpc2.monad.xyz --network monad --hardfork monad:MonadTen
+forge 1.8.3, 2026-10-09 04:32 +03
+
+No files changed, compilation skipped
+
+Ran 19 tests for test/fork/UniswapV3AdapterFork.t.sol:UniswapV3AdapterForkTest
+[PASS] test_Fork_DegenRound_TokenIsToken0() (gas: 10803355)
+[PASS] test_Fork_DegenRound_TokenIsToken1() (gas: 10802985)
+[PASS] test_Fork_DonationsToAdapterAreIgnored() (gas: 9127928)
+[PASS] test_Fork_ExtremeRepriceGas_Fee10000() (gas: 6294116)
+[PASS] test_Fork_ExtremeRepriceGas_Fee3000() (gas: 6786331)
+[PASS] test_Fork_ExtremeRepriceGas_Fee500() (gas: 10272706)
+[PASS] test_Fork_Fee100_RejectedAtOpen() (gas: 533925)
+[PASS] test_Fork_Grief_EmptyInRangeButLiquidityInTheWay() (gas: 8389176)
+[PASS] test_Fork_Grief_EmptyPoolAtExtremes() (gas: 19205712)
+[PASS] test_Fork_Grief_EmptyPoolPricedHigh_Token0() (gas: 10384008)
+[PASS] test_Fork_Grief_EmptyPoolPricedHigh_Token1() (gas: 10384360)
+[PASS] test_Fork_Grief_EmptyPoolPricedLow_Token0() (gas: 10396982)
+[PASS] test_Fork_Grief_EmptyPoolPricedLow_Token1() (gas: 10396943)
+[PASS] test_Fork_Grief_LiquidPoolAtBadPrice_Token0() (gas: 10215594)
+[PASS] test_Fork_Grief_LiquidPoolAtBadPrice_Token1() (gas: 10216219)
+[PASS] test_Fork_Grief_LiquidityPulled_StrictSeedReprices() (gas: 10430300)
+[PASS] test_Fork_LiquidPoolWithinTolerance() (gas: 9674790)
+[PASS] test_Fork_Locker_TakesApprovedNFT_AnyFutureEndTime() (gas: 8511077)
+[PASS] test_Fork_SplitAcrossTwoFeeTiers() (gas: 15944088)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 9.31s (63.41s CPU time)
+
+Ran 1 test suite in 9.63s (9.31s CPU time): 19 tests passed, 0 failed, 0 skipped (19 total tests)
+
+exit 0 after 11 s

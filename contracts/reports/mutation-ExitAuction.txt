@@ -1,0 +1,476 @@
+Mutation testing of contracts/src/exit/ExitAuction.sol (v2, branch contracts-v2)
+Method: contracts/reports/mutation-summary.md. Operators: forge 1.8.3's set (binary operator, require condition,
+assignment/initializer literal, unary not) without the bitwise/shift/power replacements of arithmetic operators.
+
+Mutants: 355 generated, 5 invalid (do not compile), 350 valid.
+Before (suite at the start of the pass): 277 killed, 73 survived: 79.1%
+After (tests added in this pass):        316 killed, 34 survived: 90.3%
+Every surviving mutant below is classified; unclassified: 0.
+
+== Surviving mutants ==
+#4 line 127 (constructor): `address(vault_).code.length != 0` -> `address(vault_).code.length > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#37 line 131 (constructor): `c.depositAmount != 0` -> `c.depositAmount > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#45 line 132 (constructor): `c.tickBps != 0` -> `c.tickBps > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#57 line 133 (constructor): `c.minExitShares != 0` -> `c.minExitShares > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#64 line 134 (constructor): `c.maxExitSharesPerRound != 0` -> `c.maxExitSharesPerRound > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#78 line 154 (openExitRound): `prev != 0` -> `prev > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#96 line 160 (openExitRound): `idle > owed` -> `idle != owed`
+    Unreachable with DemoVault: the vault never lets idle fall below the exit reserve, so `idle < owed` never happens.
+#100 line 160 (openExitRound): `idle > owed` -> `idle >= owed`
+    At equality the free buffer is 0 either way.
+#110 line 162 (openExitRound): `capacity > maxExitSharesPerRound` -> `capacity >= maxExitSharesPerRound`
+    At equality the capacity is the maximum either way.
+#116 line 163 (openExitRound): `capacity != 0` -> `capacity > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#141 line 192 (_sealTerms): `r.commitEnd != 0` -> `r.commitEnd > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#154 line 199 (_onReveal): `price % tickBps == 0` -> `price % tickBps <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#174 line 215 (settle): `r.commitEnd != 0` -> `r.commitEnd > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#191 line 224 (settle): `sold != 0` -> `sold > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#192 line 224 (settle): `sold != 0` -> `sold >= 0`
+    With `sold == 0` both lines add 0.
+#219 line 276 (_exit): `r.allocatedTotal <= sold` -> `true`
+    Defence in depth, unreachable: allocations never exceed `sold` (clearing proofs P1, fuzz conservation test).
+#230 line 277 (_exit): `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `true`
+    Defence in depth, unreachable: allocated + returned never exceeds escrow.
+#245 line 284 (_exit): `r.exitsClaimed == ledgers[roundId].reveals` -> `r.exitsClaimed >= ledgers[roundId].reveals`
+    `exitsClaimed` can never exceed `reveals`.
+#248 line 284 (_exit): `sold - r.allocatedTotal` -> `sold % r.allocatedTotal`
+    Equivalent in practice: `sold % allocated == sold - allocated` whenever allocated > sold/2, and pro-rata dust is below the number of bids at P.
+#255 line 287 (_exit): `alloc != 0` -> `alloc > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#256 line 287 (_exit): `alloc != 0` -> `alloc >= 0`
+    A zero allocation redeems 0 shares: no transfer, same state.
+#268 line 292 (_exit): `payout != 0` -> `payout > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#269 line 292 (_exit): `payout != 0` -> `payout >= 0`
+    Transferring 0 WMON changes nothing.
+#282 line 294 (_exit): `toVault != 0` -> `toVault > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#283 line 294 (_exit): `toVault != 0` -> `toVault >= 0`
+    Transferring 0 WMON changes nothing.
+#287 line 296 (_exit): `back != 0` -> `back > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#288 line 296 (_exit): `back != 0` -> `back >= 0`
+    Transferring 0 shares changes nothing.
+#302 line 338 (reservedShares): `id != 0` -> `id > 0`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#303 line 338 (reservedShares): `id != 0` -> `id >= 0`
+    For id 0 the extra term is the capacity of round 0, which is always 0.
+#310 line 344 (nextOpenBlock): `id == 0` -> `id <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#325 line 362 (_quote): `alloc == 0` -> `alloc < 0`
+    With a zero allocation the general path also returns zeros (previewRedeem(0) = 0, mulDiv(0, …) = 0).
+#326 line 362 (_quote): `alloc == 0` -> `alloc <= 0`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#333 line 366 (_quote): `assets < atSettle` -> `assets <= atSettle`
+    At equality the basis is the same.
+#334 line 366 (_quote): `assets < atSettle` -> `assets == atSettle`
+    Unreachable with DemoVault: `assets < atSettle` needs the share price to fall after settlement; DemoVault has no loss path, and at an equal price rounding gives `atSettle <= assets`.
+
+== Killed by the tests added in this pass ==
+#5 line 127 (constructor): `address(vault_).code.length != 0` -> `address(vault_).code.length >= 0`   killed by test_Constructor_EveryCheck
+#6 line 127 (constructor): `address(vault_).code.length != 0` -> `true`   killed by test_Constructor_EveryCheck
+#12 line 128 (constructor): `c.commitDuration >= MIN_COMMIT_WINDOW` -> `c.commitDuration > MIN_COMMIT_WINDOW`   killed by test_W2_ExactBoundaries
+#15 line 128 (constructor): `c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.revealDuration != MIN_REVEAL_WINDOW`   killed by test_Constructor_RejectsShortWindows
+#19 line 128 (constructor): `c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.revealDuration > MIN_REVEAL_WINDOW`   killed by test_W2_ExactBoundaries
+#21 line 130 (constructor): `c.commitDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration != MAX_EXIT_WINDOW`   killed by test_Constructor_RejectsShortWindows
+#22 line 130 (constructor): `c.commitDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration < MAX_EXIT_WINDOW`   killed by test_W2_ExactBoundaries
+#23 line 130 (constructor): `c.commitDuration <= MAX_EXIT_WINDOW && c.revealDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration <= MAX_EXIT_WINDOW || c.revealDuration <= MAX_EXIT_WINDOW`   killed by test_Constructor_RejectsShortWindows
+#27 line 130 (constructor): `c.commitDuration <= MAX_EXIT_WINDOW && c.revealDuration <= MAX_EXIT_WINDOW` -> `true`   killed by test_Constructor_RejectsShortWindows
+#28 line 130 (constructor): `c.revealDuration <= MAX_EXIT_WINDOW` -> `c.revealDuration != MAX_EXIT_WINDOW`   killed by test_Constructor_RejectsShortWindows
+#29 line 130 (constructor): `c.revealDuration <= MAX_EXIT_WINDOW` -> `c.revealDuration < MAX_EXIT_WINDOW`   killed by test_W2_ExactBoundaries
+#38 line 131 (constructor): `c.depositAmount != 0` -> `c.depositAmount >= 0`   killed by test_Constructor_EveryCheck
+#39 line 131 (constructor): `c.depositAmount != 0` -> `true`   killed by test_Constructor_EveryCheck
+#41 line 132 (constructor): `c.tickBps != 0 && c.tickBps < BPS` -> `c.tickBps != 0 || c.tickBps < BPS`   killed by test_Constructor_EveryCheck
+#46 line 132 (constructor): `c.tickBps != 0` -> `c.tickBps >= 0`   killed by test_Constructor_EveryCheck
+#47 line 132 (constructor): `c.tickBps != 0 && c.tickBps < BPS` -> `true`   killed by test_Constructor_EveryCheck
+#48 line 132 (constructor): `c.tickBps < BPS` -> `c.tickBps != BPS`   killed by test_Constructor_EveryCheck
+#49 line 132 (constructor): `c.tickBps < BPS` -> `c.tickBps <= BPS`   killed by test_Constructor_EveryCheck
+#58 line 133 (constructor): `c.minExitShares != 0` -> `c.minExitShares >= 0`   killed by test_Constructor_EveryCheck
+#59 line 133 (constructor): `c.minExitShares != 0` -> `true`   killed by test_Constructor_EveryCheck
+#65 line 134 (constructor): `c.maxExitSharesPerRound != 0` -> `c.maxExitSharesPerRound >= 0`   killed by test_Constructor_EveryCheck
+#66 line 134 (constructor): `c.maxExitSharesPerRound != 0` -> `true`   killed by test_Constructor_EveryCheck
+#128 line 173 (openExitRound): `block.timestamp + commitDuration` -> `block.timestamp * commitDuration`   killed by test_Open_StoresWindowsAndBlock
+#136 line 176 (openExitRound): `uint64(block.number)` -> `0`   killed by test_Open_StoresWindowsAndBlock
+#145 line 199 (_onReveal): `price < BPS` -> `price != BPS`   killed by test_Reveal_DiscountAboveFullAndMinimumExit
+#166 line 200 (_onReveal): `amount >= minExitShares` -> `amount > minExitShares`   killed by test_Reveal_DiscountAboveFullAndMinimumExit
+#175 line 215 (settle): `r.commitEnd != 0` -> `r.commitEnd >= 0`   killed by test_Settle_UnknownRound_AndTiming
+#176 line 215 (settle): `r.commitEnd != 0` -> `true`   killed by test_Settle_UnknownRound_AndTiming
+#180 line 216 (settle): `block.timestamp >= r.revealEnd` -> `block.timestamp <= r.revealEnd`   killed by test_Settle_UnknownRound_AndTiming
+#181 line 216 (settle): `block.timestamp >= r.revealEnd` -> `block.timestamp == r.revealEnd`   killed by test_Settle_UnknownRound_AndTiming
+#183 line 216 (settle): `block.timestamp >= r.revealEnd` -> `true`   killed by test_Settle_UnknownRound_AndTiming
+#261 line 291 (_exit): `got >= assets` -> `got <= assets`   killed by test_Redeem_DoublePayment_AllSurplusToTheVault
+#262 line 291 (_exit): `got >= assets` -> `got == assets`   killed by test_Redeem_DoublePayment_AllSurplusToTheVault
+#264 line 291 (_exit): `got >= assets` -> `true`   killed by test_Redeem_ShortPaymentReverts
+#273 line 293 (_exit): `donation + (got - assets)` -> `donation - (got - assets)`   killed by test_Redeem_DoublePayment_AllSurplusToTheVault
+#275 line 293 (_exit): `got - assets` -> `got % assets`   killed by test_Redeem_DoublePayment_AllSurplusToTheVault
+#292 line 302 (_refund): `commitments[roundId][bidder].revealed` -> `true`   killed by test_UnrevealedBidder_NoRefundNoQuote
+#295 line 329 (quote): `commitments[roundId][bidder].revealed` -> `true`   killed by test_UnrevealedBidder_NoRefundNoQuote
+#309 line 344 (nextOpenBlock): `id == 0` -> `id < 0`   killed by test_Views_BeforeTheFirstRound
+
+== Every mutant ==
+#0    killed        line 127  constructor        `address(vault_).code.length != 0` -> `!(address(vault_).code.length != 0)`
+#1    invalid       line 127  constructor        `address(vault_).code.length != 0` -> `address(vault_).code.length < 0`
+#2    killed        line 127  constructor        `address(vault_).code.length != 0` -> `address(vault_).code.length <= 0`
+#3    killed        line 127  constructor        `address(vault_).code.length != 0` -> `address(vault_).code.length == 0`
+#4    survived      line 127  constructor        `address(vault_).code.length != 0` -> `address(vault_).code.length > 0`
+#5    killed-after  line 127  constructor        `address(vault_).code.length != 0` -> `address(vault_).code.length >= 0`
+#6    killed-after  line 127  constructor        `address(vault_).code.length != 0` -> `true`
+#7    killed        line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW && c.revealDuration >= MIN_REVEAL_WINDOW` -> `!(c.commitDuration >= MIN_COMMIT_WINDOW && c.revealDuration >= MIN_REVEAL_WINDOW)`
+#8    killed        line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW` -> `c.commitDuration != MIN_COMMIT_WINDOW`
+#9    killed        line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW` -> `c.commitDuration < MIN_COMMIT_WINDOW`
+#10   killed        line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW` -> `c.commitDuration <= MIN_COMMIT_WINDOW`
+#11   killed        line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW` -> `c.commitDuration == MIN_COMMIT_WINDOW`
+#12   killed-after  line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW` -> `c.commitDuration > MIN_COMMIT_WINDOW`
+#13   killed        line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW && c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.commitDuration >= MIN_COMMIT_WINDOW || c.revealDuration >= MIN_REVEAL_WINDOW`
+#14   killed        line 128  constructor        `c.commitDuration >= MIN_COMMIT_WINDOW && c.revealDuration >= MIN_REVEAL_WINDOW` -> `true`
+#15   killed-after  line 128  constructor        `c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.revealDuration != MIN_REVEAL_WINDOW`
+#16   killed        line 128  constructor        `c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.revealDuration < MIN_REVEAL_WINDOW`
+#17   killed        line 128  constructor        `c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.revealDuration <= MIN_REVEAL_WINDOW`
+#18   killed        line 128  constructor        `c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.revealDuration == MIN_REVEAL_WINDOW`
+#19   killed-after  line 128  constructor        `c.revealDuration >= MIN_REVEAL_WINDOW` -> `c.revealDuration > MIN_REVEAL_WINDOW`
+#20   killed        line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW && c.revealDuration <= MAX_EXIT_WINDOW` -> `!(c.commitDuration <= MAX_EXIT_WINDOW && c.revealDuration <= MAX_EXIT_WINDOW)`
+#21   killed-after  line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration != MAX_EXIT_WINDOW`
+#22   killed-after  line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration < MAX_EXIT_WINDOW`
+#23   killed-after  line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW && c.revealDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration <= MAX_EXIT_WINDOW || c.revealDuration <= MAX_EXIT_WINDOW`
+#24   killed        line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration == MAX_EXIT_WINDOW`
+#25   killed        line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration > MAX_EXIT_WINDOW`
+#26   killed        line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW` -> `c.commitDuration >= MAX_EXIT_WINDOW`
+#27   killed-after  line 130  constructor        `c.commitDuration <= MAX_EXIT_WINDOW && c.revealDuration <= MAX_EXIT_WINDOW` -> `true`
+#28   killed-after  line 130  constructor        `c.revealDuration <= MAX_EXIT_WINDOW` -> `c.revealDuration != MAX_EXIT_WINDOW`
+#29   killed-after  line 130  constructor        `c.revealDuration <= MAX_EXIT_WINDOW` -> `c.revealDuration < MAX_EXIT_WINDOW`
+#30   killed        line 130  constructor        `c.revealDuration <= MAX_EXIT_WINDOW` -> `c.revealDuration == MAX_EXIT_WINDOW`
+#31   killed        line 130  constructor        `c.revealDuration <= MAX_EXIT_WINDOW` -> `c.revealDuration > MAX_EXIT_WINDOW`
+#32   killed        line 130  constructor        `c.revealDuration <= MAX_EXIT_WINDOW` -> `c.revealDuration >= MAX_EXIT_WINDOW`
+#33   killed        line 131  constructor        `c.depositAmount != 0` -> `!(c.depositAmount != 0)`
+#34   invalid       line 131  constructor        `c.depositAmount != 0` -> `c.depositAmount < 0`
+#35   killed        line 131  constructor        `c.depositAmount != 0` -> `c.depositAmount <= 0`
+#36   killed        line 131  constructor        `c.depositAmount != 0` -> `c.depositAmount == 0`
+#37   survived      line 131  constructor        `c.depositAmount != 0` -> `c.depositAmount > 0`
+#38   killed-after  line 131  constructor        `c.depositAmount != 0` -> `c.depositAmount >= 0`
+#39   killed-after  line 131  constructor        `c.depositAmount != 0` -> `true`
+#40   killed        line 132  constructor        `c.tickBps != 0 && c.tickBps < BPS` -> `!(c.tickBps != 0 && c.tickBps < BPS)`
+#41   killed-after  line 132  constructor        `c.tickBps != 0 && c.tickBps < BPS` -> `c.tickBps != 0 || c.tickBps < BPS`
+#42   invalid       line 132  constructor        `c.tickBps != 0` -> `c.tickBps < 0`
+#43   killed        line 132  constructor        `c.tickBps != 0` -> `c.tickBps <= 0`
+#44   killed        line 132  constructor        `c.tickBps != 0` -> `c.tickBps == 0`
+#45   survived      line 132  constructor        `c.tickBps != 0` -> `c.tickBps > 0`
+#46   killed-after  line 132  constructor        `c.tickBps != 0` -> `c.tickBps >= 0`
+#47   killed-after  line 132  constructor        `c.tickBps != 0 && c.tickBps < BPS` -> `true`
+#48   killed-after  line 132  constructor        `c.tickBps < BPS` -> `c.tickBps != BPS`
+#49   killed-after  line 132  constructor        `c.tickBps < BPS` -> `c.tickBps <= BPS`
+#50   killed        line 132  constructor        `c.tickBps < BPS` -> `c.tickBps == BPS`
+#51   killed        line 132  constructor        `c.tickBps < BPS` -> `c.tickBps > BPS`
+#52   killed        line 132  constructor        `c.tickBps < BPS` -> `c.tickBps >= BPS`
+#53   killed        line 133  constructor        `c.minExitShares != 0` -> `!(c.minExitShares != 0)`
+#54   invalid       line 133  constructor        `c.minExitShares != 0` -> `c.minExitShares < 0`
+#55   killed        line 133  constructor        `c.minExitShares != 0` -> `c.minExitShares <= 0`
+#56   killed        line 133  constructor        `c.minExitShares != 0` -> `c.minExitShares == 0`
+#57   survived      line 133  constructor        `c.minExitShares != 0` -> `c.minExitShares > 0`
+#58   killed-after  line 133  constructor        `c.minExitShares != 0` -> `c.minExitShares >= 0`
+#59   killed-after  line 133  constructor        `c.minExitShares != 0` -> `true`
+#60   killed        line 134  constructor        `c.maxExitSharesPerRound != 0` -> `!(c.maxExitSharesPerRound != 0)`
+#61   invalid       line 134  constructor        `c.maxExitSharesPerRound != 0` -> `c.maxExitSharesPerRound < 0`
+#62   killed        line 134  constructor        `c.maxExitSharesPerRound != 0` -> `c.maxExitSharesPerRound <= 0`
+#63   killed        line 134  constructor        `c.maxExitSharesPerRound != 0` -> `c.maxExitSharesPerRound == 0`
+#64   survived      line 134  constructor        `c.maxExitSharesPerRound != 0` -> `c.maxExitSharesPerRound > 0`
+#65   killed-after  line 134  constructor        `c.maxExitSharesPerRound != 0` -> `c.maxExitSharesPerRound >= 0`
+#66   killed-after  line 134  constructor        `c.maxExitSharesPerRound != 0` -> `true`
+#67   killed        line 137  constructor        `c.commitDuration` -> `0`
+#68   killed        line 138  constructor        `c.revealDuration` -> `0`
+#69   killed        line 139  constructor        `c.depositAmount` -> `0`
+#70   killed        line 140  constructor        `c.tickBps` -> `0`
+#71   killed        line 141  constructor        `c.minExitShares` -> `0`
+#72   killed        line 142  constructor        `c.maxExitSharesPerRound` -> `0`
+#73   killed        line 143  constructor        `c.roundGapBlocks` -> `0`
+#74   killed        line 153  openExitRound      `roundCount` -> `0`
+#75   killed        line 154  openExitRound      `prev != 0` -> `prev < 0`
+#76   killed        line 154  openExitRound      `prev != 0` -> `prev <= 0`
+#77   killed        line 154  openExitRound      `prev != 0` -> `prev == 0`
+#78   survived      line 154  openExitRound      `prev != 0` -> `prev > 0`
+#79   killed        line 154  openExitRound      `prev != 0` -> `prev >= 0`
+#80   killed        line 155  openExitRound      `_books[prev].settled` -> `!(_books[prev].settled)`
+#81   killed        line 155  openExitRound      `_books[prev].settled` -> `true`
+#82   killed        line 156  openExitRound      `block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `!(block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks)`
+#83   killed        line 156  openExitRound      `block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `block.number != uint256(_rounds[prev].settledBlock) + roundGapBlocks`
+#84   killed        line 156  openExitRound      `block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `block.number < uint256(_rounds[prev].settledBlock) + roundGapBlocks`
+#85   killed        line 156  openExitRound      `block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `block.number <= uint256(_rounds[prev].settledBlock) + roundGapBlocks`
+#86   killed        line 156  openExitRound      `block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `block.number == uint256(_rounds[prev].settledBlock) + roundGapBlocks`
+#87   killed        line 156  openExitRound      `block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `block.number > uint256(_rounds[prev].settledBlock) + roundGapBlocks`
+#88   killed        line 156  openExitRound      `block.number >= uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `true`
+#89   killed        line 156  openExitRound      `uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `uint256(_rounds[prev].settledBlock) % roundGapBlocks`
+#90   killed        line 156  openExitRound      `uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `uint256(_rounds[prev].settledBlock) * roundGapBlocks`
+#91   killed        line 156  openExitRound      `uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `uint256(_rounds[prev].settledBlock) - roundGapBlocks`
+#92   killed        line 156  openExitRound      `uint256(_rounds[prev].settledBlock) + roundGapBlocks` -> `uint256(_rounds[prev].settledBlock) / roundGapBlocks`
+#93   killed        line 158  openExitRound      `vault.idleAssets()` -> `0`
+#94   killed        line 159  openExitRound      `vault.previewMint(pendingExitShares)` -> `0`
+#95   killed        line 160  openExitRound      `idle > owed ? idle - owed : 0` -> `0`
+#96   survived      line 160  openExitRound      `idle > owed` -> `idle != owed`
+#97   killed        line 160  openExitRound      `idle > owed` -> `idle < owed`
+#98   killed        line 160  openExitRound      `idle > owed` -> `idle <= owed`
+#99   killed        line 160  openExitRound      `idle > owed` -> `idle == owed`
+#100  survived      line 160  openExitRound      `idle > owed` -> `idle >= owed`
+#101  killed        line 160  openExitRound      `idle - owed` -> `idle % owed`
+#102  killed        line 160  openExitRound      `idle - owed` -> `idle * owed`
+#103  killed        line 160  openExitRound      `idle - owed` -> `idle + owed`
+#104  killed        line 160  openExitRound      `idle - owed` -> `idle / owed`
+#105  killed        line 161  openExitRound      `vault.convertToShares(free)` -> `0`
+#106  killed        line 162  openExitRound      `capacity > maxExitSharesPerRound` -> `capacity != maxExitSharesPerRound`
+#107  killed        line 162  openExitRound      `capacity > maxExitSharesPerRound` -> `capacity < maxExitSharesPerRound`
+#108  killed        line 162  openExitRound      `capacity > maxExitSharesPerRound` -> `capacity <= maxExitSharesPerRound`
+#109  killed        line 162  openExitRound      `capacity > maxExitSharesPerRound` -> `capacity == maxExitSharesPerRound`
+#110  survived      line 162  openExitRound      `capacity > maxExitSharesPerRound` -> `capacity >= maxExitSharesPerRound`
+#111  killed        line 162  openExitRound      `maxExitSharesPerRound` -> `0`
+#112  killed        line 163  openExitRound      `capacity != 0` -> `!(capacity != 0)`
+#113  killed        line 163  openExitRound      `capacity != 0` -> `capacity < 0`
+#114  killed        line 163  openExitRound      `capacity != 0` -> `capacity <= 0`
+#115  killed        line 163  openExitRound      `capacity != 0` -> `capacity == 0`
+#116  survived      line 163  openExitRound      `capacity != 0` -> `capacity > 0`
+#117  killed        line 163  openExitRound      `capacity != 0` -> `capacity >= 0`
+#118  killed        line 163  openExitRound      `capacity != 0` -> `true`
+#119  killed        line 165  openExitRound      `prev + 1` -> `0`
+#120  killed        line 165  openExitRound      `prev + 1` -> `prev % 1`
+#121  killed        line 165  openExitRound      `prev + 1` -> `prev * 1`
+#122  killed        line 165  openExitRound      `prev + 1` -> `prev - 1`
+#123  killed        line 165  openExitRound      `prev + 1` -> `prev / 1`
+#124  killed        line 166  openExitRound      `roundId` -> `0`
+#125  killed        line 171  openExitRound      `uint128(capacity)` -> `0`
+#126  killed        line 173  openExitRound      `uint64(block.timestamp + commitDuration)` -> `0`
+#127  killed        line 173  openExitRound      `block.timestamp + commitDuration` -> `block.timestamp % commitDuration`
+#128  killed-after  line 173  openExitRound      `block.timestamp + commitDuration` -> `block.timestamp * commitDuration`
+#129  killed        line 173  openExitRound      `block.timestamp + commitDuration` -> `block.timestamp - commitDuration`
+#130  killed        line 173  openExitRound      `block.timestamp + commitDuration` -> `block.timestamp / commitDuration`
+#131  killed        line 174  openExitRound      `r.commitEnd + revealDuration` -> `0`
+#132  killed        line 174  openExitRound      `r.commitEnd + revealDuration` -> `r.commitEnd % revealDuration`
+#133  killed        line 174  openExitRound      `r.commitEnd + revealDuration` -> `r.commitEnd * revealDuration`
+#134  killed        line 174  openExitRound      `r.commitEnd + revealDuration` -> `r.commitEnd - revealDuration`
+#135  killed        line 174  openExitRound      `r.commitEnd + revealDuration` -> `r.commitEnd / revealDuration`
+#136  killed-after  line 176  openExitRound      `uint64(block.number)` -> `0`
+#137  killed        line 192  _sealTerms         `r.commitEnd != 0` -> `!(r.commitEnd != 0)`
+#138  killed        line 192  _sealTerms         `r.commitEnd != 0` -> `r.commitEnd < 0`
+#139  killed        line 192  _sealTerms         `r.commitEnd != 0` -> `r.commitEnd <= 0`
+#140  killed        line 192  _sealTerms         `r.commitEnd != 0` -> `r.commitEnd == 0`
+#141  survived      line 192  _sealTerms         `r.commitEnd != 0` -> `r.commitEnd > 0`
+#142  killed        line 192  _sealTerms         `r.commitEnd != 0` -> `r.commitEnd >= 0`
+#143  killed        line 192  _sealTerms         `r.commitEnd != 0` -> `true`
+#144  killed        line 199  _onReveal          `price < BPS && price % tickBps == 0` -> `!(price < BPS && price % tickBps == 0)`
+#145  killed-after  line 199  _onReveal          `price < BPS` -> `price != BPS`
+#146  killed        line 199  _onReveal          `price < BPS && price % tickBps == 0` -> `price < BPS || price % tickBps == 0`
+#147  killed        line 199  _onReveal          `price < BPS` -> `price <= BPS`
+#148  killed        line 199  _onReveal          `price < BPS` -> `price == BPS`
+#149  killed        line 199  _onReveal          `price < BPS` -> `price > BPS`
+#150  killed        line 199  _onReveal          `price < BPS` -> `price >= BPS`
+#151  killed        line 199  _onReveal          `price < BPS && price % tickBps == 0` -> `true`
+#152  killed        line 199  _onReveal          `price % tickBps == 0` -> `price % tickBps != 0`
+#153  killed        line 199  _onReveal          `price % tickBps == 0` -> `price % tickBps < 0`
+#154  survived      line 199  _onReveal          `price % tickBps == 0` -> `price % tickBps <= 0`
+#155  killed        line 199  _onReveal          `price % tickBps == 0` -> `price % tickBps > 0`
+#156  killed        line 199  _onReveal          `price % tickBps == 0` -> `price % tickBps >= 0`
+#157  killed        line 199  _onReveal          `price % tickBps` -> `price * tickBps`
+#158  killed        line 199  _onReveal          `price % tickBps` -> `price + tickBps`
+#159  killed        line 199  _onReveal          `price % tickBps` -> `price - tickBps`
+#160  killed        line 199  _onReveal          `price % tickBps` -> `price / tickBps`
+#161  killed        line 200  _onReveal          `amount >= minExitShares` -> `!(amount >= minExitShares)`
+#162  killed        line 200  _onReveal          `amount >= minExitShares` -> `amount != minExitShares`
+#163  killed        line 200  _onReveal          `amount >= minExitShares` -> `amount < minExitShares`
+#164  killed        line 200  _onReveal          `amount >= minExitShares` -> `amount <= minExitShares`
+#165  killed        line 200  _onReveal          `amount >= minExitShares` -> `amount == minExitShares`
+#166  killed-after  line 200  _onReveal          `amount >= minExitShares` -> `amount > minExitShares`
+#167  killed        line 200  _onReveal          `amount >= minExitShares` -> `true`
+#168  killed        line 202  _onReveal          `_rounds[roundId].escrowed += amount` -> `_rounds[roundId].escrowed -= amount`
+#169  killed        line 202  _onReveal          `amount` -> `0`
+#170  killed        line 215  settle             `r.commitEnd != 0` -> `!(r.commitEnd != 0)`
+#171  killed        line 215  settle             `r.commitEnd != 0` -> `r.commitEnd < 0`
+#172  killed        line 215  settle             `r.commitEnd != 0` -> `r.commitEnd <= 0`
+#173  killed        line 215  settle             `r.commitEnd != 0` -> `r.commitEnd == 0`
+#174  survived      line 215  settle             `r.commitEnd != 0` -> `r.commitEnd > 0`
+#175  killed-after  line 215  settle             `r.commitEnd != 0` -> `r.commitEnd >= 0`
+#176  killed-after  line 215  settle             `r.commitEnd != 0` -> `true`
+#177  killed        line 216  settle             `block.timestamp >= r.revealEnd` -> `!(block.timestamp >= r.revealEnd)`
+#178  killed        line 216  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp != r.revealEnd`
+#179  killed        line 216  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp < r.revealEnd`
+#180  killed-after  line 216  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp <= r.revealEnd`
+#181  killed-after  line 216  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp == r.revealEnd`
+#182  killed        line 216  settle             `block.timestamp >= r.revealEnd` -> `block.timestamp > r.revealEnd`
+#183  killed-after  line 216  settle             `block.timestamp >= r.revealEnd` -> `true`
+#184  killed        line 217  settle             `_settleStep(roundId, maxSteps)` -> `false`
+#185  killed        line 217  settle             `_settleStep(roundId, maxSteps)` -> `true`
+#186  killed        line 220  settle             `b.sold` -> `0`
+#187  killed        line 223  settle             `uint64(block.number)` -> `0`
+#188  killed        line 224  settle             `sold != 0` -> `sold < 0`
+#189  killed        line 224  settle             `sold != 0` -> `sold <= 0`
+#190  killed        line 224  settle             `sold != 0` -> `sold == 0`
+#191  survived      line 224  settle             `sold != 0` -> `sold > 0`
+#192  survived      line 224  settle             `sold != 0` -> `sold >= 0`
+#193  killed        line 225  settle             `vault.convertToAssets(sold)` -> `0`
+#194  killed        line 226  settle             `pendingExitShares += sold` -> `pendingExitShares -= sold`
+#195  killed        line 226  settle             `sold` -> `0`
+#196  killed        line 245  claim              `!(exited && refunded)` -> `!(!(exited && refunded))`
+#197  killed        line 245  claim              `!(exited && refunded)` -> `(exited && refunded)`
+#198  killed        line 245  claim              `!(exited && refunded)` -> `true`
+#199  killed        line 245  claim              `exited && refunded` -> `exited || refunded`
+#200  killed        line 246  claim              `!exited` -> `exited`
+#201  killed        line 247  claim              `!refunded` -> `refunded`
+#202  killed        line 267  _exit              `commitments[roundId][bidder].revealed` -> `!(commitments[roundId][bidder].revealed)`
+#203  killed        line 267  _exit              `commitments[roundId][bidder].revealed` -> `true`
+#204  killed        line 268  _exit              `!exitClaimed[roundId][bidder]` -> `!(!exitClaimed[roundId][bidder])`
+#205  killed        line 268  _exit              `!exitClaimed[roundId][bidder]` -> `exitClaimed[roundId][bidder]`
+#206  killed        line 268  _exit              `!exitClaimed[roundId][bidder]` -> `true`
+#207  killed        line 270  _exit              `true` -> `false`
+#208  killed        line 273  _exit              `_books[roundId].sold` -> `0`
+#209  killed        line 274  _exit              `r.allocatedTotal += alloc` -> `r.allocatedTotal -= alloc`
+#210  killed        line 274  _exit              `alloc` -> `0`
+#211  killed        line 275  _exit              `r.returnedTotal += back` -> `r.returnedTotal -= back`
+#212  killed        line 275  _exit              `back` -> `0`
+#213  killed        line 276  _exit              `r.allocatedTotal <= sold` -> `!(r.allocatedTotal <= sold)`
+#214  killed        line 276  _exit              `r.allocatedTotal <= sold` -> `r.allocatedTotal != sold`
+#215  killed        line 276  _exit              `r.allocatedTotal <= sold` -> `r.allocatedTotal < sold`
+#216  killed        line 276  _exit              `r.allocatedTotal <= sold` -> `r.allocatedTotal == sold`
+#217  killed        line 276  _exit              `r.allocatedTotal <= sold` -> `r.allocatedTotal > sold`
+#218  killed        line 276  _exit              `r.allocatedTotal <= sold` -> `r.allocatedTotal >= sold`
+#219  survived      line 276  _exit              `r.allocatedTotal <= sold` -> `true`
+#220  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `!(r.allocatedTotal + r.returnedTotal <= r.escrowed)`
+#221  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal` -> `r.allocatedTotal % r.returnedTotal`
+#222  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal` -> `r.allocatedTotal * r.returnedTotal`
+#223  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `r.allocatedTotal + r.returnedTotal != r.escrowed`
+#224  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `r.allocatedTotal + r.returnedTotal < r.escrowed`
+#225  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `r.allocatedTotal + r.returnedTotal == r.escrowed`
+#226  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `r.allocatedTotal + r.returnedTotal > r.escrowed`
+#227  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `r.allocatedTotal + r.returnedTotal >= r.escrowed`
+#228  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal` -> `r.allocatedTotal - r.returnedTotal`
+#229  killed        line 277  _exit              `r.allocatedTotal + r.returnedTotal` -> `r.allocatedTotal / r.returnedTotal`
+#230  survived      line 277  _exit              `r.allocatedTotal + r.returnedTotal <= r.escrowed` -> `true`
+#231  killed        line 278  _exit              `r.assetsRedeemed += assets` -> `r.assetsRedeemed -= assets`
+#232  killed        line 278  _exit              `assets` -> `0`
+#233  killed        line 279  _exit              `r.paidOut += payout` -> `r.paidOut -= payout`
+#234  killed        line 279  _exit              `payout` -> `0`
+#235  killed        line 280  _exit              `r.donated += donation` -> `r.donated -= donation`
+#236  killed        line 280  _exit              `donation` -> `0`
+#237  killed        line 281  _exit              `r.exitsClaimed += 1` -> `r.exitsClaimed -= 1`
+#238  killed        line 281  _exit              `1` -> `0`
+#239  killed        line 282  _exit              `pendingExitShares -= alloc` -> `pendingExitShares += alloc`
+#240  killed        line 282  _exit              `alloc` -> `0`
+#241  killed        line 284  _exit              `r.exitsClaimed == ledgers[roundId].reveals` -> `r.exitsClaimed != ledgers[roundId].reveals`
+#242  killed        line 284  _exit              `r.exitsClaimed == ledgers[roundId].reveals` -> `r.exitsClaimed < ledgers[roundId].reveals`
+#243  killed        line 284  _exit              `r.exitsClaimed == ledgers[roundId].reveals` -> `r.exitsClaimed <= ledgers[roundId].reveals`
+#244  killed        line 284  _exit              `r.exitsClaimed == ledgers[roundId].reveals` -> `r.exitsClaimed > ledgers[roundId].reveals`
+#245  survived      line 284  _exit              `r.exitsClaimed == ledgers[roundId].reveals` -> `r.exitsClaimed >= ledgers[roundId].reveals`
+#246  killed        line 284  _exit              `pendingExitShares -= sold - r.allocatedTotal` -> `pendingExitShares += sold - r.allocatedTotal`
+#247  killed        line 284  _exit              `sold - r.allocatedTotal` -> `0`
+#248  survived      line 284  _exit              `sold - r.allocatedTotal` -> `sold % r.allocatedTotal`
+#249  killed        line 284  _exit              `sold - r.allocatedTotal` -> `sold * r.allocatedTotal`
+#250  killed        line 284  _exit              `sold - r.allocatedTotal` -> `sold + r.allocatedTotal`
+#251  killed        line 284  _exit              `sold - r.allocatedTotal` -> `sold / r.allocatedTotal`
+#252  killed        line 287  _exit              `alloc != 0` -> `alloc < 0`
+#253  killed        line 287  _exit              `alloc != 0` -> `alloc <= 0`
+#254  killed        line 287  _exit              `alloc != 0` -> `alloc == 0`
+#255  survived      line 287  _exit              `alloc != 0` -> `alloc > 0`
+#256  survived      line 287  _exit              `alloc != 0` -> `alloc >= 0`
+#257  killed        line 288  _exit              `vault.redeem(alloc, address(this), address(this))` -> `0`
+#258  killed        line 291  _exit              `got >= assets` -> `!(got >= assets)`
+#259  killed        line 291  _exit              `got >= assets` -> `got != assets`
+#260  killed        line 291  _exit              `got >= assets` -> `got < assets`
+#261  killed-after  line 291  _exit              `got >= assets` -> `got <= assets`
+#262  killed-after  line 291  _exit              `got >= assets` -> `got == assets`
+#263  killed        line 291  _exit              `got >= assets` -> `got > assets`
+#264  killed-after  line 291  _exit              `got >= assets` -> `true`
+#265  killed        line 292  _exit              `payout != 0` -> `payout < 0`
+#266  killed        line 292  _exit              `payout != 0` -> `payout <= 0`
+#267  killed        line 292  _exit              `payout != 0` -> `payout == 0`
+#268  survived      line 292  _exit              `payout != 0` -> `payout > 0`
+#269  survived      line 292  _exit              `payout != 0` -> `payout >= 0`
+#270  killed        line 293  _exit              `donation + (got - assets)` -> `0`
+#271  killed        line 293  _exit              `donation + (got - assets)` -> `donation % (got - assets)`
+#272  killed        line 293  _exit              `donation + (got - assets)` -> `donation * (got - assets)`
+#273  killed-after  line 293  _exit              `donation + (got - assets)` -> `donation - (got - assets)`
+#274  killed        line 293  _exit              `donation + (got - assets)` -> `donation / (got - assets)`
+#275  killed-after  line 293  _exit              `got - assets` -> `got % assets`
+#276  killed        line 293  _exit              `got - assets` -> `got * assets`
+#277  killed        line 293  _exit              `got - assets` -> `got + assets`
+#278  killed        line 293  _exit              `got - assets` -> `got / assets`
+#279  killed        line 294  _exit              `toVault != 0` -> `toVault < 0`
+#280  killed        line 294  _exit              `toVault != 0` -> `toVault <= 0`
+#281  killed        line 294  _exit              `toVault != 0` -> `toVault == 0`
+#282  survived      line 294  _exit              `toVault != 0` -> `toVault > 0`
+#283  survived      line 294  _exit              `toVault != 0` -> `toVault >= 0`
+#284  killed        line 296  _exit              `back != 0` -> `back < 0`
+#285  killed        line 296  _exit              `back != 0` -> `back <= 0`
+#286  killed        line 296  _exit              `back != 0` -> `back == 0`
+#287  survived      line 296  _exit              `back != 0` -> `back > 0`
+#288  survived      line 296  _exit              `back != 0` -> `back >= 0`
+#289  killed        line 301  _refund            `_books[roundId].settled` -> `!(_books[roundId].settled)`
+#290  killed        line 301  _refund            `_books[roundId].settled` -> `true`
+#291  killed        line 302  _refund            `commitments[roundId][bidder].revealed` -> `!(commitments[roundId][bidder].revealed)`
+#292  killed-after  line 302  _refund            `commitments[roundId][bidder].revealed` -> `true`
+#293  killed        line 303  _refund            `_settleAccount(roundId, bidder, 0)` -> `0`
+#294  killed        line 329  quote              `commitments[roundId][bidder].revealed` -> `!(commitments[roundId][bidder].revealed)`
+#295  killed-after  line 329  quote              `commitments[roundId][bidder].revealed` -> `true`
+#296  killed        line 336  reservedShares     `pendingExitShares` -> `0`
+#297  killed        line 337  reservedShares     `roundCount` -> `0`
+#298  killed        line 338  reservedShares     `id != 0 && !_books[id].settled` -> `id != 0 || !_books[id].settled`
+#299  killed        line 338  reservedShares     `id != 0` -> `id < 0`
+#300  killed        line 338  reservedShares     `id != 0` -> `id <= 0`
+#301  killed        line 338  reservedShares     `id != 0` -> `id == 0`
+#302  survived      line 338  reservedShares     `id != 0` -> `id > 0`
+#303  survived      line 338  reservedShares     `id != 0` -> `id >= 0`
+#304  killed        line 338  reservedShares     `!_books[id].settled` -> `_books[id].settled`
+#305  killed        line 338  reservedShares     `shares += _rounds[id].capacity` -> `shares -= _rounds[id].capacity`
+#306  killed        line 338  reservedShares     `_rounds[id].capacity` -> `0`
+#307  killed        line 343  nextOpenBlock      `roundCount` -> `0`
+#308  killed        line 344  nextOpenBlock      `id == 0` -> `id != 0`
+#309  killed-after  line 344  nextOpenBlock      `id == 0` -> `id < 0`
+#310  survived      line 344  nextOpenBlock      `id == 0` -> `id <= 0`
+#311  killed        line 344  nextOpenBlock      `id == 0` -> `id > 0`
+#312  killed        line 344  nextOpenBlock      `id == 0` -> `id >= 0`
+#313  killed        line 345  nextOpenBlock      `!_books[id].settled` -> `_books[id].settled`
+#314  killed        line 346  nextOpenBlock      `uint256(_rounds[id].settledBlock) + roundGapBlocks` -> `uint256(_rounds[id].settledBlock) % roundGapBlocks`
+#315  killed        line 346  nextOpenBlock      `uint256(_rounds[id].settledBlock) + roundGapBlocks` -> `uint256(_rounds[id].settledBlock) * roundGapBlocks`
+#316  killed        line 346  nextOpenBlock      `uint256(_rounds[id].settledBlock) + roundGapBlocks` -> `uint256(_rounds[id].settledBlock) - roundGapBlocks`
+#317  killed        line 346  nextOpenBlock      `uint256(_rounds[id].settledBlock) + roundGapBlocks` -> `uint256(_rounds[id].settledBlock) / roundGapBlocks`
+#318  killed        line 360  _quote             `_allocation(roundId, bid.discountBps, bid.shares)` -> `0`
+#319  killed        line 361  _quote             `uint256(bid.shares) - alloc` -> `0`
+#320  killed        line 361  _quote             `uint256(bid.shares) - alloc` -> `uint256(bid.shares) % alloc`
+#321  killed        line 361  _quote             `uint256(bid.shares) - alloc` -> `uint256(bid.shares) * alloc`
+#322  killed        line 361  _quote             `uint256(bid.shares) - alloc` -> `uint256(bid.shares) + alloc`
+#323  killed        line 361  _quote             `uint256(bid.shares) - alloc` -> `uint256(bid.shares) / alloc`
+#324  killed        line 362  _quote             `alloc == 0` -> `alloc != 0`
+#325  survived      line 362  _quote             `alloc == 0` -> `alloc < 0`
+#326  survived      line 362  _quote             `alloc == 0` -> `alloc <= 0`
+#327  killed        line 362  _quote             `alloc == 0` -> `alloc > 0`
+#328  killed        line 362  _quote             `alloc == 0` -> `alloc >= 0`
+#329  killed        line 364  _quote             `vault.previewRedeem(alloc)` -> `0`
+#330  killed        line 365  _quote             `Math.mulDiv(alloc, _rounds[roundId].settleAssets, b.sold)` -> `0`
+#331  killed        line 366  _quote             `assets < atSettle ? assets : atSettle` -> `0`
+#332  killed        line 366  _quote             `assets < atSettle` -> `assets != atSettle`
+#333  survived      line 366  _quote             `assets < atSettle` -> `assets <= atSettle`
+#334  survived      line 366  _quote             `assets < atSettle` -> `assets == atSettle`
+#335  killed        line 366  _quote             `assets < atSettle` -> `assets > atSettle`
+#336  killed        line 366  _quote             `assets < atSettle` -> `assets >= atSettle`
+#337  killed        line 367  _quote             `basis * (BPS - b.clearingPrice) / BPS` -> `0`
+#338  killed        line 367  _quote             `basis * (BPS - b.clearingPrice)` -> `basis % (BPS - b.clearingPrice)`
+#339  killed        line 367  _quote             `basis * (BPS - b.clearingPrice) / BPS` -> `basis * (BPS - b.clearingPrice) % BPS`
+#340  killed        line 367  _quote             `basis * (BPS - b.clearingPrice) / BPS` -> `basis * (BPS - b.clearingPrice) * BPS`
+#341  killed        line 367  _quote             `basis * (BPS - b.clearingPrice) / BPS` -> `basis * (BPS - b.clearingPrice) + BPS`
+#342  killed        line 367  _quote             `basis * (BPS - b.clearingPrice) / BPS` -> `basis * (BPS - b.clearingPrice) - BPS`
+#343  killed        line 367  _quote             `basis * (BPS - b.clearingPrice)` -> `basis + (BPS - b.clearingPrice)`
+#344  killed        line 367  _quote             `basis * (BPS - b.clearingPrice)` -> `basis - (BPS - b.clearingPrice)`
+#345  killed        line 367  _quote             `basis * (BPS - b.clearingPrice)` -> `basis / (BPS - b.clearingPrice)`
+#346  killed        line 367  _quote             `BPS - b.clearingPrice` -> `BPS % b.clearingPrice`
+#347  killed        line 367  _quote             `BPS - b.clearingPrice` -> `BPS * b.clearingPrice`
+#348  killed        line 367  _quote             `BPS - b.clearingPrice` -> `BPS + b.clearingPrice`
+#349  killed        line 367  _quote             `BPS - b.clearingPrice` -> `BPS / b.clearingPrice`
+#350  killed        line 368  _quote             `assets - payout` -> `0`
+#351  killed        line 368  _quote             `assets - payout` -> `assets % payout`
+#352  killed        line 368  _quote             `assets - payout` -> `assets * payout`
+#353  killed        line 368  _quote             `assets - payout` -> `assets + payout`
+#354  killed        line 368  _quote             `assets - payout` -> `assets / payout`

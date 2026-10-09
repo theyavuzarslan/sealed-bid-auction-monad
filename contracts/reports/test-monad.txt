@@ -1,0 +1,270 @@
+$ forge test --network monad --hardfork monad:MonadTen
+forge 1.8.3, 2026-10-09 04:32 +03
+
+No files changed, compilation skipped
+
+Ran 3 tests for test/DepositLedger.t.sol:DepositLedgerTest
+[PASS] test_PushRefund_FailedPushIsOwed() (gas: 347192)
+[PASS] test_PushRefund_ZeroIsANoOp() (gas: 171361)
+[PASS] test_SettleAccount_PaidMustBeBelowDeposit() (gas: 228983)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 2.93ms (342.25µs CPU time)
+
+Ran 1 test for test/ExitAuction.t.sol:ExitAllowlistTest
+[PASS] test_Allowlist_OnlyListedHoldersBid() (gas: 610258)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 6.63ms (127.50µs CPU time)
+
+Ran 5 tests for test/ClearingEdgeCases.t.sol:ClearingEdgeCasesTest
+[PASS] test_EmptyBook_SettlesAtZero() (gas: 203210)
+[PASS] test_ExactCover_WithLowerLevel_ClearsAtTheCoveringLevel() (gas: 654720)
+[PASS] test_FindHint_ReturnsLowestLevelAbove() (gas: 579707)
+[PASS] test_InputChecks() (gas: 511860)
+[PASS] test_LowerBound_MoreBidsAtPriceThanUnits() (gas: 445498)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 453.38µs (336.54µs CPU time)
+
+Ran 19 tests for test/EngineEdgeCases.t.sol:EngineEdgeCasesTest
+[PASS] test_AbandonLP_RecordsAbandonment() (gas: 2356840)
+[PASS] test_ClaimVested_NoVestingRefusedForThatReason() (gas: 3104177)
+[PASS] test_Constructor_EveryCheck() (gas: 34408)
+[PASS] test_LP_AdapterOverspendRejected() (gas: 2950466)
+[PASS] test_LP_FullShare_SoldOut_WholeReserveUsed() (gas: 1936055)
+[PASS] test_LP_MonSideZero_NotSeeded() (gas: 1128249)
+[PASS] test_LP_NoMonFromAdapterAfterSeeding() (gas: 2823772)
+[PASS] test_LP_PositionMustReachTheEngine() (gas: 5479734)
+[PASS] test_LP_TokenSideZero_NotSeeded() (gas: 1128057)
+[PASS] test_LP_TwoVenues_LastTakesTheRemainder() (gas: 2929114)
+[PASS] test_OpenRules_Amounts() (gas: 878897)
+[PASS] test_OpenRules_LpAndSplits() (gas: 1457800)
+[PASS] test_OpenRules_Presets() (gas: 1907356)
+[PASS] test_OpenRules_TokenCreditingMoreIsRejected() (gas: 778909)
+[PASS] test_Quote_MatchesSettlement_AndNeedsAReveal() (gas: 2574396)
+[PASS] test_Reveal_ZeroAmountRefusedForThatReason() (gas: 719677)
+[PASS] test_SweepDust_OnlyOnce() (gas: 4174581)
+[PASS] test_UnknownRound() (gas: 121851)
+[PASS] test_WithdrawProceeds_OnlyCreator_OnlyAfterLp() (gas: 3098668)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 8.21ms (7.59ms CPU time)
+
+Ran 1 test for test/Scale.t.sol:ScaleForkTest
+[SKIP: skipped] setUp() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 202.54µs (0.00ns CPU time)
+
+Ran 1 test for test/Scale.t.sol:ScaleMockTest
+[SKIP: skipped] setUp() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 180.38µs (0.00ns CPU time)
+
+Ran 4 tests for test/Observations.t.sol:ObservationsTest
+[PASS] test_O1_GasBurningWinner_IsSettledAndOwed() (gas: 4499912)
+[PASS] test_O1_MonRejectingWinner_IsSettledAndOwed() (gas: 4447932)
+[PASS] test_O1_NormalRefund_IsPushed() (gas: 1926038)
+[PASS] test_OpenRound_RejectsShortWindows() (gas: 640172)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 12.07ms (9.27ms CPU time)
+
+Ran 10 tests for test/ExitEdgeCases.t.sol:ExitEdgeCasesTest
+[PASS] test_AllExited_NothingStaysReserved() (gas: 2876125)
+[PASS] test_Constructor_EveryCheck() (gas: 41754)
+[PASS] test_Open_StoresWindowsAndBlock() (gas: 263953)
+[PASS] test_Redeem_DoublePayment_AllSurplusToTheVault() (gas: 1599070)
+[PASS] test_Redeem_ShortPaymentReverts() (gas: 1465837)
+[PASS] test_Redeem_SurplusGoesToTheVault() (gas: 1620944)
+[PASS] test_Reveal_DiscountAboveFullAndMinimumExit() (gas: 1000442)
+[PASS] test_Settle_UnknownRound_AndTiming() (gas: 1153021)
+[PASS] test_UnrevealedBidder_NoRefundNoQuote() (gas: 1334502)
+[PASS] test_Views_BeforeTheFirstRound() (gas: 38552)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 13.96ms (2.33ms CPU time)
+
+Ran 1 test for test/fork/UniswapV3AdapterFork.t.sol:UniswapV3AdapterForkTest
+[SKIP: skipped] setUp() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 416.29µs (0.00ns CPU time)
+
+Ran 3 tests for test/SecurityPass.t.sol:EngineWindowBoundsTest
+[PASS] test_Commit_NoteAtMaxLengthAccepted() (gas: 674071)
+[PASS] test_Reveal_WindowEndIsExclusive() (gas: 975422)
+[PASS] test_W1_ExactMinimumWindowsAccepted() (gas: 562193)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 19.70ms (8.02ms CPU time)
+
+Ran 22 tests for test/ExitAuction.t.sol:ExitAuctionTest
+[PASS] test_AnyoneCanTriggerClaims_FundsGoToBidder() (gas: 1735873)
+[PASS] test_ClaimOrder_DoesNotChangePayouts() (gas: 4203906)
+[PASS] test_Claim_OnceOnly_AndOnlyWhenSettled() (gas: 1741973)
+[PASS] test_Claim_ReentrancyBlocked() (gas: 2338118)
+[PASS] test_Commit_WrongDepositAndRoundChecks() (gas: 352190)
+[PASS] test_Constructor_RejectsShortWindows() (gas: 85123)
+[PASS] test_ExitIndependentOfRefund() (gas: 2504493)
+[PASS] test_Loser_GetsAllSharesBack() (gas: 3039210)
+[PASS] test_OnlyTheExitAuctionCanRedeem() (gas: 143019)
+[PASS] test_Open_CapacityCappedPerRound() (gas: 1110808)
+[PASS] test_Open_CapacityIsIdleBufferInShares() (gas: 419969)
+[PASS] test_Open_RevertsWhenIdleBufferEmpty() (gas: 220564)
+[PASS] test_Open_RevertsWhileRoundUnsettled_AndBeforeNBlocks() (gas: 788738)
+[PASS] test_Oversubscribed_ProRataAtClearingDiscount() (gas: 4495718)
+[PASS] test_RefundIndependentOfExit() (gas: 1924818)
+[PASS] test_RevealWithoutShares_Reverts_DepositBurnable() (gas: 2162612)
+[PASS] test_Reveal_PullsSharesIntoEscrow() (gas: 852695)
+[PASS] test_Reveal_ValidatesDiscountAndSize() (gas: 1092878)
+[PASS] test_StayersGainEveryRound() (gas: 12505977)
+[PASS] test_UnclaimedWinner_StaysPayable() (gas: 3305694)
+[PASS] test_Undersubscribed_AllExit_AtLowestDiscount() (gas: 2395181)
+[PASS] test_ZeroDiscountIsLegal() (gas: 1557652)
+Suite result: ok. 22 passed; 0 failed; 0 skipped; finished in 28.86ms (15.54ms CPU time)
+
+Ran 16 tests for test/UniswapV3Adapter.t.sol:UniswapV3AdapterTest
+[PASS] testFuzz_MulDiv_FullWidth(uint256,uint256) (runs: 512, μ: 11520, ~: 11451)
+[PASS] testFuzz_MulDiv_MatchesNaive(uint128,uint128,uint256) (runs: 512, μ: 11244, ~: 11244)
+[PASS] testFuzz_SqrtPrice_RoundTrip(uint256,bool) (runs: 512, μ: 31941, ~: 31861)
+[PASS] testFuzz_Sqrt_IsFloor(uint256) (runs: 512, μ: 1760, ~: 1761)
+[PASS] test_Constructor_Checks() (gas: 483271)
+[PASS] test_MulDiv_Reverts() (gas: 51331)
+[PASS] test_Receive_OnlyFromWmon() (gas: 1618403)
+[PASS] test_Seed_InputChecks() (gas: 1854625)
+[PASS] test_Seed_RejectsFeeOnTransferToken() (gas: 1875033)
+[PASS] test_SqrtPrice_HighRatioBranch() (gas: 3665)
+[PASS] test_SqrtPrice_KnownValues() (gas: 6896)
+[PASS] test_SqrtPrice_OutOfRange() (gas: 117922)
+[PASS] test_Sqrt_Edges() (gas: 2399)
+[PASS] test_SwapCallback_OnlyDuringRepricing() (gas: 1610929)
+[PASS] test_TargetSqrtPrice_UsesWmonOrdering() (gas: 1564309)
+[PASS] test_WithinTolerance_Boundaries() (gas: 7743)
+Suite result: ok. 16 passed; 0 failed; 0 skipped; finished in 48.39ms (48.25ms CPU time)
+
+Ran 3 tests for test/SecurityPass.t.sol:ExitWindowBoundsTest
+[PASS] testFuzz_W2_AcceptedIffBothWindowsInRange(uint64,uint64) (runs: 512, μ: 20229, ~: 20165)
+[PASS] testFuzz_W2_AcceptedIffBothWindowsInRange_NearRange(uint64,uint64) (runs: 512, μ: 20890, ~: 20835)
+[PASS] test_W2_ExactBoundaries() (gas: 56877)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 102.92ms (102.79ms CPU time)
+
+Ran 4 tests for test/TokenFactory.t.sol:TokenFactoryTest
+[PASS] test_Create_MintsFixedSupplyToCreator() (gas: 740397)
+[PASS] test_Create_RejectsBadInput() (gas: 728702)
+[PASS] test_FactoryToken_FullLaunch() (gas: 3099139)
+[PASS] test_Token_HasNoAdminFunctions() (gas: 700694)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 1.43ms (805.04µs CPU time)
+
+Ran 6 tests for test/DemoVault.t.sol:DemoVaultTest
+[PASS] testFuzz_InflationAttackDoesNotPay(uint256,uint256) (runs: 512, μ: 678817, ~: 685288)
+[PASS] test_InflationAttack_ConcreteCase() (gas: 695293)
+[PASS] test_NobodyRedeemsBeforeTheExitAuctionIsSet() (gas: 373377)
+[PASS] test_OnlyStrategistMovesAssets() (gas: 428647)
+[PASS] test_SetExitAuction_OnceByDeployer_MustPointBack() (gas: 181937)
+[PASS] test_TotalAssetsCountsIdleAndStrategy() (gas: 564396)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 113.20ms (113.35ms CPU time)
+
+Ran 1 test for test/ExitAuction.t.sol:ExitAuctionFuzzTest
+[PASS] testFuzz_Conservation(uint256,uint256) (runs: 512, μ: 5553347, ~: 5730838)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 403.48ms (398.78ms CPU time)
+
+Ran 23 tests for test/AuctionEngine.t.sol:AuctionEngineTest
+[PASS] testFuzz_LifecycleConservesEverything(uint256) (runs: 512, μ: 4681704, ~: 4450209)
+[PASS] testFuzz_RevealWithHint_AnyHintSameBook(uint256) (runs: 512, μ: 4572494, ~: 4577588)
+[PASS] test_BurnUnrevealed() (gas: 2318178)
+[PASS] test_CommitRules() (gas: 900394)
+[PASS] test_Degen_OversubscribedLifecycle() (gas: 4697495)
+[PASS] test_Degen_Undersubscribed_UnsoldBurned() (gas: 2667229)
+[PASS] test_FeeOnTransferTokenRejected() (gas: 517767)
+[PASS] test_LP_Blocked_AbandonBurnsLpShare() (gas: 4199178)
+[PASS] test_LP_PartialUse_DustToCreatorAndUnsoldBurned() (gas: 4044994)
+[PASS] test_NoBids_EverythingBackToCreator() (gas: 828603)
+[PASS] test_NoteIsEmittedNotStored() (gas: 600399)
+[PASS] test_OpenRules() (gas: 350264)
+[PASS] test_Raise_Allowlist() (gas: 721571)
+[PASS] test_Raise_UnsoldReturnedAndVesting() (gas: 2441442)
+[PASS] test_RevealRules() (gas: 1154735)
+[PASS] test_RoundsCannotSpendEachOther() (gas: 1354351)
+[PASS] test_Security_NoBidWithoutCommitAndDeposit() (gas: 697554)
+[PASS] test_Security_NoSettleBeforeRevealEnd() (gas: 911167)
+[PASS] test_Security_NobodyClaimsForSomeoneElse() (gas: 3182244)
+[PASS] test_Security_ReentrantClaimBlocked() (gas: 2424981)
+[PASS] test_SettleInSteps_SameResult() (gas: 2321850)
+[PASS] test_SplitsOf_ReturnsTheCreatorsSplit() (gas: 477813)
+[PASS] test_UnexpectedMonRejected() (gas: 65549)
+Suite result: ok. 23 passed; 0 failed; 0 skipped; finished in 629.39ms (968.54ms CPU time)
+
+Ran 9 tests for test/UniformClearing.t.sol:UniformClearingTest
+[PASS] testFuzz_EqualBidsAtClearingPriceGetEqualShares(uint128,uint96,uint96) (runs: 512, μ: 610334, ~: 610363)
+[PASS] testFuzz_MatchesReference(uint256) (runs: 512, μ: 2116262, ~: 2128085)
+[PASS] test_CannotAddAfterSettlementStarts() (gas: 352472)
+[PASS] test_Example_EmptyBook() (gas: 191596)
+[PASS] test_Example_ExactlyCovered_NoProRata() (gas: 531627)
+[PASS] test_Example_OversubscribedTieIsProRata() (gas: 848844)
+[PASS] test_Example_SingleBidLargerThanSupply() (gas: 380334)
+[PASS] test_Example_Undersubscribed_AllFill_PriceIsLowestBid() (gas: 532205)
+[PASS] test_Example_ZeroPriceLevelWorks() (gas: 481762)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 681.09ms (679.09ms CPU time)
+
+Ran 11 tests for test/PrdConformance.t.sol:PrdConformanceTest
+[PASS] testFuzz_PRD_Bug8_RoundingNeverFavorsTheBidder(uint96,uint96,uint96) (runs: 512, μ: 3171626, ~: 3171742)
+[PASS] testFuzz_PRD_SnipeResistance_AnyRevealOrder(uint256) (runs: 512, μ: 8588180, ~: 8590864)
+[PASS] test_PRD_BlindBidding_OnlyTheHashIsOnChainBeforeReveal() (gas: 641147)
+[PASS] test_PRD_Bug1_SaltIsPartOfTheCommitment() (gas: 880225)
+[PASS] test_PRD_Bug2_CopiedCommitmentCannotBeReplayed() (gas: 985719)
+[PASS] test_PRD_Bug2_RevealCannotBeFrontRun() (gas: 995135)
+[PASS] test_PRD_Bug3_NonRevealerLosesExactlyTheDeposit() (gas: 2259246)
+[PASS] test_PRD_Bug7_PoolFirst_AtTheClearingPrice_Locked() (gas: 3678106)
+[PASS] test_PRD_SnipeResistance_OrderAndTimingDoNotMatter() (gas: 8557297)
+[PASS] test_PRD_UniformDeposit_SameForEveryBid_AndLargerThanTheBid() (gas: 1055579)
+[PASS] test_PRD_UniformPrice_EveryWinnerPaysTheClearingPrice() (gas: 4552996)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 681.29ms (884.27ms CPU time)
+
+Ran 10 tests for test/AuditRegressions.t.sol:AuditRegressions
+[PASS] testFuzz_Interleavings(uint256) (runs: 512, μ: 8126443, ~: 8309576)
+[PASS] test_FeeTierNotSupportedRejectedAtOpen() (gas: 103236)
+[PASS] test_H1_BlockedPool_AbandonBurns_NoUncheckedSeed() (gas: 4604910)
+[PASS] test_L1_AnyoneCanSettleANonClaimer() (gas: 4236177)
+[PASS] test_L2_ImpossibleParametersRejected() (gas: 81991)
+[PASS] test_L3_CheapHighPriceLevelsRejected() (gas: 721456)
+[PASS] test_M1_SeedNeverSucceeds_NothingStranded() (gas: 3844351)
+[PASS] test_M2_PausedToken_RefundsStillFlow() (gas: 2814873)
+[PASS] test_RaiseLockTooShortRejected() (gas: 104661)
+[PASS] test_StrayAdapterMonRejected() (gas: 2836667)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 681.29ms (679.21ms CPU time)
+
+Ran 1 test for test/invariant/AuctionEngine.invariant.t.sol:AuctionEngineInvariantTest
+[PASS]
+AuctionEngineInvariantTest invariants:
+[PASS] invariant_ClearingAndAllocations
+[PASS] invariant_LedgerMatchesHistory
+[PASS] invariant_MonBalanceEqualsRoundBalancesPlusOwed
+[PASS] invariant_NoDoubleClaim
+[PASS] invariant_OwedRefundsAccountedFor
+[PASS] invariant_RefundsNeverExceedDeposits
+[PASS] invariant_RoundBalanceDecomposes
+[PASS] invariant_SettledBiddersPaidExactly
+[PASS] invariant_TokensAccountedFor
+[PASS] invariant_UnrevealedDepositsOnlyBurned
+ AuctionEngineInvariantTest invariants (runs: 32, calls: 4096, reverts: 0)
+
+╭----------------+------------------+-------+---------+----------╮
+| Contract       | Selector         | Calls | Reverts | Discards |
++================================================================+
+| AuctionHandler | abandonLP        | 182   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | burnUnrevealed   | 190   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | claim            | 697   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | claimVested      | 173   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | commit           | 481   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | disposeUnsold    | 184   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | openRound        | 195   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | reveal           | 498   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | seedLP           | 170   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | settle           | 325   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | sweepDust        | 173   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | warp             | 499   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | withdrawOwed     | 168   | 0       | 0        |
+|----------------+------------------+-------+---------+----------|
+| AuctionHandler | withdrawProceeds | 161   | 0       | 0        |
+╰----------------+------------------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 13.24s (13.24s CPU time)
+
+Ran 21 test suites in 13.25s (16.68s CPU time): 151 tests passed, 0 failed, 3 skipped (154 total tests)
+
+exit 0 after 14 s

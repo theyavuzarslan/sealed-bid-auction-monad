@@ -1,0 +1,100 @@
+Mutation testing of contracts/src/SealingLayer.sol (v2, branch contracts-v2)
+Method: contracts/reports/mutation-summary.md. Operators: forge 1.8.3's set (binary operator, require condition,
+assignment/initializer literal, unary not) without the bitwise/shift/power replacements of arithmetic operators.
+
+Mutants: 76 generated, 0 invalid (do not compile), 76 valid.
+Before (suite at the start of the pass): 70 killed, 6 survived: 92.1%
+After (tests added in this pass):        72 killed, 4 survived: 94.7%
+Every surviving mutant below is classified; unclassified: 0.
+
+== Surviving mutants ==
+#18 line 53 (commit): `hash != bytes32(0)` -> `hash > bytes32(0)`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#31 line 55 (commit): `allowlistRoot != bytes32(0)` -> `allowlistRoot > bytes32(0)`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+#38 line 59 (commit): `c.hash == bytes32(0)` -> `c.hash <= bytes32(0)`
+    Unsigned value: `== 0` and `<= 0` are the same test.
+#62 line 112 (_reveal): `c.hash != bytes32(0)` -> `c.hash > bytes32(0)`
+    Unsigned value: `!= 0` and `> 0` are the same test.
+
+== Killed by the tests added in this pass ==
+#23 line 54 (commit): `note.length <= MAX_NOTE_LENGTH` -> `note.length < MAX_NOTE_LENGTH`   killed by test_Commit_NoteAtMaxLengthAccepted
+#53 line 110 (_reveal): `block.timestamp < revealEnd` -> `block.timestamp <= revealEnd`   killed by test_Reveal_WindowEndIsExclusive
+
+== Every mutant ==
+#0    killed        line 51   commit             `block.timestamp < commitEnd` -> `!(block.timestamp < commitEnd)`
+#1    killed        line 51   commit             `block.timestamp < commitEnd` -> `block.timestamp != commitEnd`
+#2    killed        line 51   commit             `block.timestamp < commitEnd` -> `block.timestamp <= commitEnd`
+#3    killed        line 51   commit             `block.timestamp < commitEnd` -> `block.timestamp == commitEnd`
+#4    killed        line 51   commit             `block.timestamp < commitEnd` -> `block.timestamp > commitEnd`
+#5    killed        line 51   commit             `block.timestamp < commitEnd` -> `block.timestamp >= commitEnd`
+#6    killed        line 51   commit             `block.timestamp < commitEnd` -> `true`
+#7    killed        line 52   commit             `msg.value == deposit` -> `!(msg.value == deposit)`
+#8    killed        line 52   commit             `msg.value == deposit` -> `msg.value != deposit`
+#9    killed        line 52   commit             `msg.value == deposit` -> `msg.value < deposit`
+#10   killed        line 52   commit             `msg.value == deposit` -> `msg.value <= deposit`
+#11   killed        line 52   commit             `msg.value == deposit` -> `msg.value > deposit`
+#12   killed        line 52   commit             `msg.value == deposit` -> `msg.value >= deposit`
+#13   killed        line 52   commit             `msg.value == deposit` -> `true`
+#14   killed        line 53   commit             `hash != bytes32(0)` -> `!(hash != bytes32(0))`
+#15   killed        line 53   commit             `hash != bytes32(0)` -> `hash < bytes32(0)`
+#16   killed        line 53   commit             `hash != bytes32(0)` -> `hash <= bytes32(0)`
+#17   killed        line 53   commit             `hash != bytes32(0)` -> `hash == bytes32(0)`
+#18   survived      line 53   commit             `hash != bytes32(0)` -> `hash > bytes32(0)`
+#19   killed        line 53   commit             `hash != bytes32(0)` -> `hash >= bytes32(0)`
+#20   killed        line 53   commit             `hash != bytes32(0)` -> `true`
+#21   killed        line 54   commit             `note.length <= MAX_NOTE_LENGTH` -> `!(note.length <= MAX_NOTE_LENGTH)`
+#22   killed        line 54   commit             `note.length <= MAX_NOTE_LENGTH` -> `note.length != MAX_NOTE_LENGTH`
+#23   killed-after  line 54   commit             `note.length <= MAX_NOTE_LENGTH` -> `note.length < MAX_NOTE_LENGTH`
+#24   killed        line 54   commit             `note.length <= MAX_NOTE_LENGTH` -> `note.length == MAX_NOTE_LENGTH`
+#25   killed        line 54   commit             `note.length <= MAX_NOTE_LENGTH` -> `note.length > MAX_NOTE_LENGTH`
+#26   killed        line 54   commit             `note.length <= MAX_NOTE_LENGTH` -> `note.length >= MAX_NOTE_LENGTH`
+#27   killed        line 54   commit             `note.length <= MAX_NOTE_LENGTH` -> `true`
+#28   killed        line 55   commit             `allowlistRoot != bytes32(0)` -> `allowlistRoot < bytes32(0)`
+#29   killed        line 55   commit             `allowlistRoot != bytes32(0)` -> `allowlistRoot <= bytes32(0)`
+#30   killed        line 55   commit             `allowlistRoot != bytes32(0)` -> `allowlistRoot == bytes32(0)`
+#31   survived      line 55   commit             `allowlistRoot != bytes32(0)` -> `allowlistRoot > bytes32(0)`
+#32   killed        line 55   commit             `allowlistRoot != bytes32(0)` -> `allowlistRoot >= bytes32(0)`
+#33   killed        line 56   commit             `MerkleProofLib.verify(proof, allowlistRoot, MerkleProofLib.leafOf(msg.sender))` -> `!(MerkleProofLib.verify(proof, allowlistRoot, MerkleProofLib.leafOf(msg.sender)))`
+#34   killed        line 56   commit             `MerkleProofLib.verify(proof, allowlistRoot, MerkleProofLib.leafOf(msg.sender))` -> `true`
+#35   killed        line 59   commit             `c.hash == bytes32(0)` -> `!(c.hash == bytes32(0))`
+#36   killed        line 59   commit             `c.hash == bytes32(0)` -> `c.hash != bytes32(0)`
+#37   killed        line 59   commit             `c.hash == bytes32(0)` -> `c.hash < bytes32(0)`
+#38   survived      line 59   commit             `c.hash == bytes32(0)` -> `c.hash <= bytes32(0)`
+#39   killed        line 59   commit             `c.hash == bytes32(0)` -> `c.hash > bytes32(0)`
+#40   killed        line 59   commit             `c.hash == bytes32(0)` -> `c.hash >= bytes32(0)`
+#41   killed        line 59   commit             `c.hash == bytes32(0)` -> `true`
+#42   killed        line 61   commit             `ledgers[roundId].commits += 1` -> `ledgers[roundId].commits -= 1`
+#43   killed        line 61   commit             `1` -> `0`
+#44   killed        line 110  _reveal            `block.timestamp >= commitEnd && block.timestamp < revealEnd` -> `!(block.timestamp >= commitEnd && block.timestamp < revealEnd)`
+#45   killed        line 110  _reveal            `block.timestamp >= commitEnd` -> `block.timestamp != commitEnd`
+#46   killed        line 110  _reveal            `block.timestamp >= commitEnd` -> `block.timestamp < commitEnd`
+#47   killed        line 110  _reveal            `block.timestamp >= commitEnd` -> `block.timestamp <= commitEnd`
+#48   killed        line 110  _reveal            `block.timestamp >= commitEnd` -> `block.timestamp == commitEnd`
+#49   killed        line 110  _reveal            `block.timestamp >= commitEnd` -> `block.timestamp > commitEnd`
+#50   killed        line 110  _reveal            `block.timestamp >= commitEnd && block.timestamp < revealEnd` -> `block.timestamp >= commitEnd || block.timestamp < revealEnd`
+#51   killed        line 110  _reveal            `block.timestamp >= commitEnd && block.timestamp < revealEnd` -> `true`
+#52   killed        line 110  _reveal            `block.timestamp < revealEnd` -> `block.timestamp != revealEnd`
+#53   killed-after  line 110  _reveal            `block.timestamp < revealEnd` -> `block.timestamp <= revealEnd`
+#54   killed        line 110  _reveal            `block.timestamp < revealEnd` -> `block.timestamp == revealEnd`
+#55   killed        line 110  _reveal            `block.timestamp < revealEnd` -> `block.timestamp > revealEnd`
+#56   killed        line 110  _reveal            `block.timestamp < revealEnd` -> `block.timestamp >= revealEnd`
+#57   killed        line 112  _reveal            `c.hash != bytes32(0) && !c.revealed` -> `!(c.hash != bytes32(0) && !c.revealed)`
+#58   killed        line 112  _reveal            `c.hash != bytes32(0) && !c.revealed` -> `c.hash != bytes32(0) || !c.revealed`
+#59   killed        line 112  _reveal            `c.hash != bytes32(0)` -> `c.hash < bytes32(0)`
+#60   killed        line 112  _reveal            `c.hash != bytes32(0)` -> `c.hash <= bytes32(0)`
+#61   killed        line 112  _reveal            `c.hash != bytes32(0)` -> `c.hash == bytes32(0)`
+#62   survived      line 112  _reveal            `c.hash != bytes32(0)` -> `c.hash > bytes32(0)`
+#63   killed        line 112  _reveal            `c.hash != bytes32(0)` -> `c.hash >= bytes32(0)`
+#64   killed        line 112  _reveal            `c.hash != bytes32(0) && !c.revealed` -> `true`
+#65   killed        line 112  _reveal            `!c.revealed` -> `c.revealed`
+#66   killed        line 113  _reveal            `keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash` -> `!(keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash)`
+#67   killed        line 113  _reveal            `keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash` -> `keccak256(abi.encode(price, amount, salt, msg.sender)) != c.hash`
+#68   killed        line 113  _reveal            `keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash` -> `keccak256(abi.encode(price, amount, salt, msg.sender)) < c.hash`
+#69   killed        line 113  _reveal            `keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash` -> `keccak256(abi.encode(price, amount, salt, msg.sender)) <= c.hash`
+#70   killed        line 113  _reveal            `keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash` -> `keccak256(abi.encode(price, amount, salt, msg.sender)) > c.hash`
+#71   killed        line 113  _reveal            `keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash` -> `keccak256(abi.encode(price, amount, salt, msg.sender)) >= c.hash`
+#72   killed        line 113  _reveal            `keccak256(abi.encode(price, amount, salt, msg.sender)) == c.hash` -> `true`
+#73   killed        line 114  _reveal            `true` -> `false`
+#74   killed        line 115  _reveal            `ledgers[roundId].reveals += 1` -> `ledgers[roundId].reveals -= 1`
+#75   killed        line 115  _reveal            `1` -> `0`

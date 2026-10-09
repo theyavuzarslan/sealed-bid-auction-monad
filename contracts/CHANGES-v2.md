@@ -9,7 +9,7 @@ The live Monad mainnet deployment is v1, tagged `mainnet-v1`. v2 fixes four item
 | 3 | **ExitAuction redeem.** `require(got >= assets, "redeem short")` replaces `got == assets`; any surplus goes to the vault with the donation. | ERC-4626 only guarantees `previewRedeem ≤ redeem`; strict equality would block exits on vaults other than DemoVault. | ExitAuction |
 | 4 | **Compiler.** `pragma solidity 0.8.34;` on every contract in `src` (vendored OpenZeppelin unchanged), `solc_version = "0.8.34"`. | 0.8.34 fixes the transient-storage clearing bug (v1 is not affected: it never uses `delete` on transient state). One exact compiler for every deployed contract. | src/*.sol, foundry.toml |
 
-Tests: 108 passed, 0 failed (`forge test`), including new `test/Observations.t.sol` (a MON-rejecting winner and a gas-burning winner both settle, are owed, and withdraw; normal refunds are still pushed; short windows are refused) and `test_Constructor_RejectsShortWindows` / an updated `test_ExitIndependentOfRefund` in `test/ExitAuction.t.sol`. The full security pass (mutation testing, symbolic proofs, scale test, Monad rules) runs once v2 is final.
+Tests: 108 passed, 0 failed (`forge test`), including new `test/Observations.t.sol` (a MON-rejecting winner and a gas-burning winner both settle, are owed, and withdraw; normal refunds are still pushed; short windows are refused) and `test_Constructor_RejectsShortWindows` / an updated `test_ExitIndependentOfRefund` in `test/ExitAuction.t.sol`. The full security pass (mutation testing, symbolic proofs, scale test, Monad rules) ran on v2: [`../SECURITY.md`](../SECURITY.md).
 
 ## Independent review (Codex, gpt-5.5, read-only)
 

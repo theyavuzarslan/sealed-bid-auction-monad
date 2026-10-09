@@ -183,6 +183,11 @@ contract EngineProofs is Test {
         _oneBidder(0.005 ether, amount);
     }
 
+    /// Every uint96 amount at the reserve price (0.001 MON per token).
+    function prove_P3_P4_P5_OneBidder_AtReserve(uint96 amount) public {
+        _oneBidder(RESERVE, amount);
+    }
+
     function prove_P3_P4_P5_OneBidder_FixedAmount(uint96 price) public {
         _oneBidder(price, 100e18);
     }
@@ -263,6 +268,10 @@ contract EngineProofs is Test {
 
     function prove_P5_CeilingInequalities_OneBidder_FixedPrice(uint96 amount) public {
         _p5(0.005 ether, amount);
+    }
+
+    function prove_P5_CeilingInequalities_OneBidder_AtReserve(uint96 amount) public {
+        _p5(RESERVE, amount);
     }
 
     function prove_P5_CeilingInequalities_OneBidder_FixedAmount(uint96 price) public {

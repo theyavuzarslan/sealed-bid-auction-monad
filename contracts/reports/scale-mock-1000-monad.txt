@@ -1,0 +1,33 @@
+$ FOUNDRY_PROFILE=scale forge test --match-contract ScaleMockTest --network monad --hardfork monad:MonadTen -vv
+forge 1.8.3, 2026-10-09 04:32 +03
+
+No files changed, compilation skipped
+
+Ran 1 test for test/Scale.t.sol:ScaleMockTest
+[PASS] test_Scale_1000Bidders() (gas: 1178151546)
+Logs:
+  === Scale: 1000 bidders, 289 price levels ===
+  P = 89 ticks; winners above P 718, at P 2, below P 280; oversubscribed yes
+  settle: 205 levels visited, 3 calls of maxSteps=100
+  tx gas = execution + 21000 intrinsic + calldata; before refunds
+  operation                      n        min       mean        max        total
+  commit                      1000     118231     118333     152303    118333640
+  reveal (no hint)            1000     160726     337525    2543606    337525048
+  revealWithHint              1000     161103     174735     218671    174735484
+  settle (per call)              3     226114     708255     954007      2124766
+  seedLP                         1     621562     621562     621562       621562
+  claim (all)                 1000     198648     244082     295627    244082792
+  claim (above P, full)        718     261627     261734     295627    187925386
+  claim (at P, pro-rata)         2     262583     262583     262583       525166
+  claim (below P, refund)      280     198648     198686     209448     55632240
+  withdrawProceeds               1     103196     103196     103196       103196
+  sweepDust                      1     145170     145170     145170       145170
+  findHint (view, free via eth_call), max gas: 114150
+  bidder journey (mean commit + hinted reveal + claim): 537150 gas = $0.001380
+  bidder journey worst case (max commit + unhinted reveal + claim): 2991536 gas = $0.007689
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 3.02s (3.02s CPU time)
+
+Ran 1 test suite in 3.02s (3.02s CPU time): 1 tests passed, 0 failed, 0 skipped (1 total tests)
+
+exit 0 after 3 s
