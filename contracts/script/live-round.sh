@@ -4,6 +4,7 @@
 #   cd contracts && ./script/live-round.sh                       # new round, 3 bidders (about 12 minutes)
 #   cd contracts && SHOWCASE=1 ./script/live-round.sh            # showcase: 8 bidders, 20 minutes to bid
 #   cd contracts && ./script/live-round.sh live-round/<folder>   # resume one that stopped
+#   cd contracts && SWEEP_ONLY=1 ./script/live-round.sh live-round/<folder>   # just return a run's MON and tokens
 #
 # What it does, as the creator (your keystore) and the throwaway (burner) bidders it makes and funds:
 #   1. Funds each new bidder wallet from the creator (0.7 MON each; 0.4 MON in showcase mode).
@@ -119,6 +120,30 @@ wait_until() {
   while n=$(now); [ "$n" -lt "$t" ]; do printf '\r  waiting for %s: %3ss ' "$what" $((t - n)); sleep 5; done; printf '\r  %s reached.            \n' "$what"
 }
 
+# Bidders send their tokens (if any) and leftover MON back to the creator.
+sweep_all() {
+  say "Bidders return tokens and leftover MON to the creator"
+  local GP i v bal gl mon fee
+  GP=$(cast gas-price --rpc-url "$RPC")
+  for i in $IDX; do
+    v="SWEPT_$i"; [ -n "${!v:-}" ] && continue
+    if [ -n "${TOKEN:-}" ]; then
+      bal=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "${ADDR[$i]}" --rpc-url "$RPC" | awk '{print $1}')
+      [ "$bal" != 0 ] && send "tokens ${NAMES[$i]} → creator" --private-key "${KEY[$i]}" -- "$TOKEN" "transfer(address,uint256)" "$CREATOR" "$bal"
+    fi
+    sleep "$SPACING"
+    # Monad charges the whole gas limit, so the limit is fixed up front and the rest is sent.
+    mon=$(cast balance "${ADDR[$i]}" --rpc-url "$RPC")
+    if [ "$mon" = 0 ]; then put "SWEPT_$i" 1; continue; fi
+    gl=$(cast estimate "$CREATOR" --value 1 --from "${ADDR[$i]}" --rpc-url "$RPC" 2>/dev/null) || gl=21000
+    fee=$((gl * GP))
+    if [ "$(echo "$mon > $fee" | bc)" = 1 ]; then
+      send "MON ${NAMES[$i]} → creator" --private-key "${KEY[$i]}" -- "$CREATOR" --value "$(echo "$mon - $fee" | bc)" --gas-limit "$gl" --gas-price "$GP" --legacy
+    fi
+    put "SWEPT_$i" 1
+  done
+}
+
 # ── 1. Bidder wallets ──
 if [ ! -f "$STATE_DIR/bidders.json" ]; then
   say "Making $N burner bidder wallets"
@@ -129,6 +154,13 @@ for i in $IDX; do
   ADDR+=("$(jq -r ".[$i].address" "$STATE_DIR/bidders.json")"); KEY+=("$(jq -r ".[$i].private_key" "$STATE_DIR/bidders.json")")
   echo "  ${NAMES[$i]} ${ADDR[$i]}"
 done
+
+if [ "${SWEEP_ONLY:-0}" = 1 ]; then
+  [ -z "${ROUND:-}" ] || [ -n "${CLAIMED_0:-}" ] || die "round $ROUND is live: its bidders' deposits are in the engine; resume instead"
+  sweep_all
+  echo "Creator balance now $(cast balance "$CREATOR" --rpc-url "$RPC" --ether) MON"
+  exit 0
+fi
 
 if [ -z "${FUNDED:-}" ]; then
   say "Funding each bidder with $(cast from-wei "$FUND") MON"
@@ -150,7 +182,9 @@ fi
 if [ -z "${ROUND:-}" ]; then
   say "Approving the engine and opening the round"
   send "approve" "${CREATOR_ARGS[@]}" -- "$TOKEN" "approve(address,uint256)" "$ENGINE" "$(cast max-uint)"
-  START=$(now); COMMIT_END=$((START + COMMIT_SECS)); REVEAL_END=$((COMMIT_END + REVEAL_SECS))
+  # The engine wants at least 5 minutes of bidding counted from the block that includes openRound,
+  # so a minute of margin covers the time the transaction takes to land.
+  START=$(now); COMMIT_END=$((START + COMMIT_SECS + 60)); REVEAL_END=$((COMMIT_END + REVEAL_SECS))
   send "openRound" "${CREATOR_ARGS[@]}" -- "$ENGINE" \
     "openRound((uint8,address,uint128,uint96,uint96,uint96,uint96,uint64,uint64,bytes32,string,uint16,(address,uint16,uint24)[],uint64,string,uint16,uint64,uint64))" \
     "(0,$TOKEN,$SELL,$DEPOSIT,$MIN_BID,$TICK,$RESERVE,$COMMIT_END,$REVEAL_END,0x0000000000000000000000000000000000000000000000000000000000000000,\"\",$LP_BPS,[($ADAPTER,10000,3000)],0,DEFAULT,0,0,0)"
@@ -203,21 +237,7 @@ if [ -z "${WITHDRAWN:-}" ]; then
 fi
 
 # ── 6. Return tokens and MON to the creator ──
-say "Bidders return tokens and leftover MON to the creator"
-GP=$(cast gas-price --rpc-url "$RPC")
-for i in $IDX; do
-  v="SWEPT_$i"; [ -n "${!v:-}" ] && continue
-  bal=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "${ADDR[$i]}" --rpc-url "$RPC" | awk '{print $1}')
-  [ "$bal" != 0 ] && send "tokens ${NAMES[$i]} → creator" --private-key "${KEY[$i]}" -- "$TOKEN" "transfer(address,uint256)" "$CREATOR" "$bal"
-  sleep "$SPACING"
-  # Monad charges the whole gas limit, so the limit is fixed up front and the rest is sent.
-  gl=$(cast estimate "$CREATOR" --value 1 --from "${ADDR[$i]}" --rpc-url "$RPC")
-  mon=$(cast balance "${ADDR[$i]}" --rpc-url "$RPC"); fee=$((gl * GP))
-  if [ "$(echo "$mon > $fee" | bc)" = 1 ]; then
-    send "MON ${NAMES[$i]} → creator" --private-key "${KEY[$i]}" -- "$CREATOR" --value "$(echo "$mon - $fee" | bc)" --gas-limit "$gl" --gas-price "$GP" --legacy
-  fi
-  put "SWEPT_$i" 1
-done
+sweep_all
 
 # ── Summary ──
 {
