@@ -81,13 +81,21 @@ export async function readRequest(method, params) {
   return globalThis.ethereum.request({ method, params });
 }
 
+// Rounds of an earlier engine stay readable at #/v1/round/<id>: the route sets the version, and
+// engine() then reads that deployment (config `legacy`) instead of the current one.
+let version = null;
+export function setEngineVersion(v) { version = v || null; }
+export function engineVersion() { return version; }
+
 export function engine() {
   const net = network();
-  if (!isAddress(net.deployment.auctionEngine)) return null;
+  const old = version ? net.legacy?.[version] : null;
+  const address = old ? old.auctionEngine : net.deployment.auctionEngine;
+  if (!isAddress(address)) return null;
   return makeEngine({
     request: readRequest,
-    address: net.deployment.auctionEngine,
-    fromBlock: BigInt(net.fromBlock ?? 0),
+    address,
+    fromBlock: BigInt((old ? old.fromBlock : net.fromBlock) ?? 0),
     logChunk: net.logChunk,
   });
 }

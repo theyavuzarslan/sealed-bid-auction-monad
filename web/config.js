@@ -43,6 +43,10 @@ export default {
         locker: "0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d", // GoPlus UniV3LPLocker (decision 24)
         tokenFactory: "0x41F968CcA0a95d4289D356c24668b1c72e645DbF", // deployments/143.json
       },
+      // Earlier engines whose rounds stay readable at #/<version>/round/<id>.
+      legacy: {
+        v1: { auctionEngine: "0x0Fa0E7Db5b2c2146D77E41579030A842492E2120", fromBlock: 110869947 }, // tag mainnet-v1; round 1
+      },
     },
   },
 

@@ -3,7 +3,7 @@
 // merkle.js (allowlist), engine.js (calls) and store.js (localStorage).
 // Rules: the commitment COUNT and timing are public by design; revealed prices only after settlement.
 import cfg from "../../config.js";
-import { engine as getEngine, network, chainNow, syncClock } from "../net.js";
+import { engine as getEngine, engineVersion, network, chainNow, syncClock } from "../net.js";
 import { sendTx, signTypedData, feeOf } from "../wallet.js";
 import { ZERO32 } from "../engine.js";
 import { formatUnits, wireToPerToken, bidProblems } from "../bid.js";
@@ -46,7 +46,7 @@ export function renderRound(el, app, roundIdRaw) {
   let notifyTimer = null;
   let share = null; // { key, status: drawing | ready | error, url, blob, error }
   const me = () => app.account;
-  const roundUrl = () => `${location.origin}${location.pathname}#/round/${roundId}`;
+  const roundUrl = () => `${location.origin}${location.pathname}#/${engineVersion() ? engineVersion() + "/" : ""}round/${roundId}`;
   const ctx = () => ({ chainId: net.chainId, engine: eng.address, roundId, bidder: me() });
 
   el.innerHTML = `

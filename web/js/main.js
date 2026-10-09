@@ -2,7 +2,7 @@
 import cfg from "../config.js";
 import { hasWallet, hasInjectedWallet, connectWallet, currentAccount, walletChainId, switchChain, onWalletEvents, setProvider, usingPasskey } from "./wallet.js";
 import { passkeySupported, hasStoredPasskey, connectPasskey } from "./passkey-wallet.js";
-import { network, networkName, setNetworkName, loadDeployment, setDeploymentOverride } from "./net.js";
+import { network, networkName, setNetworkName, loadDeployment, setDeploymentOverride, setEngineVersion } from "./net.js";
 import { renderHome } from "./screens/home.js";
 import { renderCreator } from "./screens/creator.js";
 import { renderLaunchSimple } from "./screens/launch-simple.js";
@@ -196,11 +196,12 @@ function route() {
   screen = null;
   view.innerHTML = "";
   const hash = location.hash || "#/";
+  setEngineVersion(null);
   let m;
   try {
     if (/^#\/(host|launch)$/.test(hash)) { setNav("host"); screen = renderLaunchSimple(view, app); }
     else if (/^#\/(host\/advanced|creator)$/.test(hash)) { setNav("host"); screen = renderCreator(view, app); }
-    else if ((m = hash.match(/^#\/round\/(\d+)$/))) { setNav("play"); screen = renderRound(view, app, m[1]); }
+    else if ((m = hash.match(/^#\/(?:(v\d+)\/)?round\/(\d+)$/))) { setNav("play"); setEngineVersion(m[1]); screen = renderRound(view, app, m[2]); }
     else if (hash === "#/play") { setNav("play"); screen = renderHome(view, { scrollTo: "play" }); }
     else if (hash === "#/how") { setNav("how"); screen = renderHome(view, { scrollTo: "how" }); }
     else { setNav(null); screen = renderHome(view); }
