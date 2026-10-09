@@ -55,15 +55,16 @@ Everything below was run on 9 Oct 2026 on branch `contracts-v2` with forge 1.8.3
 | Static-analysis triage (6–9 Oct), [STATIC-ANALYSIS.md](contracts/STATIC-ANALYSIS.md) | v1 | One manual finding, O1: a bidder contract that rejects MON could block its round's creator proceeds and dust sweep. **Fixed in v2** (owed refunds) |
 | Independent read-only review of v2 (Codex, gpt-5.5) | v2 diff | No significant issue. 4 low/info: 2 fixed (exit windows capped at 30 days; the app shows owed refunds), 1 accepted, 1 documented ([CHANGES-v2.md](contracts/CHANGES-v2.md)) |
 | Second independent review of v2 (Codex, gpt-5.6-sol, high effort) | v2 diff since `mainnet-v1` | No critical, high or medium issue; reentrancy (including read-only), owed-refund isolation and every accounting path checked. 1 low fixed (ExitAuction now measures what the vault actually paid and records any surplus), 1 info documented (EIP-7702 wallets that refuse refunds must call `withdrawOwed`) |
+| Vault exit pre-mainnet review (9 Oct) | `ExitAuction`, `DemoVault`, `DeployExitMainnet.s.sol`, plus a full two-round rehearsal of `script/live-exit.sh` on a Monad mainnet fork against real WMON | 1 medium **fixed**: with an allowlisted exit auction, anyone could deposit but only allowlisted holders can ever exit, so an outsider's deposit could never come out. `DemoVault` now takes deposits only for holders proven to be on the allowlist (`proveHolder`), with tests. 2 info documented (below). The Codex pass hit its usage limit before reporting and will be re-run |
 | This pass | v2 money path | **No bug found in `src/`.** Gaps were in the tests: 193 mutants that survived the earlier suite are now killed by new tests, and two existing tests were found to stop silently after their first expected revert (below) |
 
 ### Tests
 
 | Run | Command (from `contracts/`) | Result |
 | --- | --- | --- |
-| Unit, fuzz (512 runs), invariants (32 × 128) | `forge test` | 151 passed, 0 failed, 3 skipped (the scale and fork suites, which need their own profile or an RPC); 16 s |
-| Same, under Monad execution rules | `forge test --network monad --hardfork monad:MonadTen` | 151 passed, 0 failed |
-| Deep | `FOUNDRY_PROFILE=deep forge test` | 151 passed; every fuzz test at 10,000 runs; invariants 500 runs × depth 256 = **128,000 calls, 0 reverts**; 548 s |
+| Unit, fuzz (512 runs), invariants (32 × 128) | `forge test` | 154 passed, 0 failed, 3 skipped (the scale and fork suites, which need their own profile or an RPC); 16 s |
+| Same, under Monad execution rules | `forge test --network monad --hardfork monad:MonadTen` | 154 passed, 0 failed |
+| Deep | `FOUNDRY_PROFILE=deep forge test` | 151 passed (before the 9 Oct vault fix); every fuzz test at 10,000 runs; invariants 500 runs × depth 256 = **128,000 calls, 0 reverts**; 548 s |
 | Monad mainnet fork | `forge test --match-path 'test/fork/*' --fork-url https://rpc2.monad.xyz --network monad --hardfork monad:MonadTen` | 19 passed, against the real Uniswap v3 factory and position manager and the GoPlus `UniV3LPLocker` on Monad mainnet (repricing, griefed pools, split fee tiers, lock terms) |
 | 1,000 bidders, Monad gas rules | `FOUNDRY_PROFILE=scale forge test --match-contract ScaleMockTest --network monad --hardfork monad:MonadTen -vv` | Pass: 1,000 bidders over 289 price levels; every allocation and payment checked against a reference computed from the raw bids; MON and tokens reconciled to the wei. Gas below |
 | 1,000 bidders on a Monad mainnet fork (real Uniswap v3 and GoPlus) | `FOUNDRY_PROFILE=scale forge test --match-contract ScaleForkTest --fork-url <rpc>` | v1 result in `reports/scale-fork-1000.txt` (pass). Not re-run on v2: the public RPCs refused this load on 9 Oct (rpc2: HTTP 429 rate limit; rpc1: no historical state). v2's engine changes on this path (the window minimum at open, the refund push) are covered by the mock-based 1,000-bidder run above and the fork tests |
@@ -158,6 +159,8 @@ Full triage: [contracts/STATIC-ANALYSIS.md](contracts/STATIC-ANALYSIS.md).
 - **A bidder contract that rejects MON** must call `withdrawOwed(to)` to collect its refund; a contract that can neither receive MON nor make that call cannot recover it. Ordinary wallets and passkey accounts are unaffected. A refund push forwards 50,000 gas; a smart-wallet receive hook that needs more is owed instead of paid, and withdraws the same way.
 - **Proofs are bounded** (see the table), and the symbolic engine is a preview feature of forge 1.8.
 - **LP seeding depends on external contracts** (Uniswap v3, the GoPlus locker) that are fixed at deployment and tested on a mainnet fork; if seeding stays blocked, `abandonLP` burns the LP's MON share after a grace period and token delivery opens.
+- **The vault's strategist is trusted.** It can mark every idle WMON not reserved for a settled or open exit as deployed, which leaves the next exit round without capacity until it unmarks it. Nothing can leave the vault (the strategy is simulated), so this delays exits, it cannot take funds.
+- **Anyone can open an exit round** once the previous one settled and `roundGapBlocks` passed. An open round reserves its capacity (the strategist cannot mark it as deployed) until it settles, at least the two 5-minute windows.
 - v1 is the live deployment until v2 is deployed; the v2 fixes do not apply to v1 rounds.
 
 ## Reproduce

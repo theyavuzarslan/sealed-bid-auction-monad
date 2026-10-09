@@ -4,6 +4,7 @@ pragma solidity 0.8.34;
 import {ERC4626} from "../vendor/openzeppelin/token/ERC20/extensions/ERC4626.sol";
 import {ERC20} from "../vendor/openzeppelin/token/ERC20/ERC20.sol";
 import {IERC20} from "../vendor/openzeppelin/token/ERC20/IERC20.sol";
+import {MerkleProofLib} from "../lib/MerkleProofLib.sol";
 
 /// @notice What the vault needs to know from its exit adapter: shares it has promised to redeem.
 interface IExitReserve {
@@ -11,6 +12,8 @@ interface IExitReserve {
     function vault() external view returns (address);
     /// @notice Shares the exit adapter has promised to redeem.
     function reservedShares() external view returns (uint256);
+    /// @notice Merkle root of the holders who may bid to exit; zero lets every holder bid.
+    function allowlistRoot() external view returns (bytes32);
 }
 
 /// @title DemoVault — ERC-4626 over WMON with an idle buffer and a simulated illiquid strategy
@@ -27,6 +30,10 @@ interface IExitReserve {
 ///      - The strategist cannot move into the strategy any idle WMON that backs shares the exit
 ///        adapter has promised to redeem (`IExitReserve.reservedShares`), so a settled exit can always
 ///        be paid.
+///      - With an allowlisted exit adapter, only allowlisted holders can ever exit, so only they may
+///        receive new shares: a deposit for anyone else could never come out. A holder is proven once
+///        (`proveHolder`, by anyone, with the holder's Merkle proof). Shares stay transferable; a holder
+///        who sends shares off the list strands only their own.
 ///      Inflation attack: `_decimalsOffset() = 3` (OpenZeppelin's virtual shares). A first-depositor
 ///      donation attack then costs the attacker about 1000× what it can take from a victim, so it
 ///      never pays. Shares have 21 decimals as a result. No seed deposit is needed.
@@ -42,6 +49,8 @@ contract DemoVault is ERC4626 {
     address public exitAuction;
     /// @notice WMON marked as deployed to the simulated strategy.
     uint256 public strategyAssets;
+    /// @notice Holders proven to be on the exit adapter's allowlist: with one set, the only receivers of new shares.
+    mapping(address => bool) public provenHolder;
 
     /// @notice The exit adapter was wired.
     event ExitAuctionSet(address indexed exitAuction);
@@ -49,6 +58,8 @@ contract DemoVault is ERC4626 {
     event MovedToStrategy(uint256 assets, uint256 strategyAssets);
     /// @notice `assets` WMON moved from the strategy mark back to idle, leaving `strategyAssets`.
     event MovedToIdle(uint256 assets, uint256 strategyAssets);
+    /// @notice `account` was proven to be on the exit adapter's allowlist.
+    event HolderProven(address indexed account);
 
     /// @param wmon        The asset (WMON).
     /// @param strategist_ May move the simulated strategy mark.
@@ -68,6 +79,20 @@ contract DemoVault is ERC4626 {
         require(IExitReserve(exitAuction_).vault() == address(this), "exit auction for another vault");
         exitAuction = exitAuction_;
         emit ExitAuctionSet(exitAuction_);
+    }
+
+    /// @notice Anyone: record that `account` is on the exit adapter's allowlist, so it may receive shares.
+    /// @param account The holder.
+    /// @param proof   Its Merkle proof against the exit adapter's `allowlistRoot`.
+    function proveHolder(address account, bytes32[] calldata proof) external {
+        address ea = exitAuction;
+        require(ea != address(0), "exit auction not set");
+        require(
+            MerkleProofLib.verify(proof, IExitReserve(ea).allowlistRoot(), MerkleProofLib.leafOf(account)),
+            "not on allowlist"
+        );
+        provenHolder[account] = true;
+        emit HolderProven(account);
     }
 
     // ─── Simulated strategy ─────────────────────────────────────────────
@@ -108,6 +133,16 @@ contract DemoVault is ERC4626 {
         return idleAssets() + strategyAssets;
     }
 
+    /// @notice Zero for a receiver that could never exit (see `proveHolder`).
+    function maxDeposit(address receiver) public view override returns (uint256) {
+        return _mayHold(receiver) ? super.maxDeposit(receiver) : 0;
+    }
+
+    /// @notice Zero for a receiver that could never exit (see `proveHolder`).
+    function maxMint(address receiver) public view override returns (uint256) {
+        return _mayHold(receiver) ? super.maxMint(receiver) : 0;
+    }
+
     /// @notice Only the exit adapter can withdraw, and at most the idle buffer.
     /// @dev `owner == address(0)` matters only while the exit adapter is unset (`exitAuction` is zero).
     function maxWithdraw(address owner) public view override returns (uint256) {
@@ -129,6 +164,14 @@ contract DemoVault is ERC4626 {
     /// @dev See DECIMALS_OFFSET.
     function _decimalsOffset() internal pure override returns (uint8) {
         return DECIMALS_OFFSET;
+    }
+
+    /// @dev Whether `account` may receive new shares: everyone while the exit adapter is unset (the
+    ///      deploy script wires it in the same broadcast) or open, otherwise proven holders only.
+    function _mayHold(address account) private view returns (bool) {
+        address ea = exitAuction;
+        if (ea == address(0) || provenHolder[account]) return true;
+        return IExitReserve(ea).allowlistRoot() == bytes32(0);
     }
 
     /// @dev `previewMint` of the reserved shares: the WMON they redeem for, rounded up.

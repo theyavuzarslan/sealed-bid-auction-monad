@@ -859,9 +859,40 @@ contract ExitAllowlistTest is ExitBase {
         bytes32 lb = MerkleProofLib.leafOf(bob);
         allowRoot = la < lb ? keccak256(abi.encode(la, lb)) : keccak256(abi.encode(lb, la));
         _deploy(type(uint128).max);
+        vault.proveHolder(alice, _one(lb));
+        vault.proveHolder(bob, _one(la));
         _join(alice, 10_000 ether);
         _join(bob, 10_000 ether);
-        _join(carol, 10_000 ether);
+    }
+
+    function _one(bytes32 x) internal pure returns (bytes32[] memory p) {
+        p = new bytes32[](1);
+        p[0] = x;
+    }
+
+    /// Only allowlisted holders can exit, so the vault takes deposits only for them: a deposit for
+    /// anyone else could never come out.
+    function test_Allowlist_OffListDepositRefused() public {
+        assertFalse(vault.provenHolder(carol));
+        assertEq(vault.maxDeposit(carol), 0);
+        assertEq(vault.maxMint(carol), 0);
+        vm.deal(carol, 10_000 ether);
+        vm.startPrank(carol);
+        wmon.deposit{value: 10_000 ether}();
+        wmon.approve(address(vault), 10_000 ether);
+        vm.expectRevert();
+        vault.deposit(10_000 ether, carol);
+        vm.expectRevert();
+        vault.mint(1e21, carol);
+        // A listed holder cannot deposit for carol either; carol cannot claim to be listed.
+        vm.stopPrank();
+        vm.expectRevert("not on allowlist");
+        vault.proveHolder(carol, _one(MerkleProofLib.leafOf(alice)));
+        vm.expectRevert("not on allowlist");
+        vault.proveHolder(carol, new bytes32[](0));
+        // A listed holder's deposits still work, for itself.
+        assertGt(vault.maxDeposit(alice), 0);
+        assertEq(wmon.balanceOf(carol), 10_000 ether, "carol keeps her WMON");
     }
 
     function test_Allowlist_OnlyListedHoldersBid() public {
@@ -877,6 +908,7 @@ contract ExitAllowlistTest is ExitBase {
         vm.prank(bob);
         auction.commit{value: DEPOSIT}(r, bytes32(uint256(2)), proofBob, "");
 
+        vm.deal(carol, DEPOSIT);
         vm.prank(carol);
         vm.expectRevert("not on allowlist");
         auction.commit{value: DEPOSIT}(r, bytes32(uint256(3)), proofAlice, "");

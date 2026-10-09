@@ -29,13 +29,14 @@ import {IERC20} from "../src/vendor/openzeppelin/token/ERC20/IERC20.sol";
 ///                    (DemoVault decimals offset 3): 1 WMON = 1e21 shares at the starting price.
 ///   MAX_EXIT_SHARES  default 1,000,000 WMON of shares = 1_000_000e21, per round
 ///   GAP_BLOCKS       default 5, blocks between a settlement and the next open
+///   OUT              deployments file name, default "<chainid>-exit" (deployments/<OUT>.json)
 ///
 /// Dry run (no broadcast; writes deployments/143-exit.json with simulated addresses, do not commit it):
 ///   ALLOWLIST_ROOT=0x… forge script script/DeployExitMainnet.s.sol --fork-url https://rpc2.monad.xyz \
 ///     --sender <deployer>
 /// Deploy:
 ///   ALLOWLIST_ROOT=0x… forge script script/DeployExitMainnet.s.sol --rpc-url https://rpc.monad.xyz \
-///     --account deployer --broadcast
+///     --account parity-deployer --broadcast
 contract DeployExitMainnet is Script {
     /// WMON on Monad mainnet (chain 143), as used by AuctionEngine's pools (SUBMISSION.md, Deployment).
     address constant WMON = 0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A;
@@ -76,6 +77,7 @@ contract DeployExitMainnet is Script {
         json = vm.serializeAddress("exit", "exitAuction", address(auction));
         json = vm.serializeAddress("exit", "strategist", strategist);
         json = vm.serializeBytes32("exit", "allowlistRoot", root);
-        vm.writeJson(json, string.concat("deployments/", vm.toString(block.chainid), "-exit.json"));
+        string memory out = vm.envOr("OUT", string.concat(vm.toString(block.chainid), "-exit"));
+        vm.writeJson(json, string.concat("deployments/", out, ".json"));
     }
 }

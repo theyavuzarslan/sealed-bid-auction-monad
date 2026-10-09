@@ -5,7 +5,7 @@ script = "script"
 test = "test"
 libs = ["../contracts/lib"]
 # Match contracts/foundry.toml: the auction pane runs the real AuctionEngine from ../contracts/src.
-solc_version = "0.8.28"
+solc_version = "0.8.34"
 optimizer = true
 optimizer_runs = 200
 via_ir = true

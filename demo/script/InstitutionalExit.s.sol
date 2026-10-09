@@ -164,6 +164,13 @@ contract InstitutionalExit is Script {
         s = vm.serializeAddress("stack", "exitAuction", address(auction));
         vm.writeJson(s, STACK);
 
+        // The vault takes deposits only for holders proven to be on the exit allowlist.
+        vm.startBroadcast(_key(0));
+        for (uint256 i; i < LPS; ++i) {
+            vault.proveHolder(_lpAddr(i), _proof(i));
+        }
+        vm.stopBroadcast();
+
         for (uint256 i; i < LPS; ++i) {
             vm.startBroadcast(_lpKey(i));
             wmon.deposit{value: l[i].holding}();

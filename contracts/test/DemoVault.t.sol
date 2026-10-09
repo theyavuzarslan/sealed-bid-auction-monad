@@ -49,6 +49,18 @@ contract DemoVaultTest is Test {
         );
     }
 
+    // ─── Who may receive shares ─────────────────────────────────────────
+
+    /// Unwired (the deploy script wires in the same broadcast) and with an open exit auction, anyone may deposit.
+    function test_Deposits_OpenWithoutAllowlist() public {
+        _deposit(victim, 1 ether);
+        vm.expectRevert("exit auction not set");
+        vault.proveHolder(victim, new bytes32[](0));
+        vault.setExitAuction(address(_auction()));
+        assertGt(vault.maxDeposit(attacker), 0);
+        _deposit(attacker, 1 ether);
+    }
+
     // ─── Idle buffer and strategy ───────────────────────────────────────
 
     function test_TotalAssetsCountsIdleAndStrategy() public {
