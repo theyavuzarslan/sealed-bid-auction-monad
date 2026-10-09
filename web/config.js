@@ -32,11 +32,11 @@ export default {
       // Public read RPC; writes still go through the wallet. rpc2 is used because it serves eth_getLogs over
       // 10,000 blocks per call (probed 8 Oct, CORS open); rpc1, rpc and rpc3 now cap it at 100 blocks.
       rpcUrl: "https://rpc2.monad.xyz",
-      fromBlock: 110869947, // AuctionEngine deploy block (6 Oct 2026); log scans start here
+      fromBlock: 111880616, // v2 AuctionEngine deploy block (9 Oct 2026); log scans start here
       logChunk: 10000, // blocks per eth_getLogs call; rpc2's limit. Use 100 for the other public RPCs
       deploymentUrls: [],
       deployment: {
-        auctionEngine: "0x0Fa0E7Db5b2c2146D77E41579030A842492E2120", // deployments/143.json
+        auctionEngine: "0x4Fd754Fa8EaE4E93349e5920B994ace64eaA8ae4", // v2, deployments/143.json; v1 is under legacy
         token: null, // no default token on mainnet: the creator enters theirs
         adapter: "0x71da6a936f1196881C236c62a084ddEB448772Ba", // UniswapV3Adapter, deployments/143-adapter.json
         positionManager: "0x7197E214c0b767cFB76Fb734ab638E2c192F4E53", // Uniswap v3 NonfungiblePositionManager
@@ -45,7 +45,7 @@ export default {
       },
       // Earlier engines whose rounds stay readable at #/<version>/round/<id>.
       legacy: {
-        v1: { auctionEngine: "0x0Fa0E7Db5b2c2146D77E41579030A842492E2120", fromBlock: 110869947 }, // tag mainnet-v1; round 1
+        v1: { auctionEngine: "0x0Fa0E7Db5b2c2146D77E41579030A842492E2120", fromBlock: 110869947 }, // tag mainnet-v1; round 1, deployments/143-v1.json
       },
     },
   },

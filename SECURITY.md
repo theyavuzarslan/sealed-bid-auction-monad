@@ -20,8 +20,8 @@ Also built and tested, but off the bidder money path: the Uniswap v3 adapter and
 
 | Version | State | Addresses |
 | --- | --- | --- |
-| v1 (git tag `mainnet-v1`) | Live on Monad mainnet (chain 143) since 6 Oct 2026 | `AuctionEngine` [`0x0Fa0E7Db5b2c2146D77E41579030A842492E2120`](https://monadscan.com/address/0x0Fa0E7Db5b2c2146D77E41579030A842492E2120), `TokenFactory` [`0x41F968CcA0a95d4289D356c24668b1c72e645DbF`](https://monadscan.com/address/0x41F968CcA0a95d4289D356c24668b1c72e645DbF), `UniswapV3Adapter` [`0x71da6a936f1196881C236c62a084ddEB448772Ba`](https://monadscan.com/address/0x71da6a936f1196881C236c62a084ddEB448772Ba) (details in [SUBMISSION.md](SUBMISSION.md)) |
-| v2 (branch `contracts-v2`) | Pending deployment | New engine address once deployed; v1's round 1 stays on the v1 engine. Changes: [contracts/CHANGES-v2.md](contracts/CHANGES-v2.md) |
+| v1 (git tag `mainnet-v1`) | Deployed on Monad mainnet 6 Oct 2026; holds round 1 (readable at `#/v1/round/1`) | `AuctionEngine` [`0x0Fa0E7Db5b2c2146D77E41579030A842492E2120`](https://monadscan.com/address/0x0Fa0E7Db5b2c2146D77E41579030A842492E2120), `TokenFactory` [`0x41F968CcA0a95d4289D356c24668b1c72e645DbF`](https://monadscan.com/address/0x41F968CcA0a95d4289D356c24668b1c72e645DbF), `UniswapV3Adapter` [`0x71da6a936f1196881C236c62a084ddEB448772Ba`](https://monadscan.com/address/0x71da6a936f1196881C236c62a084ddEB448772Ba) (details in [SUBMISSION.md](SUBMISSION.md)) |
+| **v2 (current)** | Live on Monad mainnet since 9 Oct 2026 (block 111880616); the app uses it | `AuctionEngine` [`0x4Fd754Fa8EaE4E93349e5920B994ace64eaA8ae4`](https://monadscan.com/address/0x4Fd754Fa8EaE4E93349e5920B994ace64eaA8ae4); reuses v1's `TokenFactory` and `UniswapV3Adapter`. Changes: [contracts/CHANGES-v2.md](contracts/CHANGES-v2.md) |
 
 The results below are for **v2** unless marked otherwise. v2 fixes four review items in v1 (minimum windows, a refund to a contract that rejects MON could block a round's settlement, ERC-4626 `redeem` equality, compiler); none of them lets anyone take another party's funds in v1.
 

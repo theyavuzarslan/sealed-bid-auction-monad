@@ -1,4 +1,4 @@
-# Contracts v2 (branch `contracts-v2`, not deployed)
+# Contracts v2 (live on Monad mainnet since 9 Oct 2026: `AuctionEngine` 0x4Fd754Fa8EaE4E93349e5920B994ace64eaA8ae4)
 
 The live Monad mainnet deployment is v1, tagged `mainnet-v1`. v2 fixes four items found in review. Every change is covered by tests; external function signatures and events of v1 are unchanged, and v2 only adds new ones.
 
