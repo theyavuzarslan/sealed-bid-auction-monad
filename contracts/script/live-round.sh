@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # One real Even round on Monad mainnet, start to finish, signed by your Foundry keystore.
 #
-#   cd contracts && ./script/live-round.sh                       # new round (about 10 minutes)
+#   cd contracts && ./script/live-round.sh                       # new round, 3 bidders (about 12 minutes)
+#   cd contracts && SHOWCASE=1 ./script/live-round.sh            # showcase: 8 bidders, 20 minutes to bid
 #   cd contracts && ./script/live-round.sh live-round/<folder>   # resume one that stopped
 #
-# What it does, as the creator (your keystore) and three throwaway bidders it makes and funds:
-#   1. Funds three new bidder wallets with 0.7 MON each from the creator.
+# What it does, as the creator (your keystore) and the throwaway (burner) bidders it makes and funds:
+#   1. Funds each new bidder wallet from the creator (0.7 MON each; 0.4 MON in showcase mode).
 #   2. Creates a fixed-supply test token with the TokenFactory, approves the engine, opens a Degen round.
 #   3. Each bidder commits a sealed bid with the uniform 0.5 MON deposit.
 #   4. After the commit window, each bidder reveals.
@@ -57,6 +58,22 @@ FUND=700000000000000000            # 0.7 MON per bidder: deposit + gas
 NAMES=(early crowd-a crowd-b)
 PRICES=(2000000000000 1500000000000 1200000000000)
 AMOUNTS=(200000000000000000000000 250000000000000000000000 200000000000000000000000)
+if [ "${SHOWCASE:-0}" = 1 ]; then
+  # Eight burner bidders with a spread of prices and sizes. Demand (560,000) exceeds supply (500,000):
+  # the round clears at 0.0000013 MON per token, everyone above pays that, ece is filled pro-rata and
+  # fatih (below the price) gets a full refund. Bidding stays open 20 minutes so people can join from the site.
+  NAMES=(whale early-bot ana ben cem deniz ece fatih)
+  PRICES=(2500000000000 2400000000000 2000000000000 1800000000000 1600000000000 1500000000000 1300000000000 1100000000000)
+  AMOUNTS=(100000000000000000000000 90000000000000000000000 80000000000000000000000 70000000000000000000000 60000000000000000000000 60000000000000000000000 50000000000000000000000 50000000000000000000000)
+  DEPOSIT=300000000000000000       # 0.3 MON each
+  FUND=400000000000000000          # 0.4 MON each: deposit + gas
+  COMMIT_SECS=${COMMIT_SECS_SHOWCASE:-1200}
+  REVEAL_SECS=${REVEAL_SECS_SHOWCASE:-600}
+  NAME=${SHOWCASE_NAME:-Even Showcase}
+  SYMBOL=${SHOWCASE_SYMBOL:-EVSHOW}
+fi
+N=${#NAMES[@]}
+IDX=$(seq 0 $((N - 1)))
 
 say() { printf '\n\033[1;35m▸ %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
@@ -104,18 +121,18 @@ wait_until() {
 
 # ── 1. Bidder wallets ──
 if [ ! -f "$STATE_DIR/bidders.json" ]; then
-  say "Making three throwaway bidder wallets"
-  ( umask 077; for _ in 1 2 3; do cast wallet new --json | jq -c '.data[0] | {address, private_key}'; done | jq -s . > "$STATE_DIR/bidders.json" )
+  say "Making $N burner bidder wallets"
+  ( umask 077; for _ in $IDX; do cast wallet new --json | jq -c '.data[0] | {address, private_key}'; done | jq -s . > "$STATE_DIR/bidders.json" )
 fi
 ADDR=(); KEY=()
-for i in 0 1 2; do
+for i in $IDX; do
   ADDR+=("$(jq -r ".[$i].address" "$STATE_DIR/bidders.json")"); KEY+=("$(jq -r ".[$i].private_key" "$STATE_DIR/bidders.json")")
   echo "  ${NAMES[$i]} ${ADDR[$i]}"
 done
 
 if [ -z "${FUNDED:-}" ]; then
-  say "Funding each bidder with 0.7 MON"
-  for i in 0 1 2; do
+  say "Funding each bidder with $(cast from-wei "$FUND") MON"
+  for i in $IDX; do
     if [ "$(cast balance "${ADDR[$i]}" --rpc-url "$RPC")" -lt "$FUND" ]; then
       sleep "$SPACING"; send "fund ${NAMES[$i]}" "${CREATOR_ARGS[@]}" -- "${ADDR[$i]}" --value "$FUND"
     fi
@@ -143,7 +160,7 @@ if [ -z "${ROUND:-}" ]; then
 fi
 
 # ── 3. Sealed bids ──
-for i in 0 1 2; do
+for i in $IDX; do
   v="COMMITTED_$i"; [ -n "${!v:-}" ] && continue
   [ "$(now)" -lt "$COMMIT_END" ] || die "commit window closed before ${NAMES[$i]} bid"
   s="SALT_$i"; [ -n "${!s:-}" ] || put "SALT_$i" "0x$(openssl rand -hex 32)"
@@ -157,7 +174,7 @@ done
 # ── 4. Reveal ──
 say "Bidding closes, then the reveal window opens"
 wait_until "$COMMIT_END" "end of bidding"
-for i in 0 1 2; do
+for i in $IDX; do
   v="REVEALED_$i"; [ -n "${!v:-}" ] && continue
   s="SALT_$i"
   send "reveal ${NAMES[$i]}" --private-key "${KEY[$i]}" -- "$ENGINE" "reveal(uint256,uint96,uint96,bytes32)" "$ROUND" "${PRICES[$i]}" "${AMOUNTS[$i]}" "${!s}"
@@ -175,7 +192,7 @@ if [ -z "${SEEDED:-}" ]; then
   send "seedLP (Uniswap + GoPlus)" "${CREATOR_ARGS[@]}" -- "$ENGINE" "seedLP(uint256)" "$ROUND"
   put SEED_TX "$(jq -r .transactionHash <<<"$LAST_RECEIPT")"; put SEEDED 1
 fi
-for i in 0 1 2; do
+for i in $IDX; do
   v="CLAIMED_$i"; [ -n "${!v:-}" ] && continue
   send "claim ${NAMES[$i]}" --private-key "${KEY[$i]}" -- "$ENGINE" "claim(uint256)" "$ROUND"
   put "CLAIMED_$i" 1
@@ -188,7 +205,7 @@ fi
 # ── 6. Return tokens and MON to the creator ──
 say "Bidders return tokens and leftover MON to the creator"
 GP=$(cast gas-price --rpc-url "$RPC")
-for i in 0 1 2; do
+for i in $IDX; do
   v="SWEPT_$i"; [ -n "${!v:-}" ] && continue
   bal=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "${ADDR[$i]}" --rpc-url "$RPC" | awk '{print $1}')
   [ "$bal" != 0 ] && send "tokens ${NAMES[$i]} → creator" --private-key "${KEY[$i]}" -- "$TOKEN" "transfer(address,uint256)" "$CREATOR" "$bal"
