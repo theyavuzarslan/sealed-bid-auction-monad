@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Even launch film</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=block">
+<style>
+/* A 30-second launch film, rendered frame by frame: window.__seek(t) poses every element for time t.
+   Nothing animates by itself (no CSS transitions), so any frame renders identically on its own. */
+:root {
+  --bg: #07050f; --ink: #f6f3ff; --dim: #8d84ad; --faint: #2a2244;
+  --purple: #836ef9; --purple-2: #a99bff; --lime: #c6f24e; --berry: #e0307f;
+  --serif: "Instrument Serif", serif; --sans: "Geist", sans-serif; --mono: "Geist Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--ink); }
+body { font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+.stage { position: absolute; inset: 0; overflow: hidden; }
+.layer { position: absolute; inset: 0; opacity: 0; will-change: opacity, transform; }
+.center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.serif { font-family: var(--serif); font-weight: 400; letter-spacing: -0.02em; line-height: 0.98; }
+.mono { font-family: var(--mono); }
+.kicker { font-family: var(--mono); font-size: 22px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
+.glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0; }
+.word { display: inline-block; opacity: 0; }
+
+/* 1 · the race */
+#s1 h1 { font-size: 168px; }
+#s1 .l2 { color: var(--ink); }
+#s1 .strike { position: absolute; height: 10px; background: var(--berry); left: 0; top: 54%; width: 0; border-radius: 5px; }
+
+/* 2 · the mempool */
+#s2 .feed { position: absolute; left: 50%; top: 0; width: 1240px; margin-left: -620px; font-family: var(--mono); font-size: 30px; }
+#s2 .row { display: grid; grid-template-columns: 210px 1fr 220px 190px; gap: 24px; padding: 14px 28px; border-bottom: 1px solid #1a1430; color: #6f6690; white-space: nowrap; }
+#s2 .row.win { color: var(--ink); background: linear-gradient(90deg, rgba(224,48,127,0.22), rgba(224,48,127,0)); border-left: 4px solid var(--berry); }
+#s2 .row .t { color: inherit; }
+#s2 .cap { position: absolute; left: 0; right: 0; bottom: 120px; }
+#s2 .cap h2 { font-size: 112px; }
+#s2 .shade { position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg) 0%, rgba(7,5,15,0) 22%, rgba(7,5,15,0) 50%, var(--bg) 78%); }
+
+/* 3 · the question */
+#s3 h1 { font-size: 150px; max-width: 1500px; }
+#s3 em { font-style: italic; color: var(--purple-2); }
+
+/* 4 · the mark */
+#s4 .coin { width: 520px; height: 520px; background: url(../../web/assets/even-coin-transparent.png) center/contain no-repeat; clip-path: inset(0 0 6% 0); }
+#s4 .name { font-family: var(--serif); font-size: 230px; letter-spacing: -0.03em; margin-top: -10px; }
+
+/* 5 · seal */
+#s5 .title { position: absolute; left: 160px; top: 120px; }
+#s5 .title h2 { font-size: 150px; }
+#s5 .title p { font-size: 34px; color: var(--dim); margin-top: 26px; max-width: 640px; line-height: 1.35; }
+#s5 .card { position: absolute; left: 1000px; top: 96px; width: 760px; padding: 36px 44px; border-radius: 28px; background: linear-gradient(180deg, #171030, #100b22); border: 1px solid #2c2350; box-shadow: 0 40px 120px rgba(0,0,0,0.55); }
+#s5 .card .lab { font-family: var(--mono); font-size: 20px; letter-spacing: 0.16em; color: var(--dim); text-transform: uppercase; }
+#s5 .card .val { font-size: 56px; font-weight: 500; letter-spacing: -0.02em; margin: 6px 0 22px; font-variant-numeric: tabular-nums; }
+#s5 .card .hash { font-family: var(--mono); font-size: 30px; min-height: 122px; color: var(--purple-2); word-break: break-all; line-height: 1.35; }
+#s5 .card .btn { margin-top: 24px; height: 84px; border-radius: 46px; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 600; }
+#s5 .grid { position: absolute; left: 160px; right: 160px; bottom: 64px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 22px; }
+#s5 .chip { height: 128px; border-radius: 20px; background: #130d26; border: 1px solid #2c2350; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 22px; opacity: 0; }
+#s5 .chip .h { font-family: var(--mono); font-size: 21px; color: var(--purple-2); white-space: nowrap; }
+#s5 .chip .d { font-family: var(--mono); font-size: 19px; color: var(--dim); white-space: nowrap; }
+
+/* 6 · reveal and clear */
+#s6 .title { position: absolute; left: 160px; top: 110px; }
+#s6 .title h2 { font-size: 132px; }
+#s6 .title p { font-size: 32px; color: var(--dim); margin-top: 22px; }
+#s6 svg { position: absolute; left: 160px; top: 380px; width: 1600px; height: 600px; overflow: visible; }
+#s6 .price { position: absolute; right: 160px; top: 120px; text-align: right; }
+#s6 .price .n { font-family: var(--serif); font-size: 140px; color: var(--lime); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+#s6 .price .u { font-family: var(--mono); font-size: 24px; letter-spacing: 0.18em; color: var(--dim); text-transform: uppercase; margin-top: 6px; }
+
+/* 7 · one price */
+#s7 h1 { font-size: 176px; }
+#s7 p { font-size: 40px; color: var(--dim); margin-top: 34px; }
+
+/* 8 · proof */
+#s8 .kicker { margin-bottom: 40px; }
+#s8 .stats { display: flex; gap: 120px; }
+#s8 .stat .n { font-family: var(--serif); font-size: 170px; line-height: 1; }
+#s8 .stat .l { font-family: var(--mono); font-size: 24px; letter-spacing: 0.16em; color: var(--dim); text-transform: uppercase; margin-top: 14px; }
+#s8 .stat:nth-child(2) .n { color: var(--lime); }
+
+/* 9 · end card */
+#s9 .row { display: flex; align-items: center; gap: 44px; }
+#s9 .coin { width: 260px; height: 260px; background: url(../../web/assets/even-coin-transparent.png) center/contain no-repeat; clip-path: inset(0 0 6% 0); }
+#s9 .name { font-family: var(--serif); font-size: 220px; letter-spacing: -0.03em; }
+#s9 .line { font-size: 46px; margin-top: 30px; }
+#s9 .url { font-family: var(--mono); font-size: 30px; color: var(--purple-2); margin-top: 26px; letter-spacing: 0.04em; }
+#s9 .fine { position: absolute; left: 0; right: 0; bottom: 70px; font-family: var(--mono); font-size: 19px; color: #5b5379; letter-spacing: 0.08em; }
+
+.grain { position: absolute; inset: -50%; opacity: 0.06; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%); pointer-events: none; }
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="glow" id="glowA" style="width:1100px;height:1100px;background:#5b3df5;left:410px;top:-10px"></div>
+  <div class="glow" id="glowB" style="width:900px;height:900px;background:#c6f24e;left:510px;top:90px"></div>
+
+  <section class="layer center" id="s1">
+    <h1 class="serif"><span class="word" id="w1a">Every</span> <span class="word" id="w1b">token</span> <span class="word" id="w1c">launch</span></h1>
+    <h1 class="serif l2" style="position:relative"><span class="word" id="w1d">is a</span> <span class="word" id="w1e" style="position:relative">race.<span class="strike" id="strike"></span></span></h1>
+  </section>
+
+  <section class="layer" id="s2">
+    <div class="feed" id="feed"></div>
+    <div class="shade"></div>
+    <div class="cap center"><h2 class="serif" id="s2cap">Won by whoever is <em style="font-style:italic;color:var(--berry)">fastest</em>.</h2></div>
+  </section>
+
+  <section class="layer center" id="s3">
+    <h1 class="serif"><span class="word" id="w3a">What if</span> <span class="word" id="w3b">being first</span><br><span class="word" id="w3c"><em>bought nothing?</em></span></h1>
+  </section>
+
+  <section class="layer center" id="s4">
+    <div class="coin" id="coin4"></div>
+    <div class="name" id="name4">Even</div>
+  </section>
+
+  <section class="layer" id="s5">
+    <div class="title"><div class="kicker" id="k5">01 · Seal</div><h2 class="serif" id="h5" style="margin-top:22px">Seal your bid.</h2>
+      <p id="p5">Your price and size become a hash. Everyone locks the same deposit, so your deposit gives nothing away.</p></div>
+    <div class="card" id="card5">
+      <div class="lab">Max price per token</div><div class="val" id="v5price">0.0000025 MON</div>
+      <div class="lab">Amount</div><div class="val" id="v5amt">100,000 EVTRY</div>
+      <div class="lab" id="lab5hash" style="opacity:0">Sealed</div><div class="hash" id="v5hash" style="opacity:0"></div>
+      <div class="btn" id="btn5">Seal bid · lock 0.3 MON</div>
+    </div>
+    <div class="grid" id="grid5"></div>
+  </section>
+
+  <section class="layer" id="s6">
+    <div class="title"><div class="kicker">02 · Reveal &nbsp;·&nbsp; 03 · Clear</div><h2 class="serif" style="margin-top:22px" id="h6">Then everyone reveals.</h2>
+      <p id="p6">Bids stack from the highest price down until they cover the supply.</p></div>
+    <div class="price" id="price6"><div class="n" id="n6">0.0000013</div><div class="u">MON per token · one price</div></div>
+    <svg id="chart" viewBox="0 0 1600 600"></svg>
+  </section>
+
+  <section class="layer center" id="s7">
+    <h1 class="serif"><span class="word" id="w7a">One price.</span> <span class="word" id="w7b"><em style="color:var(--lime)">For everyone.</em></span></h1>
+    <p id="p7">Bid early or bid late: every winner pays the same.</p>
+  </section>
+
+  <section class="layer center" id="s8">
+    <div class="kicker" id="k8">Live on Monad mainnet · scripted test round</div>
+    <div class="stats">
+      <div class="stat" id="st1"><div class="n" id="n8a">8</div><div class="l">sealed bids</div></div>
+      <div class="stat" id="st2"><div class="n">1</div><div class="l">clearing price</div></div>
+      <div class="stat" id="st3"><div class="n">0</div><div class="l">MON left in the engine</div></div>
+    </div>
+  </section>
+
+  <section class="layer center" id="s9">
+    <div class="row"><div class="coin" id="coin9"></div><div class="name">Even</div></div>
+    <div class="line" id="line9">Fair launches on Monad.</div>
+    <div class="url" id="url9">even-monad.vercel.app</div>
+    <div class="fine">Snipe-resistant: submission timing no longer determines price.</div>
+  </section>
+
+  <div class="flash" id="flash"></div>
+  <div class="vignette"></div>
+  <div class="grain" id="grain"></div>
+</div>
+
+<script>
+// ── Timing helpers ────────────────────────────────────────────────
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));            // 0..1 progress of t through [a, b]
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const easeOutExpo = x => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const easeInOut = x => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const lerp = (a, b, x) => a + (b - a) * x;
+const $ = id => document.getElementById(id);
+// A layer is visible on [a, b], with `fi` seconds of fade in and `fo` of fade out (0 = hard cut).
+function layer(el, t, a, b, fi = 0, fo = 0) {
+  let o = t >= a && t < b ? 1 : 0;
+  if (fi && t >= a && t < a + fi) o = easeOut(seg(t, a, a + fi));
+  if (fo && t >= b - fo && t < b) o = Math.min(o, 1 - seg(t, b - fo, b));
+  el.style.opacity = o;
+  return o;
+}
+// A word rises into place over 0.45 s from time a.
+function rise(el, t, a, dist = 40, dur = 0.45) {
+  const p = easeOutExpo(seg(t, a, a + dur));
+  el.style.opacity = p;
+  el.style.transform = `translateY(${(1 - p) * dist}px)`;
+  el.style.filter = `blur(${(1 - p) * 8}px)`;
+}
+// Deterministic pseudo-random numbers, so every render of a frame is the same.
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+const hex = (r, n) => Array.from({ length: n }, () => '0123456789abcdef'[Math.floor(r() * 16)]).join('');
+
+// ── Static content built once ─────────────────────────────────────
+const R = rng(42);
+const feedRows = [];
+for (let i = 0; i < 40; i++) {
+  const win = i === 23;
+  const amt = win ? '40.0 MON' : (R() * 3 + 0.1).toFixed(2) + ' MON';
+  feedRows.push(`<div class="row${win ? ' win' : ''}"><span>0x${hex(R, 4)}…${hex(R, 3)}</span><span class="t">buy ${win ? 'ALL' : Math.floor(R() * 90 + 5) + 'k'} $LAUNCH</span><span>${amt}</span><span>${win ? 'block +0' : '+' + (R() * 900 + 40).toFixed(0) + ' ms'}</span></div>`);
+}
+$('feed').innerHTML = feedRows.join('');
+
+const HASH = '0x7f3a91c4e2b85d06a1f9c3e7b24d58a0c6e19f42b7d3a85e0c4f1b96a2d7e3c51';
+const bidders = ['whale', 'early-bot', 'ana', 'ben', 'cem', 'deniz', 'ece', 'fatih'];
+const R2 = rng(7);
+$('grid5').innerHTML = bidders.map(() => `<div class="chip"><div class="h">0x${hex(R2, 4)}…${hex(R2, 3)}</div><div class="d">0.3 MON locked</div></div>`).join('');
+
+// The real round: eight bids (price in micro-MON per token, amount in thousand tokens), supply 500k.
+const BIDS = [[2.5, 100], [2.4, 90], [2.0, 80], [1.8, 70], [1.6, 60], [1.5, 60], [1.3, 50], [1.1, 50]];
+const SUPPLY = 500, P = 1.3, W = 1600, H = 560, XMAX = 600, YMAX = 2.8;
+const x = q => (q / XMAX) * W, y = p => H - (p / YMAX) * H;
+let cum = 0, bars = '';
+BIDS.forEach(([p, q], i) => {
+  const filled = p > P ? q : p === P ? SUPPLY - cum : 0;
+  bars += `<rect class="bar" data-i="${i}" x="${x(cum) + 3}" y="${y(p)}" width="${x(q) - 6}" height="${H - y(p)}" rx="6"
+    fill="${p >= P ? '#836ef9' : '#3a2f63'}" />`;
+  if (p === P) bars += `<rect class="bar" data-i="${i}" x="${x(cum) + 3}" y="${y(p)}" width="${x(SUPPLY - cum) - 6}" height="${H - y(p)}" rx="6" fill="#a99bff" />`;
+  bars += `<text class="blab" data-i="${i}" x="${x(cum) + x(q) / 2}" y="${y(p) - 16}" text-anchor="middle" font-family="Geist Mono" font-size="22" fill="#8d84ad">${bidders[i]}</text>`;
+  cum += q;
+});
+$('chart').innerHTML = `<line x1="0" y1="${H}" x2="${W}" y2="${H}" stroke="#2a2244" stroke-width="2"/>
+  ${bars}
+  <line id="supply" x1="${x(SUPPLY)}" y1="-10" x2="${x(SUPPLY)}" y2="${H}" stroke="#f6f3ff" stroke-width="3" stroke-dasharray="10 10"/>
+  <text id="supplyLab" x="${x(SUPPLY) + 14}" y="12" font-family="Geist Mono" font-size="22" fill="#f6f3ff" letter-spacing="3">SUPPLY 500,000</text>
+  <line id="pline" x1="0" y1="${y(P)}" x2="0" y2="${y(P)}" stroke="#c6f24e" stroke-width="6" stroke-linecap="round"/>
+  <text id="plab" x="12" y="${y(P) - 18}" font-family="Geist Mono" font-size="24" fill="#c6f24e" letter-spacing="3">ONE PRICE</text>`;
+
+// ── The film ──────────────────────────────────────────────────────
+const S = { s1: [0, 4], s2: [4, 7.6], s3: [8, 10], s4: [10, 12.5], s5: [12.5, 17], s6: [17, 22.5], s7: [22.5, 25], s8: [25, 27.5], s9: [27.5, 30] };
+function seek(t) {
+  // Background glows breathe with the cut.
+  const gA = t < 8 ? 0.12 : t < 10 ? 0.05 : t < 12.5 ? 0.55 : t < 27.5 ? 0.22 : 0.45;
+  $('glowA').style.opacity = gA * (0.9 + 0.1 * Math.sin(t * 1.3));
+  $('glowA').style.transform = `translate(${Math.sin(t * 0.21) * 140}px, ${Math.cos(t * 0.17) * 90}px)`;
+  $('glowB').style.opacity = t >= 22.5 && t < 25 ? 0.14 : t >= 17 && t < 22.5 ? 0.05 * seg(t, 19, 21) : 0;
+  $('grain').style.transform = `translate(${(Math.floor(t * 24) * 37) % 200 - 100}px, ${(Math.floor(t * 24) * 53) % 200 - 100}px)`;
+
+  // 1 · "Every token launch is a race." (ticks on each beat; the struck word lands on beat 6)
+  layer($('s1'), t, ...S.s1, 0, 0.25);
+  rise($('w1a'), t, 0.25); rise($('w1b'), t, 0.55); rise($('w1c'), t, 0.85);
+  rise($('w1d'), t, 1.6); rise($('w1e'), t, 2.0, 60);
+  $('strike').style.width = (easeInOut(seg(t, 3.0, 3.4)) * 100) + '%';
+
+  // 2 · the mempool scrolls, one wallet takes everything in block +0
+  layer($('s2'), t, ...S.s2, 0.15, 0);
+  const sp = seg(t, 4, 7.6);
+  $('feed').style.transform = `translateY(${lerp(80, -1500, easeInOut(sp))}px)`;
+  const capP = easeOutExpo(seg(t, 5.6, 6.1));
+  $('s2cap').style.opacity = capP; $('s2cap').style.transform = `translateY(${(1 - capP) * 30}px)`;
+  // a glitch shake at the end
+  const g = t > 7.1 && t < 7.6 ? Math.sin(t * 190) * 14 : 0;
+  $('s2').style.transform = `translateX(${g}px)`;
+
+  // 3 · the question (7.6–8.0 is silence and black)
+  layer($('s3'), t, ...S.s3, 0, 0.2);
+  rise($('w3a'), t, 8.05); rise($('w3b'), t, 8.45); rise($('w3c'), t, 9.0, 50);
+
+  // 4 · the mark: the coin lands on the downbeat with a flash
+  layer($('s4'), t, ...S.s4, 0, 0.3);
+  const cp = easeOutExpo(seg(t, 10, 10.9));
+  $('coin4').style.transform = `scale(${lerp(0.55, 1, cp)}) rotate(${lerp(-14, 0, cp)}deg)`;
+  $('coin4').style.opacity = clamp(cp * 1.4);
+  const np = easeOutExpo(seg(t, 10.45, 11.1));
+  $('name4').style.opacity = np; $('name4').style.letterSpacing = lerp(0.08, -0.03, np) + 'em';
+  $('flash').style.opacity = t >= 10 && t < 10.35 ? 0.55 * (1 - seg(t, 10, 10.35)) : 0;
+
+  // 5 · seal: the form types, the bid collapses into a hash, eight identical sealed chips appear
+  layer($('s5'), t, ...S.s5, 0.2, 0.2);
+  rise($('k5'), t, 12.6); rise($('h5'), t, 12.75, 50); rise($('p5'), t, 13.1);
+  const cardIn = easeOutExpo(seg(t, 12.7, 13.4));
+  $('card5').style.opacity = cardIn; $('card5').style.transform = `translateY(${(1 - cardIn) * 60}px) scale(${lerp(0.96, 1, cardIn)})`;
+  const sealP = seg(t, 14.2, 14.7);                       // the button press
+  $('btn5').style.transform = `scale(${t > 14.1 && t < 14.3 ? 0.95 : 1})`;
+  $('btn5').style.background = sealP > 0 ? '#2a2244' : '#836ef9';
+  $('btn5').textContent = sealP > 0 ? 'Sealed · 0.3 MON locked' : 'Seal bid · lock 0.3 MON';
+  const blur = easeInOut(sealP);
+  for (const id of ['v5price', 'v5amt']) { $(id).style.filter = `blur(${blur * 14}px)`; $(id).style.opacity = 1 - blur * 0.7; }
+  const nHash = Math.floor(seg(t, 14.4, 15.0) * HASH.length);
+  $('v5hash').textContent = HASH.slice(0, nHash); $('v5hash').style.opacity = nHash ? 1 : 0;
+  $('lab5hash').style.opacity = nHash ? 1 : 0;
+  [...$('grid5').children].forEach((c, i) => {
+    const p = easeOutExpo(seg(t, 15.0 + i * 0.12, 15.5 + i * 0.12));
+    c.style.opacity = p; c.style.transform = `translateY(${(1 - p) * 30}px)`;
+  });
+
+  // 6 · reveal and clear: bars rise in price order, the supply line drops in, the price line sweeps
+  layer($('s6'), t, ...S.s6, 0.2, 0.15);
+  [...document.querySelectorAll('#chart .bar')].forEach(b => {
+    const i = +b.dataset.i, p = easeOutExpo(seg(t, 17.5 + i * 0.22, 18.1 + i * 0.22));
+    b.style.transformOrigin = `0 ${H}px`; b.style.transform = `scaleY(${p})`; b.style.transformBox = 'view-box';
+    b.style.opacity = p;
+  });
+  document.querySelectorAll('#chart .blab').forEach(b => { const i = +b.dataset.i; b.style.opacity = easeOut(seg(t, 17.8 + i * 0.22, 18.2 + i * 0.22)); });
+  const sup = easeOut(seg(t, 19.6, 20.0));
+  $('supply').style.opacity = sup; $('supplyLab').style.opacity = sup;
+  const pl = easeInOut(seg(t, 20.2, 21.0));
+  $('pline').setAttribute('x2', lerp(0, W, pl)); $('plab').style.opacity = easeOut(seg(t, 20.6, 21.0));
+  const pr = easeOutExpo(seg(t, 20.8, 21.4));
+  $('price6').style.opacity = pr; $('price6').style.transform = `translateY(${(1 - pr) * 30}px)`;
+  const h6 = t < 20.2 ? 'Then everyone reveals.' : 'One price clears it.';
+  const swap = t >= 20.0 && t < 20.4 ? Math.abs(t - 20.2) / 0.2 : 1;   // a quick dip through the text change
+  $('h6').style.opacity = swap; $('p6').style.opacity = swap;
+  if ($('h6').textContent !== h6) $('h6').textContent = h6;
+  $('p6').textContent = t < 20.2 ? 'Bids stack from the highest price down until they cover the supply.' : 'Above it: filled in full. At it: shared pro rata. Below it: refunded.';
+
+  // 7 · the line
+  layer($('s7'), t, ...S.s7, 0.15, 0.2);
+  rise($('w7a'), t, 22.6, 50); rise($('w7b'), t, 23.2, 50); rise($('p7'), t, 23.8);
+
+  // 8 · proof from mainnet
+  layer($('s8'), t, ...S.s8, 0.15, 0.2);
+  rise($('k8'), t, 25.05); rise($('st1'), t, 25.3, 60); rise($('st2'), t, 25.6, 60); rise($('st3'), t, 25.9, 60);
+  $('n8a').textContent = String(Math.max(1, Math.round(easeOut(seg(t, 25.3, 25.9)) * 8)));
+
+  // 9 · end card
+  layer($('s9'), t, S.s9[0], 31, 0.3, 0);
+  const ep = easeOutExpo(seg(t, 27.6, 28.4));
+  $('coin9').style.transform = `scale(${lerp(0.7, 1, ep)}) rotate(${lerp(-10, 0, ep)}deg)`;
+  rise($('line9'), t, 28.3); rise($('url9'), t, 28.6);
+  const out = seg(t, 29.55, 30);                       // fade to black on the last half second
+  $('stage').style.opacity = 1 - out * 0.999;
+}
+
+window.__seek = seek;
+document.fonts.ready.then(() => {
+  const img = new Image();
+  img.onload = () => { seek(0); window.__ready = { ok: document.fonts.check('80px "Instrument Serif"') && document.fonts.check('20px "Geist Mono"') }; };
+  img.onerror = () => { window.__ready = { ok: false }; };
+  img.src = '../../web/assets/even-coin-transparent.png';
+});
+// Preview in a browser: ?t=12.3 poses one frame; ?play plays in real time.
+const q = new URLSearchParams(location.search);
+if (q.has('t')) document.fonts.ready.then(() => seek(+q.get('t')));
+if (q.has('play')) document.fonts.ready.then(() => { const t0 = performance.now(); const f = () => { seek(((performance.now() - t0) / 1000) % 30); requestAnimationFrame(f); }; f(); });
+</script>
+</body>
+</html>
