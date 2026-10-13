@@ -3,7 +3,8 @@
 Cues follow the picture in index.html: clock ticks under "Every token launch is a race", a driving
 pulse under the mempool, a stutter and a half second of silence, a soft pad under the question, a hit
 on the coin at 10.0 s, a groove through seal / reveal / clear with pops on every on-screen event, a
-lift on "One price. For everyone.", and a held chord on the end card.
+lift on "One price. For everyone.", and a held chord on the end card. A square-wave chip layer (the
+arcade world of the site) blips as the bot eats each pellet, jingles the coin in, and arpeggiates under the groove.
 
     python3 promo/film/score.py [out.wav]
 """
@@ -118,6 +119,18 @@ def pop(m):
     return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 35)
 
 
+def sq(m, d=0.08, duty=0.5, decay=18.0):
+    """Square-wave chip voice (the arcade layer)."""
+    t = t_arr(d)
+    ph = (t * hz(m)) % 1.0
+    return np.where(ph < duty, 1.0, -1.0) * np.exp(-t * decay) * env(len(t), 0.002, d, 1.0, 0.01) * 0.5
+
+
+def chip_pop(m):
+    """A coin or bar landing: a two-step square blip."""
+    return np.concatenate([sq(m, 0.04, 0.25, 8), sq(m + 12, 0.07, 0.25, 20)])
+
+
 def riser(d, f0=200, f1=2400):
     t = t_arr(d)
     n = rng.normal(0, 1, len(t))
@@ -147,6 +160,11 @@ for k in range(8):
     add(tick(k % 2 == 0), 0.25 + k * BEAT, 0.5)
 add(pad([D2 + 12, A2 + 12], 4.0, cutoff=500, attack=2.5, release=0.3), 0.0, 0.5)
 add(riser(0.45, 400, 6000), 2.95, 0.5)                          # the strike-through
+for i in range(50):                                             # the bot eats each pellet in the lane
+    px = 24 + i * 9
+    at = 0.2 + (px - 4 + 10) / 510 * 3.7
+    if 0.2 <= at < 3.95:
+        add(sq(84 if i % 2 == 0 else 88, 0.035, 0.25, 30), at, 0.16, pan=-0.6 + 1.2 * px / 480)
 
 # 4–7.6: the mempool pulse, rising
 for k in range(7):
@@ -170,6 +188,10 @@ add(boom(), 10.0, 0.9)
 add(pad([50] + Dm, 2.6, cutoff=3200, attack=0.01, release=1.2), 10.0, 0.6)
 add(pluck(74, 1.2), 10.45, 0.5, pan=0.2)
 add(pluck(81, 1.2), 10.6, 0.35, pan=-0.2)
+for i, m in enumerate([72, 76, 79, 84, 88]):                    # the coin goes in
+    add(sq(m, 0.06, 0.5, 10), 10.0 + i * 0.045, 0.22)
+for at in (11.0, 11.6, 12.2):                                   # "INSERT COIN" blinks
+    add(sq(91, 0.05, 0.25, 30), at, 0.12)
 
 # 12.5–22.5: the groove (two-bar chord cycle Dm Bb F C)
 prog = [(Dm, D2), (Bb, Bb1), (F, F2), (C, C2)]
@@ -189,6 +211,12 @@ while t0 + k * 2 < 22.5:
         add(bass(b, 0.2), at, 0.42)
         add(bass(b + 12 if q == 3 else b, 0.18), at + 0.25, 0.28)
         add(hat(), at + 0.25, 0.3, pan=0.25)
+    for j in range(16):                                         # 16th-note chip arpeggio of the chord
+        at = bar + j * 0.125
+        if at >= 22.5:
+            break
+        m = ch[j % 3] + (12 if j % 8 >= 4 else 0)
+        add(sq(m, 0.1, 0.125, 14), at, 0.07, pan=0.35 if j % 2 else -0.35)
     k += 1
 
 # events in the seal scene
@@ -196,14 +224,18 @@ add(pluck(69, 0.3), 14.2, 0.55)                                  # the button pr
 for i in range(12):
     add(tick(i % 2 == 0) * 0.6, 14.4 + i * 0.05, 0.35, pan=0.4)  # the hash typing
 for i in range(8):
-    add(pop(74 + [0, 3, 5, 7, 10, 12, 15, 17][i]), 15.0 + i * 0.12, 0.35, pan=-0.6 + i * 0.17)
+    add(chip_pop(74 + [0, 3, 5, 7, 10, 12, 15, 17][i]), 15.0 + i * 0.12, 0.3, pan=-0.6 + i * 0.17)
 # reveal: a pop per bar, rising; supply line; the price line sweep and its hit
 for i in range(8):
-    add(pop(62 + [0, 2, 3, 5, 7, 8, 10, 12][i]), 17.5 + i * 0.22, 0.4, pan=-0.5 + i * 0.14)
+    add(chip_pop(62 + [0, 2, 3, 5, 7, 8, 10, 12][i]), 17.5 + i * 0.22, 0.32, pan=-0.5 + i * 0.14)
 add(pluck(57, 0.5), 19.6, 0.5)
 add(riser(0.8, 300, 5000), 20.2, 0.5)
 add(pluck(81, 1.0, 1.2), 21.0, 0.5)
 add(pluck(77, 1.0), 21.0, 0.35)
+for i, m in enumerate([77, 81, 84, 89, 93]):                    # the price is called
+    add(sq(m, 0.07, 0.5, 12), 21.0 + i * 0.06, 0.18)
+for i in range(8):                                              # eight coins land under "One price"
+    add(chip_pop(77 + (0 if i < 7 else -12)), 23.0 + i * 0.08, 0.2, pan=-0.6 + i * 0.17)
 
 # 22.5–25: the lift to F major
 add(boom() * 0.5, 22.5, 0.6)
@@ -216,7 +248,7 @@ for q in range(5):
 # 25–27.5: proof, a pop per number
 add(pad(C + [72], 2.5, cutoff=2400), 25.0, 0.35)
 for i, at in enumerate((25.3, 25.6, 25.9)):
-    add(pop(79 + i * 3), at, 0.55)
+    add(chip_pop(79 + i * 3), at, 0.4)
     add(kick(0.6), at, 0.35)
 
 # 27.5–30: the end card, one held chord
@@ -224,6 +256,8 @@ add(boom() * 0.6, 27.5, 0.6)
 add(pad([38, 50] + Dm + [74], 2.5, cutoff=2600, attack=0.02, release=1.4), 27.5, 0.55)
 add(pluck(74, 2.0), 27.6, 0.4)
 add(pluck(81, 2.0), 28.3, 0.3, pan=0.3)
+for at in (28.8, 29.4):                                          # "PRESS START" blinks
+    add(sq(91, 0.05, 0.25, 30), at, 0.12)
 
 # ── Master: gentle glue, fade out, peak to -1 dBFS ─────────────────
 mix = np.stack([L, R])

@@ -5,334 +5,390 @@
 <title>Even launch film</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Schibsted+Grotesk:wght@400;500;600;700&family=Silkscreen&display=block">
 <style>
-/* A 30-second launch film, rendered frame by frame: window.__seek(t) poses every element for time t.
-   Nothing animates by itself (no CSS transitions), so any frame renders identically on its own. */
+/* A 30-second launch film in Even's arcade world (DESIGN.md), rendered frame by frame:
+   window.__seek(t) poses every element for time t. Nothing animates by itself.
+   Type uses DESIGN.md's fonts and ramp tokens; the film sets the root size to 40px (2.5× the app's 16px),
+   so every rem step reads at 1080p. Pixel actors (the coin, the bot, pellets) are the hand-drawn sprites
+   from promo/commercial/sprites.js, drawn on a 480×270 canvas scaled ×4. */
 :root {
-  --bg: #07050f; --ink: #f6f3ff; --dim: #8d84ad; --faint: #2a2244;
-  --purple: #836ef9; --purple-2: #a99bff; --lime: #c6f24e; --berry: #e0307f;
-  --serif: "Instrument Serif", serif; --sans: "Geist", sans-serif; --mono: "Geist Mono", monospace;
+  font-size: 40px;
+  --cabinet-indigo: #200052; --cabinet-deep: #140033; --night-black: #0e100f;
+  --monad-purple: #6e54ff; --purple-lamp: #8270ff; --purple-glow: #b5a8ff;
+  --berry: #a0055d; --berry-lamp: #e0358f; --marquee-white: #fbfaf9; --bezel-grey: #edebe8;
+  --ink: #17142b; --ink-soft: #4a4566; --win-lime: #c6f24e;
+  --scanline: rgba(0, 0, 0, 0.16);
+  --screen-line: #2d1a66; --screen-dim: #6d5fb0; --screen-label: #8b7fd0; --purple-shade: #4a36c9;
+  --t-micro: 0.625rem; --t-label-sm: 0.6875rem; --t-label: 0.75rem; --t-small: 0.875rem;
+  --t-body: 1.0625rem; --t-lead: 1.1875rem; --t-title-sm: 1.5rem; --t-title: 1.75rem;
+  --t-panel: 2rem; --t-score: 2.6rem; --t-headline: 3rem; --t-display: 6rem;
+  --f-display: "Jersey 10", "Silkscreen", ui-monospace, monospace;
+  --f-label: "Silkscreen", ui-monospace, monospace;
+  --f-body: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --f-code: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--ink); }
-body { font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-.stage { position: absolute; inset: 0; overflow: hidden; }
-.layer { position: absolute; inset: 0; opacity: 0; will-change: opacity, transform; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--cabinet-deep); color: var(--marquee-white); }
+body { font-family: var(--f-body); -webkit-font-smoothing: antialiased; }
+.stage { position: absolute; inset: 0; overflow: hidden;
+  background: radial-gradient(ellipse 70% 75% at 50% 45%, var(--cabinet-indigo) 0%, var(--cabinet-indigo) 40%, var(--cabinet-deep) 100%); }
+.layer { position: absolute; inset: 0; opacity: 0; }
 .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.serif { font-family: var(--serif); font-weight: 400; letter-spacing: -0.02em; line-height: 0.98; }
-.mono { font-family: var(--mono); }
-.kicker { font-family: var(--mono); font-size: 22px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
-.glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0; }
+.display { font-family: var(--f-display); font-weight: 400; line-height: 0.9; letter-spacing: 0.01em; text-transform: uppercase; }
+.label { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.06em; text-transform: uppercase; color: var(--screen-label); }
+.lime { color: var(--win-lime); }
 .word { display: inline-block; opacity: 0; }
+#px { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; image-rendering: pixelated; pointer-events: none; }
+.scan { position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, var(--scanline) 0 2px, transparent 2px 4px); opacity: 0.25; }
+.flash { position: absolute; inset: 0; background: var(--marquee-white); opacity: 0; pointer-events: none; }
 
 /* 1 · the race */
-#s1 h1 { font-size: 168px; }
-#s1 .l2 { color: var(--ink); }
-#s1 .strike { position: absolute; height: 10px; background: var(--berry); left: 0; top: 54%; width: 0; border-radius: 5px; }
+#s1 h1 { font-size: var(--t-display); }
+#s1 .strike { position: absolute; left: -0.1em; right: -0.1em; top: 50%; height: 0.32rem; background: var(--berry-lamp); transform-origin: left; transform: scaleX(0); }
 
 /* 2 · the mempool */
-#s2 .feed { position: absolute; left: 50%; top: 0; width: 1240px; margin-left: -620px; font-family: var(--mono); font-size: 30px; }
-#s2 .row { display: grid; grid-template-columns: 210px 1fr 220px 190px; gap: 24px; padding: 14px 28px; border-bottom: 1px solid #1a1430; color: #6f6690; white-space: nowrap; }
-#s2 .row.win { color: var(--ink); background: linear-gradient(90deg, rgba(224,48,127,0.22), rgba(224,48,127,0)); border-left: 4px solid var(--berry); }
-#s2 .row .t { color: inherit; }
-#s2 .cap { position: absolute; left: 0; right: 0; bottom: 120px; }
-#s2 .cap h2 { font-size: 112px; }
-#s2 .shade { position: absolute; inset: 0; background: linear-gradient(180deg, var(--bg) 0%, rgba(7,5,15,0) 22%, rgba(7,5,15,0) 50%, var(--bg) 78%); }
+#s2 .feed { position: absolute; left: 50%; top: 0; width: 1240px; margin-left: -560px; font-family: var(--f-code); font-size: var(--t-label); }
+#s2 .row { display: grid; grid-template-columns: 220px 1fr 210px 200px; gap: 24px; padding: 14px 28px; color: var(--screen-dim); white-space: nowrap; }
+#s2 .row:nth-child(odd) { background: rgba(20, 0, 51, 0.45); }
+#s2 .row.win { color: var(--marquee-white); background: var(--berry); }
+#s2 .shade { position: absolute; inset: 0; background: linear-gradient(180deg, var(--cabinet-deep) 0%, rgba(20,0,51,0) 22%, rgba(20,0,51,0) 52%, var(--cabinet-deep) 80%); }
+#s2 .cap { position: absolute; left: 0; right: 0; bottom: 110px; }
+#s2 .cap h2 { font-size: var(--t-headline); }
 
 /* 3 · the question */
-#s3 h1 { font-size: 150px; max-width: 1500px; }
-#s3 em { font-style: italic; color: var(--purple-2); }
+#s3 h1 { font-size: var(--t-display); }
 
 /* 4 · the mark */
-#s4 .coin { width: 520px; height: 520px; background: url(../../web/assets/even-coin-transparent.png) center/contain no-repeat; clip-path: inset(0 0 6% 0); }
-#s4 .name { font-family: var(--serif); font-size: 230px; letter-spacing: -0.03em; margin-top: -10px; }
+#s4 .coin { width: 470px; height: 470px; background: url(../../web/assets/even-coin-transparent.png) center/contain no-repeat; clip-path: inset(0 0 6% 0); }
+#s4 .name { font-size: var(--t-display); color: var(--marquee-white); text-shadow: 0.08em 0.08em 0 var(--berry); margin-top: 0.1rem; }
+#s4 .label { margin-top: 0.6rem; color: var(--win-lime); font-size: var(--t-body); }
 
-/* 5 · seal */
-#s5 .title { position: absolute; left: 160px; top: 120px; }
-#s5 .title h2 { font-size: 150px; }
-#s5 .title p { font-size: 34px; color: var(--dim); margin-top: 26px; max-width: 640px; line-height: 1.35; }
-#s5 .card { position: absolute; left: 1000px; top: 96px; width: 760px; padding: 36px 44px; border-radius: 28px; background: linear-gradient(180deg, #171030, #100b22); border: 1px solid #2c2350; box-shadow: 0 40px 120px rgba(0,0,0,0.55); }
-#s5 .card .lab { font-family: var(--mono); font-size: 20px; letter-spacing: 0.16em; color: var(--dim); text-transform: uppercase; }
-#s5 .card .val { font-size: 56px; font-weight: 500; letter-spacing: -0.02em; margin: 6px 0 22px; font-variant-numeric: tabular-nums; }
-#s5 .card .hash { font-family: var(--mono); font-size: 30px; min-height: 122px; color: var(--purple-2); word-break: break-all; line-height: 1.35; }
-#s5 .card .btn { margin-top: 24px; height: 84px; border-radius: 46px; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 600; }
-#s5 .grid { position: absolute; left: 160px; right: 160px; bottom: 64px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 22px; }
-#s5 .chip { height: 128px; border-radius: 20px; background: #130d26; border: 1px solid #2c2350; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 22px; opacity: 0; }
-#s5 .chip .h { font-family: var(--mono); font-size: 21px; color: var(--purple-2); white-space: nowrap; }
-#s5 .chip .d { font-family: var(--mono); font-size: 19px; color: var(--dim); white-space: nowrap; }
+/* panels, as in the app: bezel white, ink text, hard stepped shadow in the player's colour */
+.panel { background: var(--marquee-white); color: var(--ink); box-shadow: 12px 12px 0 var(--berry); }
+.panel .label { color: var(--ink-soft); }
 
-/* 6 · reveal and clear */
-#s6 .title { position: absolute; left: 160px; top: 110px; }
-#s6 .title h2 { font-size: 132px; }
-#s6 .title p { font-size: 32px; color: var(--dim); margin-top: 22px; }
-#s6 svg { position: absolute; left: 160px; top: 380px; width: 1600px; height: 600px; overflow: visible; }
-#s6 .price { position: absolute; right: 160px; top: 120px; text-align: right; }
-#s6 .price .n { font-family: var(--serif); font-size: 140px; color: var(--lime); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-#s6 .price .u { font-family: var(--mono); font-size: 24px; letter-spacing: 0.18em; color: var(--dim); text-transform: uppercase; margin-top: 6px; }
+/* 5 · insert coin / commit */
+#s5 .title { position: absolute; left: 160px; top: 120px; width: 760px; }
+#s5 .title h2 { font-size: var(--t-headline); margin-top: 0.4rem; }
+#s5 .title p { font-size: var(--t-body); color: var(--purple-glow); margin-top: 0.6rem; line-height: 1.4; }
+#s5 .card { position: absolute; left: 1010px; top: 110px; width: 750px; padding: 0.9rem 1.05rem; }
+#s5 .card .val { font-family: var(--f-body); font-weight: 600; font-size: var(--t-panel); margin: 0.1rem 0 0.5rem; }
+#s5 .card .hash { font-family: var(--f-code); font-size: var(--t-label); color: var(--purple-shade); word-break: break-all; line-height: 1.35; min-height: 2.9rem; }
+#s5 .card .btn { margin-top: 0.5rem; height: 2rem; background: var(--win-lime); color: var(--ink); display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-label); font-size: var(--t-small); text-transform: uppercase; box-shadow: 6px 6px 0 var(--ink); }
+#s5 .slots { position: absolute; left: 160px; top: 850px; width: 1600px; display: grid; grid-template-columns: repeat(8, 1fr); text-align: center; }
+#s5 .slot { padding-top: 104px; opacity: 0; }
+#s5 .slot .label { color: var(--purple-glow); }
+#s5 .coinsin { position: absolute; left: 160px; top: 780px; }
+
+/* 6 · continue? / results */
+#s6 .title { position: absolute; left: 160px; top: 100px; }
+#s6 .title h2 { font-size: var(--t-headline); margin-top: 0.4rem; }
+#s6 .title p { font-size: var(--t-body); color: var(--purple-glow); margin-top: 0.4rem; max-width: 820px; }
+#s6 svg { position: absolute; left: 160px; top: 400px; width: 1600px; height: 560px; overflow: visible; }
+#s6 .price { position: absolute; right: 160px; top: 96px; text-align: right; }
+#s6 .price .n { font-family: var(--f-display); font-size: calc(var(--t-headline) * 1.5); line-height: 0.85; color: var(--win-lime); }
+#s6 .price .u { font-family: var(--f-body); font-weight: 600; font-size: var(--t-body); color: var(--marquee-white); margin-top: 0.2rem; }
 
 /* 7 · one price */
-#s7 h1 { font-size: 176px; }
-#s7 p { font-size: 40px; color: var(--dim); margin-top: 34px; }
+#s7 h1 { font-size: var(--t-display); margin-top: -260px; }
+#s7 p { font-size: var(--t-lead); color: var(--purple-glow); margin-top: 0.5rem; }
+#s7 .tags { position: absolute; left: 0; right: 0; top: 820px; display: grid; grid-template-columns: repeat(8, 200px); justify-content: center; text-align: center; }
+#s7 .tag { font-family: var(--f-body); font-weight: 600; font-size: var(--t-label); opacity: 0; }
+#s7 .tag.out { font-family: var(--f-label); font-weight: 400; color: var(--screen-label); font-size: var(--t-label); }
 
 /* 8 · proof */
-#s8 .kicker { margin-bottom: 40px; }
-#s8 .stats { display: flex; gap: 120px; }
-#s8 .stat .n { font-family: var(--serif); font-size: 170px; line-height: 1; }
-#s8 .stat .l { font-family: var(--mono); font-size: 24px; letter-spacing: 0.16em; color: var(--dim); text-transform: uppercase; margin-top: 14px; }
-#s8 .stat:nth-child(2) .n { color: var(--lime); }
+#s8 .label { font-size: var(--t-body); margin-bottom: 0.9rem; }
+#s8 .stats { display: flex; gap: 3rem; }
+#s8 .stat .n { font-family: var(--f-display); font-size: var(--t-display); line-height: 0.9; }
+#s8 .stat .label { font-size: var(--t-label); margin: 0.3rem 0 0; }
+#s8 .stat:nth-child(2) .n { color: var(--win-lime); }
 
 /* 9 · end card */
-#s9 .row { display: flex; align-items: center; gap: 44px; }
+#s9 .row { display: flex; align-items: center; gap: 1rem; }
 #s9 .coin { width: 260px; height: 260px; background: url(../../web/assets/even-coin-transparent.png) center/contain no-repeat; clip-path: inset(0 0 6% 0); }
-#s9 .name { font-family: var(--serif); font-size: 220px; letter-spacing: -0.03em; }
-#s9 .line { font-size: 46px; margin-top: 30px; }
-#s9 .url { font-family: var(--mono); font-size: 30px; color: var(--purple-2); margin-top: 26px; letter-spacing: 0.04em; }
-#s9 .fine { position: absolute; left: 0; right: 0; bottom: 70px; font-family: var(--mono); font-size: 19px; color: #5b5379; letter-spacing: 0.08em; }
-
-.grain { position: absolute; inset: -50%; opacity: 0.06; pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-.vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%); pointer-events: none; }
-.flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#s9 .name { font-size: var(--t-display); text-shadow: 0.08em 0.08em 0 var(--berry); }
+#s9 .line { font-size: var(--t-lead); font-weight: 500; margin-top: 0.7rem; }
+#s9 .url { font-family: var(--f-code); font-size: var(--t-body); color: var(--purple-glow); margin-top: 0.4rem; }
+#s9 .start { font-family: var(--f-label); font-size: var(--t-body); color: var(--win-lime); margin-top: 1rem; text-transform: uppercase; }
+#s9 .fine { position: absolute; left: 0; right: 0; bottom: 64px; font-size: var(--t-small); color: var(--screen-label); }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
-  <div class="glow" id="glowA" style="width:1100px;height:1100px;background:#5b3df5;left:410px;top:-10px"></div>
-  <div class="glow" id="glowB" style="width:900px;height:900px;background:#c6f24e;left:510px;top:90px"></div>
-
   <section class="layer center" id="s1">
-    <h1 class="serif"><span class="word" id="w1a">Every</span> <span class="word" id="w1b">token</span> <span class="word" id="w1c">launch</span></h1>
-    <h1 class="serif l2" style="position:relative"><span class="word" id="w1d">is a</span> <span class="word" id="w1e" style="position:relative">race.<span class="strike" id="strike"></span></span></h1>
+    <h1 class="display"><span class="word" id="w1a">Every</span> <span class="word" id="w1b">token</span> <span class="word" id="w1c">launch</span></h1>
+    <h1 class="display"><span class="word" id="w1d">is a</span> <span class="word" id="w1e" style="position:relative">race.<span class="strike" id="strike"></span></span></h1>
   </section>
 
   <section class="layer" id="s2">
     <div class="feed" id="feed"></div>
     <div class="shade"></div>
-    <div class="cap center"><h2 class="serif" id="s2cap">Won by whoever is <em style="font-style:italic;color:var(--berry)">fastest</em>.</h2></div>
+    <div class="cap center"><h2 class="display" id="s2cap">Won by whoever is <span style="color:var(--berry-lamp)">fastest.</span></h2></div>
   </section>
 
   <section class="layer center" id="s3">
-    <h1 class="serif"><span class="word" id="w3a">What if</span> <span class="word" id="w3b">being first</span><br><span class="word" id="w3c"><em>bought nothing?</em></span></h1>
+    <h1 class="display"><span class="word" id="w3a">What if</span> <span class="word" id="w3b">being first</span><br><span class="word lime" id="w3c">bought nothing?</span></h1>
   </section>
 
   <section class="layer center" id="s4">
     <div class="coin" id="coin4"></div>
-    <div class="name" id="name4">Even</div>
+    <div class="name display" id="name4">Even</div>
+    <div class="label" id="insert4">Insert coin</div>
   </section>
 
   <section class="layer" id="s5">
-    <div class="title"><div class="kicker" id="k5">01 · Seal</div><h2 class="serif" id="h5" style="margin-top:22px">Seal your bid.</h2>
+    <div class="title"><div class="label" id="k5">Insert coin · commit</div><h2 class="display" id="h5">Seal your bid.</h2>
       <p id="p5">Your price and size become a hash. Everyone locks the same deposit, so your deposit gives nothing away.</p></div>
-    <div class="card" id="card5">
-      <div class="lab">Max price per token</div><div class="val" id="v5price">0.0000025 MON</div>
-      <div class="lab">Amount</div><div class="val" id="v5amt">100,000 EVTRY</div>
-      <div class="lab" id="lab5hash" style="opacity:0">Sealed</div><div class="hash" id="v5hash" style="opacity:0"></div>
-      <div class="btn" id="btn5">Seal bid · lock 0.3 MON</div>
+    <div class="card panel" id="card5">
+      <div class="label">Max price per token</div><div class="val" id="v5price">0.0000025 MON</div>
+      <div class="label">Amount</div><div class="val" id="v5amt">100,000 EVTRY</div>
+      <div class="label" id="lab5hash" style="opacity:0">Sealed</div><div class="hash" id="v5hash"></div>
+      <div class="btn" id="btn5">Insert coin · lock 0.3 MON</div>
     </div>
-    <div class="grid" id="grid5"></div>
+    <div class="label coinsin" id="coinsin">Coins in</div>
+    <div class="slots" id="slots5"></div>
   </section>
 
   <section class="layer" id="s6">
-    <div class="title"><div class="kicker">02 · Reveal &nbsp;·&nbsp; 03 · Clear</div><h2 class="serif" style="margin-top:22px" id="h6">Then everyone reveals.</h2>
+    <div class="title"><div class="label" id="k6">Continue? · reveal</div><h2 class="display" id="h6">Everyone reveals.</h2>
       <p id="p6">Bids stack from the highest price down until they cover the supply.</p></div>
-    <div class="price" id="price6"><div class="n" id="n6">0.0000013</div><div class="u">MON per token · one price</div></div>
-    <svg id="chart" viewBox="0 0 1600 600"></svg>
+    <div class="price" id="price6"><div class="n">0.0000013</div><div class="u">0.0000013 MON per token</div></div>
+    <svg id="chart" viewBox="0 0 1600 560"></svg>
   </section>
 
   <section class="layer center" id="s7">
-    <h1 class="serif"><span class="word" id="w7a">One price.</span> <span class="word" id="w7b"><em style="color:var(--lime)">For everyone.</em></span></h1>
+    <h1 class="display"><span class="word" id="w7a">One price.</span> <span class="word lime" id="w7b">For everyone.</span></h1>
     <p id="p7">Bid early or bid late: every winner pays the same.</p>
+    <div class="tags" id="tags7"></div>
   </section>
 
   <section class="layer center" id="s8">
-    <div class="kicker" id="k8">Live on Monad mainnet · scripted test round</div>
+    <div class="label" id="k8">Live on Monad mainnet · scripted test round</div>
     <div class="stats">
-      <div class="stat" id="st1"><div class="n" id="n8a">8</div><div class="l">sealed bids</div></div>
-      <div class="stat" id="st2"><div class="n">1</div><div class="l">clearing price</div></div>
-      <div class="stat" id="st3"><div class="n">0</div><div class="l">MON left in the engine</div></div>
+      <div class="stat" id="st1"><div class="n" id="n8a">8</div><div class="label">sealed bids</div></div>
+      <div class="stat" id="st2"><div class="n">1</div><div class="label">clearing price</div></div>
+      <div class="stat" id="st3"><div class="n">0</div><div class="label">MON left in the engine</div></div>
     </div>
   </section>
 
   <section class="layer center" id="s9">
-    <div class="row"><div class="coin" id="coin9"></div><div class="name">Even</div></div>
+    <div class="row"><div class="coin" id="coin9"></div><div class="name display">Even</div></div>
     <div class="line" id="line9">Fair launches on Monad.</div>
     <div class="url" id="url9">even-monad.vercel.app</div>
+    <div class="start" id="start9">Press start</div>
     <div class="fine">Snipe-resistant: submission timing no longer determines price.</div>
   </section>
 
+  <canvas id="px" width="480" height="270"></canvas>
   <div class="flash" id="flash"></div>
-  <div class="vignette"></div>
-  <div class="grain" id="grain"></div>
+  <div class="scan"></div>
 </div>
 
-<script>
+<script type="module">
+import { coin, bot } from '../commercial/sprites.js';
+import { P } from '../commercial/palette.js';
+
 // ── Timing helpers ────────────────────────────────────────────────
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
-const seg = (t, a, b) => clamp((t - a) / (b - a));            // 0..1 progress of t through [a, b]
+const seg = (t, a, b) => clamp((t - a) / (b - a));
 const easeOut = x => 1 - Math.pow(1 - x, 3);
 const easeOutExpo = x => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
 const easeInOut = x => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const lerp = (a, b, x) => a + (b - a) * x;
+const step = (x, n) => Math.floor(x * n) / n;            // pixel-stepped motion
 const $ = id => document.getElementById(id);
-// A layer is visible on [a, b], with `fi` seconds of fade in and `fo` of fade out (0 = hard cut).
 function layer(el, t, a, b, fi = 0, fo = 0) {
   let o = t >= a && t < b ? 1 : 0;
-  if (fi && t >= a && t < a + fi) o = easeOut(seg(t, a, a + fi));
-  if (fo && t >= b - fo && t < b) o = Math.min(o, 1 - seg(t, b - fo, b));
+  if (fi && t >= a && t < a + fi) o = step(seg(t, a, a + fi), 4);
+  if (fo && t >= b - fo && t < b) o = Math.min(o, 1 - step(seg(t, b - fo, b), 4));
   el.style.opacity = o;
   return o;
 }
-// A word rises into place over 0.45 s from time a.
-function rise(el, t, a, dist = 40, dur = 0.45) {
-  const p = easeOutExpo(seg(t, a, a + dur));
-  el.style.opacity = p;
-  el.style.transform = `translateY(${(1 - p) * dist}px)`;
-  el.style.filter = `blur(${(1 - p) * 8}px)`;
+// A word steps up into place (arcade: 4 stepped frames, no blur).
+function rise(el, t, a, dist = 32, dur = 0.24) {
+  const p = step(easeOut(seg(t, a, a + dur)), 4);
+  el.style.opacity = p > 0 ? 1 : 0;
+  el.style.transform = `translateY(${Math.round((1 - p) * dist / 4) * 4}px)`;
 }
-// Deterministic pseudo-random numbers, so every render of a frame is the same.
+const blinkOn = (t, period = 0.6, on = 0.38) => ((t % period) + period) % period < on;
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 const hex = (r, n) => Array.from({ length: n }, () => '0123456789abcdef'[Math.floor(r() * 16)]).join('');
 
-// ── Static content built once ─────────────────────────────────────
+// ── Static content ────────────────────────────────────────────────
 const R = rng(42);
-const feedRows = [];
+const rows = [];
 for (let i = 0; i < 40; i++) {
   const win = i === 23;
-  const amt = win ? '40.0 MON' : (R() * 3 + 0.1).toFixed(2) + ' MON';
-  feedRows.push(`<div class="row${win ? ' win' : ''}"><span>0x${hex(R, 4)}…${hex(R, 3)}</span><span class="t">buy ${win ? 'ALL' : Math.floor(R() * 90 + 5) + 'k'} $LAUNCH</span><span>${amt}</span><span>${win ? 'block +0' : '+' + (R() * 900 + 40).toFixed(0) + ' ms'}</span></div>`);
+  rows.push(`<div class="row${win ? ' win' : ''}" ${win ? 'id="winrow"' : ''}><span>0x${hex(R, 4)}…${hex(R, 3)}</span><span>buy ${win ? 'ALL' : Math.floor(R() * 90 + 5) + 'k'} $LAUNCH</span><span>${win ? '40.0 MON' : (R() * 3 + 0.1).toFixed(2) + ' MON'}</span><span>${win ? 'block +0' : '+' + (R() * 900 + 40).toFixed(0) + ' ms'}</span></div>`);
 }
-$('feed').innerHTML = feedRows.join('');
+$('feed').innerHTML = rows.join('');
 
 const HASH = '0x7f3a91c4e2b85d06a1f9c3e7b24d58a0c6e19f42b7d3a85e0c4f1b96a2d7e3c51';
-const bidders = ['whale', 'early-bot', 'ana', 'ben', 'cem', 'deniz', 'ece', 'fatih'];
-const R2 = rng(7);
-$('grid5').innerHTML = bidders.map(() => `<div class="chip"><div class="h">0x${hex(R2, 4)}…${hex(R2, 3)}</div><div class="d">0.3 MON locked</div></div>`).join('');
+$('slots5').innerHTML = Array.from({ length: 8 }, () => `<div class="slot"><div class="label">0.3 MON</div></div>`).join('');
+$('tags7').innerHTML = Array.from({ length: 8 }, (_, i) => i < 7 ? `<div class="tag">0.0000013</div>` : `<div class="tag out">Refunded</div>`).join('');
 
 // The real round: eight bids (price in micro-MON per token, amount in thousand tokens), supply 500k.
+const NAMES = ['whale', 'early-bot', 'ana', 'ben', 'cem', 'deniz', 'ece', 'fatih'];
 const BIDS = [[2.5, 100], [2.4, 90], [2.0, 80], [1.8, 70], [1.6, 60], [1.5, 60], [1.3, 50], [1.1, 50]];
-const SUPPLY = 500, P = 1.3, W = 1600, H = 560, XMAX = 600, YMAX = 2.8;
+const SUPPLY = 500, PRICE = 1.3, W = 1600, H = 520, XMAX = 600, YMAX = 2.8;
 const x = q => (q / XMAX) * W, y = p => H - (p / YMAX) * H;
 let cum = 0, bars = '';
 BIDS.forEach(([p, q], i) => {
-  const filled = p > P ? q : p === P ? SUPPLY - cum : 0;
-  bars += `<rect class="bar" data-i="${i}" x="${x(cum) + 3}" y="${y(p)}" width="${x(q) - 6}" height="${H - y(p)}" rx="6"
-    fill="${p >= P ? '#836ef9' : '#3a2f63'}" />`;
-  if (p === P) bars += `<rect class="bar" data-i="${i}" x="${x(cum) + 3}" y="${y(p)}" width="${x(SUPPLY - cum) - 6}" height="${H - y(p)}" rx="6" fill="#a99bff" />`;
-  bars += `<text class="blab" data-i="${i}" x="${x(cum) + x(q) / 2}" y="${y(p) - 16}" text-anchor="middle" font-family="Geist Mono" font-size="22" fill="#8d84ad">${bidders[i]}</text>`;
+  const col = p >= PRICE ? '#6e54ff' : '#2d1a66';
+  bars += `<g class="bar" data-i="${i}"><rect x="${x(cum) + 4}" y="${y(p)}" width="${x(q) - 8}" height="${H - y(p)}" fill="${col}"/>
+    <rect x="${x(cum) + 4}" y="${y(p)}" width="${x(q) - 8}" height="12" fill="${p >= PRICE ? '#8270ff' : '#3a2a7a'}"/></g>`;
+  if (p === PRICE) bars += `<g class="bar" data-i="${i}"><rect x="${x(SUPPLY) - 4}" y="${y(p)}" width="${x(cum + q) - x(SUPPLY)}" height="${H - y(p)}" fill="#2d1a66"/></g>`;
+  bars += `<text class="blab" data-i="${i}" x="${x(cum) + x(q) / 2}" y="${y(p) - 18}" text-anchor="middle" font-family="Silkscreen" font-size="22" fill="#b5a8ff">${NAMES[i].toUpperCase()}</text>`;
   cum += q;
 });
-$('chart').innerHTML = `<line x1="0" y1="${H}" x2="${W}" y2="${H}" stroke="#2a2244" stroke-width="2"/>
+$('chart').innerHTML = `<rect x="0" y="${H}" width="${W}" height="4" fill="#2d1a66"/>
   ${bars}
-  <line id="supply" x1="${x(SUPPLY)}" y1="-10" x2="${x(SUPPLY)}" y2="${H}" stroke="#f6f3ff" stroke-width="3" stroke-dasharray="10 10"/>
-  <text id="supplyLab" x="${x(SUPPLY) + 14}" y="12" font-family="Geist Mono" font-size="22" fill="#f6f3ff" letter-spacing="3">SUPPLY 500,000</text>
-  <line id="pline" x1="0" y1="${y(P)}" x2="0" y2="${y(P)}" stroke="#c6f24e" stroke-width="6" stroke-linecap="round"/>
-  <text id="plab" x="12" y="${y(P) - 18}" font-family="Geist Mono" font-size="24" fill="#c6f24e" letter-spacing="3">ONE PRICE</text>`;
+  <line id="supply" x1="${x(SUPPLY)}" y1="-20" x2="${x(SUPPLY)}" y2="${H}" stroke="#fbfaf9" stroke-width="4" stroke-dasharray="12 12"/>
+  <text id="supplyLab" x="${x(SUPPLY) + 16}" y="0" font-family="Silkscreen" font-size="22" fill="#fbfaf9">SUPPLY 500,000</text>
+  <rect id="pline" x="0" y="${y(PRICE) - 4}" width="0" height="8" fill="#c6f24e"/>
+  <g id="plab"><rect x="0" y="${y(PRICE) - 52}" width="190" height="40" fill="#c6f24e"/><text x="14" y="${y(PRICE) - 24}" font-family="Silkscreen" font-size="22" fill="#17142b">ONE PRICE</text></g>`;
+
+// ── Pixel actors on the 480×270 canvas ───────────────────────────
+const g = $('px').getContext('2d');
+g.imageSmoothingEnabled = false;
+const LANE_Y = 222, PELLETS = Array.from({ length: 50 }, (_, i) => 24 + i * 9);
+function drawPixels(t) {
+  g.clearRect(0, 0, 480, 270);
+  // 1 · the race: the bot runs the lane eating every pellet; the crowd arrives to an empty lane.
+  if (t < 4) {
+    const bx = lerp(-10, 500, seg(t, 0.2, 3.9));
+    for (const px of PELLETS) if (px > bx + 4) { g.fillStyle = P.lime; g.fillRect(px - 1, LANE_Y - 1, 3, 3); }
+    g.fillStyle = P.line; g.fillRect(0, LANE_Y - 11, 480, 2); g.fillRect(0, LANE_Y + 10, 480, 2);
+    bot(g, bx, LANE_Y, t, { scale: 1 });
+    for (let k = 0; k < 3; k++) {
+      const cx = lerp(-30 - k * 20, 150 - k * 22, seg(t, 1.4, 4));
+      coin(g, cx, LANE_Y, t, { scale: 1, phase: k * 5, state: t > 3 ? 'sad' : null });
+    }
+  }
+  // 2 · the bot rides the winning row of the mempool.
+  if (t >= 4 && t < 7.6) {
+    const r = $('winrow').getBoundingClientRect();
+    if (r.bottom > 0 && r.top < 1080) bot(g, (r.left - 40) / 4, (r.top + r.height / 2) / 4, t, { scale: 1 });
+  }
+  // 5 · coins in: one coin per sealed bid, all the same.
+  if (t >= 12.5 && t < 17) {
+    for (let i = 0; i < 8; i++) {
+      const p = seg(t, 15.0 + i * 0.12, 15.25 + i * 0.12);
+      if (p <= 0) continue;
+      const cx = (160 + 100 + i * 200) / 4, cy = (850 + 46) / 4 - (1 - p) * 6;
+      coin(g, cx, cy, t, { scale: 2, phase: i * 3, bob: p >= 1 });
+    }
+  }
+  // 7 · eight coins: seven winners at one price (happy), one bid below it (refunded).
+  if (t >= 22.5 && t < 25) {
+    for (let i = 0; i < 8; i++) {
+      const p = seg(t, 23.0 + i * 0.08, 23.2 + i * 0.08);
+      if (p <= 0) continue;
+      const cx = (960 + (i - 3.5) * 200) / 4, cy = 760 / 4 - (1 - p) * 6;
+      coin(g, cx, cy, t, { scale: 2, phase: i * 3, state: i < 7 ? 'happy' : null, grey: i === 7 });
+    }
+  }
+}
 
 // ── The film ──────────────────────────────────────────────────────
 const S = { s1: [0, 4], s2: [4, 7.6], s3: [8, 10], s4: [10, 12.5], s5: [12.5, 17], s6: [17, 22.5], s7: [22.5, 25], s8: [25, 27.5], s9: [27.5, 30] };
 function seek(t) {
-  // Background glows breathe with the cut.
-  const gA = t < 8 ? 0.12 : t < 10 ? 0.05 : t < 12.5 ? 0.55 : t < 27.5 ? 0.22 : 0.45;
-  $('glowA').style.opacity = gA * (0.9 + 0.1 * Math.sin(t * 1.3));
-  $('glowA').style.transform = `translate(${Math.sin(t * 0.21) * 140}px, ${Math.cos(t * 0.17) * 90}px)`;
-  $('glowB').style.opacity = t >= 22.5 && t < 25 ? 0.14 : t >= 17 && t < 22.5 ? 0.05 * seg(t, 19, 21) : 0;
-  $('grain').style.transform = `translate(${(Math.floor(t * 24) * 37) % 200 - 100}px, ${(Math.floor(t * 24) * 53) % 200 - 100}px)`;
-
-  // 1 · "Every token launch is a race." (ticks on each beat; the struck word lands on beat 6)
+  // 1 · "Every token launch is a race."
   layer($('s1'), t, ...S.s1, 0, 0.25);
   rise($('w1a'), t, 0.25); rise($('w1b'), t, 0.55); rise($('w1c'), t, 0.85);
-  rise($('w1d'), t, 1.6); rise($('w1e'), t, 2.0, 60);
-  $('strike').style.width = (easeInOut(seg(t, 3.0, 3.4)) * 100) + '%';
+  rise($('w1d'), t, 1.6); rise($('w1e'), t, 2.0, 48);
+  $('strike').style.transform = `scaleX(${step(easeInOut(seg(t, 3.0, 3.35)), 8)})`;
 
-  // 2 · the mempool scrolls, one wallet takes everything in block +0
-  layer($('s2'), t, ...S.s2, 0.15, 0);
-  const sp = seg(t, 4, 7.6);
-  $('feed').style.transform = `translateY(${lerp(80, -1500, easeInOut(sp))}px)`;
-  const capP = easeOutExpo(seg(t, 5.6, 6.1));
-  $('s2cap').style.opacity = capP; $('s2cap').style.transform = `translateY(${(1 - capP) * 30}px)`;
-  // a glitch shake at the end
-  const g = t > 7.1 && t < 7.6 ? Math.sin(t * 190) * 14 : 0;
-  $('s2').style.transform = `translateX(${g}px)`;
+  // 2 · the mempool scrolls; one wallet takes everything in block +0
+  layer($('s2'), t, ...S.s2, 0.12, 0);
+  $('feed').style.transform = `translateY(${Math.round(lerp(80, -1460, easeInOut(seg(t, 4, 7.6))) / 4) * 4}px)`;
+  rise($('s2cap'), t, 5.6, 32);
+  $('s2').style.transform = `translateX(${t > 7.1 && t < 7.6 ? (Math.floor(t * 30) % 2 ? 16 : -16) : 0}px)`;
 
-  // 3 · the question (7.6–8.0 is silence and black)
+  // 3 · the question (7.6–8.0 is black and silent)
   layer($('s3'), t, ...S.s3, 0, 0.2);
-  rise($('w3a'), t, 8.05); rise($('w3b'), t, 8.45); rise($('w3c'), t, 9.0, 50);
+  rise($('w3a'), t, 8.05); rise($('w3b'), t, 8.45); rise($('w3c'), t, 9.0, 48);
 
-  // 4 · the mark: the coin lands on the downbeat with a flash
+  // 4 · the mark lands on the downbeat
   layer($('s4'), t, ...S.s4, 0, 0.3);
-  const cp = easeOutExpo(seg(t, 10, 10.9));
-  $('coin4').style.transform = `scale(${lerp(0.55, 1, cp)}) rotate(${lerp(-14, 0, cp)}deg)`;
-  $('coin4').style.opacity = clamp(cp * 1.4);
-  const np = easeOutExpo(seg(t, 10.45, 11.1));
-  $('name4').style.opacity = np; $('name4').style.letterSpacing = lerp(0.08, -0.03, np) + 'em';
-  $('flash').style.opacity = t >= 10 && t < 10.35 ? 0.55 * (1 - seg(t, 10, 10.35)) : 0;
+  const cp = step(easeOutExpo(seg(t, 10, 10.6)), 6);
+  $('coin4').style.transform = `scale(${lerp(0.5, 1, cp)})`;
+  $('coin4').style.opacity = cp > 0 ? 1 : 0;
+  rise($('name4'), t, 10.4, 48);
+  $('insert4').style.opacity = t > 11.0 && blinkOn(t - 11.0) ? 1 : 0;
+  $('flash').style.opacity = t >= 10 && t < 10.25 ? (t < 10.08 ? 0.7 : 0.3) : 0;
 
-  // 5 · seal: the form types, the bid collapses into a hash, eight identical sealed chips appear
-  layer($('s5'), t, ...S.s5, 0.2, 0.2);
-  rise($('k5'), t, 12.6); rise($('h5'), t, 12.75, 50); rise($('p5'), t, 13.1);
-  const cardIn = easeOutExpo(seg(t, 12.7, 13.4));
-  $('card5').style.opacity = cardIn; $('card5').style.transform = `translateY(${(1 - cardIn) * 60}px) scale(${lerp(0.96, 1, cardIn)})`;
-  const sealP = seg(t, 14.2, 14.7);                       // the button press
-  $('btn5').style.transform = `scale(${t > 14.1 && t < 14.3 ? 0.95 : 1})`;
-  $('btn5').style.background = sealP > 0 ? '#2a2244' : '#836ef9';
-  $('btn5').textContent = sealP > 0 ? 'Sealed · 0.3 MON locked' : 'Seal bid · lock 0.3 MON';
-  const blur = easeInOut(sealP);
-  for (const id of ['v5price', 'v5amt']) { $(id).style.filter = `blur(${blur * 14}px)`; $(id).style.opacity = 1 - blur * 0.7; }
-  const nHash = Math.floor(seg(t, 14.4, 15.0) * HASH.length);
-  $('v5hash').textContent = HASH.slice(0, nHash); $('v5hash').style.opacity = nHash ? 1 : 0;
-  $('lab5hash').style.opacity = nHash ? 1 : 0;
-  [...$('grid5').children].forEach((c, i) => {
-    const p = easeOutExpo(seg(t, 15.0 + i * 0.12, 15.5 + i * 0.12));
-    c.style.opacity = p; c.style.transform = `translateY(${(1 - p) * 30}px)`;
-  });
+  // 5 · insert coin: the form, the press, the hash, eight identical coins
+  layer($('s5'), t, ...S.s5, 0.16, 0.16);
+  rise($('k5'), t, 12.6); rise($('h5'), t, 12.75, 48); rise($('p5'), t, 13.1);
+  rise($('card5'), t, 12.8, 48);
+  const pressed = t > 14.1 && t < 14.3;
+  $('btn5').style.transform = pressed ? 'translate(4px, 4px)' : 'none';
+  $('btn5').style.boxShadow = pressed ? 'none' : '6px 6px 0 #17142b';
+  const sealed = t >= 14.2;
+  $('btn5').textContent = sealed ? 'Sealed · 0.3 MON locked' : 'Insert coin · lock 0.3 MON';
+  $('btn5').style.background = sealed ? '#e2defa' : '#c6f24e';
+  const hide = step(seg(t, 14.2, 14.6), 4);
+  for (const id of ['v5price', 'v5amt']) $(id).style.filter = `blur(${hide * 12}px)`;
+  const n = Math.floor(seg(t, 14.4, 15.0) * HASH.length);
+  $('v5hash').textContent = HASH.slice(0, n);
+  $('lab5hash').style.opacity = n ? 1 : 0;
+  rise($('coinsin'), t, 14.9);
+  [...$('slots5').children].forEach((c, i) => { c.style.opacity = t >= 15.0 + i * 0.12 ? 1 : 0; });
 
-  // 6 · reveal and clear: bars rise in price order, the supply line drops in, the price line sweeps
-  layer($('s6'), t, ...S.s6, 0.2, 0.15);
-  [...document.querySelectorAll('#chart .bar')].forEach(b => {
-    const i = +b.dataset.i, p = easeOutExpo(seg(t, 17.5 + i * 0.22, 18.1 + i * 0.22));
-    b.style.transformOrigin = `0 ${H}px`; b.style.transform = `scaleY(${p})`; b.style.transformBox = 'view-box';
-    b.style.opacity = p;
+  // 6 · continue? then results: bars step up in price order, supply line, the one-price line sweeps
+  layer($('s6'), t, ...S.s6, 0.16, 0.12);
+  document.querySelectorAll('#chart .bar').forEach(b => {
+    const i = +b.dataset.i, p = step(easeOut(seg(t, 17.5 + i * 0.22, 17.9 + i * 0.22)), 5);
+    b.style.transform = `scaleY(${p})`; b.style.transformOrigin = `0 ${H}px`; b.style.transformBox = 'view-box';
   });
-  document.querySelectorAll('#chart .blab').forEach(b => { const i = +b.dataset.i; b.style.opacity = easeOut(seg(t, 17.8 + i * 0.22, 18.2 + i * 0.22)); });
-  const sup = easeOut(seg(t, 19.6, 20.0));
+  document.querySelectorAll('#chart .blab').forEach(b => { b.style.opacity = t >= 17.9 + (+b.dataset.i) * 0.22 ? 1 : 0; });
+  const sup = t >= 19.6 ? 1 : 0;
   $('supply').style.opacity = sup; $('supplyLab').style.opacity = sup;
-  const pl = easeInOut(seg(t, 20.2, 21.0));
-  $('pline').setAttribute('x2', lerp(0, W, pl)); $('plab').style.opacity = easeOut(seg(t, 20.6, 21.0));
-  const pr = easeOutExpo(seg(t, 20.8, 21.4));
-  $('price6').style.opacity = pr; $('price6').style.transform = `translateY(${(1 - pr) * 30}px)`;
-  const h6 = t < 20.2 ? 'Then everyone reveals.' : 'One price clears it.';
-  const swap = t >= 20.0 && t < 20.4 ? Math.abs(t - 20.2) / 0.2 : 1;   // a quick dip through the text change
-  $('h6').style.opacity = swap; $('p6').style.opacity = swap;
+  $('pline').setAttribute('width', Math.round(step(easeInOut(seg(t, 20.2, 21.0)), 20) * W));
+  $('plab').style.opacity = t >= 20.6 ? 1 : 0;
+  rise($('price6'), t, 20.8, 48);
+  const results = t >= 20.2;
+  const k6 = results ? 'Results · settle' : 'Continue? · reveal';
+  if ($('k6').textContent !== k6) $('k6').textContent = k6;
+  const h6 = results ? 'One price clears it.' : 'Everyone reveals.';
   if ($('h6').textContent !== h6) $('h6').textContent = h6;
-  $('p6').textContent = t < 20.2 ? 'Bids stack from the highest price down until they cover the supply.' : 'Above it: filled in full. At it: shared pro rata. Below it: refunded.';
+  const p6 = results ? 'Above it: filled in full. At it: shared pro rata. Below it: refunded.' : 'Bids stack from the highest price down until they cover the supply.';
+  if ($('p6').textContent !== p6) $('p6').textContent = p6;
+  const dip = t >= 20.0 && t < 20.4 ? (t < 20.2 ? 0.25 : 0.6) : 1;
+  $('h6').style.opacity = dip; $('p6').style.opacity = dip;
 
-  // 7 · the line
-  layer($('s7'), t, ...S.s7, 0.15, 0.2);
-  rise($('w7a'), t, 22.6, 50); rise($('w7b'), t, 23.2, 50); rise($('p7'), t, 23.8);
+  // 7 · the line, and eight coins under it
+  layer($('s7'), t, ...S.s7, 0.12, 0.16);
+  rise($('w7a'), t, 22.6, 48); rise($('w7b'), t, 23.2, 48); rise($('p7'), t, 23.8);
+  [...$('tags7').children].forEach((c, i) => { c.style.opacity = t >= 23.15 + i * 0.08 ? 1 : 0; });
 
   // 8 · proof from mainnet
-  layer($('s8'), t, ...S.s8, 0.15, 0.2);
-  rise($('k8'), t, 25.05); rise($('st1'), t, 25.3, 60); rise($('st2'), t, 25.6, 60); rise($('st3'), t, 25.9, 60);
+  layer($('s8'), t, ...S.s8, 0.12, 0.16);
+  rise($('k8'), t, 25.05); rise($('st1'), t, 25.3, 48); rise($('st2'), t, 25.6, 48); rise($('st3'), t, 25.9, 48);
   $('n8a').textContent = String(Math.max(1, Math.round(easeOut(seg(t, 25.3, 25.9)) * 8)));
 
   // 9 · end card
-  layer($('s9'), t, S.s9[0], 31, 0.3, 0);
-  const ep = easeOutExpo(seg(t, 27.6, 28.4));
-  $('coin9').style.transform = `scale(${lerp(0.7, 1, ep)}) rotate(${lerp(-10, 0, ep)}deg)`;
-  rise($('line9'), t, 28.3); rise($('url9'), t, 28.6);
-  const out = seg(t, 29.55, 30);                       // fade to black on the last half second
-  $('stage').style.opacity = 1 - out * 0.999;
+  layer($('s9'), t, S.s9[0], 31, 0.2, 0);
+  const ep = step(easeOutExpo(seg(t, 27.6, 28.1)), 5);
+  $('coin9').style.transform = `scale(${lerp(0.6, 1, ep)})`;
+  rise($('line9'), t, 28.2); rise($('url9'), t, 28.5);
+  $('start9').style.opacity = t > 28.8 && blinkOn(t - 28.8) ? 1 : 0;
+  $('stage').style.opacity = 1 - step(seg(t, 29.5, 30), 6) * 0.999;
+
+  drawPixels(t);
 }
 
 window.__seek = seek;
 document.fonts.ready.then(() => {
   const img = new Image();
-  img.onload = () => { seek(0); window.__ready = { ok: document.fonts.check('80px "Instrument Serif"') && document.fonts.check('20px "Geist Mono"') }; };
+  img.onload = () => { seek(0); window.__ready = { ok: document.fonts.check('80px "Jersey 10"') && document.fonts.check('20px Silkscreen') && document.fonts.check('20px "Schibsted Grotesk"') }; };
   img.onerror = () => { window.__ready = { ok: false }; };
   img.src = '../../web/assets/even-coin-transparent.png';
 });
-// Preview in a browser: ?t=12.3 poses one frame; ?play plays in real time.
 const q = new URLSearchParams(location.search);
 if (q.has('t')) document.fonts.ready.then(() => seek(+q.get('t')));
 if (q.has('play')) document.fonts.ready.then(() => { const t0 = performance.now(); const f = () => { seek(((performance.now() - t0) / 1000) % 30); requestAnimationFrame(f); }; f(); });
