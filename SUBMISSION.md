@@ -17,7 +17,7 @@
 
 ---
 
-The judge-facing write-up for the Monad Metropolis submission (Social, Attention & Culture track). Mechanism, evidence, cost and limits follow.
+The judge-facing write-up for the Monad Metropolis submission (Onchain Finance & Trading track). Mechanism, evidence, cost and limits follow.
 
 Status: draft
 
