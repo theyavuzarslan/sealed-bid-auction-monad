@@ -13,7 +13,7 @@
 
 **Who it is for:** memecoin communities on Monad that want their launch to go to their own buyers, and the creators who launch for them [src: PRODUCT.md].
 
-**Live:** https://even-monad.vercel.app (the pitch, the replay and the app; the engine is not on a public network yet, see [Deployment](#deployment)). Code: this repository.
+**Live:** https://even-monad.vercel.app (the pitch, the replay and the app), running against the engine on **Monad mainnet**, see [Deployment](#deployment). Code: this repository.
 
 ---
 
@@ -164,6 +164,8 @@ Live on **Monad mainnet** (chain 143). The app uses the **v2 engine** (deployed 
 The engine uses the existing Monad deployments of Uniswap v3 (factory `0x204FAca1764B154221e35c0d20aBb3c525710498`, position manager `0x7197E214c0b767cFB76Fb734ab638E2c192F4E53`), WMON (`0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A`) and the GoPlus `UniV3LPLocker` (`0x24A9eB23De8E6f59BDB981B03E847F0f3ABbFa0d`). Checked on-chain after deploy: the engine allows the adapter, its locker is GoPlus, the permanent-lock end is 1 Jan 2100 and the LP grace period is one day. v1's three deployments cost 0.99 MON in total (9.68M gas at 102 gwei); the v2 engine cost 0.65 MON (6.40M gas). Both engines were checked on-chain after deploy, and v2's deployed bytecode matches the local build.
 
 **First live round (6 Oct 2026):** [round 1](https://even-monad.vercel.app/web/#/v1/round/1), run end to end on mainnet with `contracts/script/live-round.sh`: a fresh factory token ([`EVTEST`](https://monadscan.com/address/0x6e187bda0cb0f5f52fb62e2e396eb12405110e1b)), three sealed bids for 650,000 tokens against 500,000 for sale, cleared oversubscribed at 0.0000012 MON per token, everyone paid that price, the last bidder was filled pro-rata, and the pool was seeded and locked in one transaction ([seed and lock](https://monadscan.com/tx/0x2e6f24fdd035d07db463e15e82e9037b7b3ee45bd4164d0248387ba10c92f139), Uniswap v3 pool [`0xc9fc…f42A`](https://monadscan.com/address/0xc9fc46B5387Ba19D69c5Bea70EC50F04233df42A)).
+
+**First v2 round (9 Oct 2026), a scripted test round:** [round 1 on v2](https://even-monad.vercel.app/web/#/round/1), run with `SHOWCASE=1 contracts/script/live-round.sh`: eight burner wallets of ours bid sealed for 560,000 [`EVTRY`](https://monadscan.com/address/0xf469ae9434111b393426f93817c25c59fffc9379) against 500,000 for sale. It cleared oversubscribed at 0.0000013 MON per token: six bidders above the price filled in full, one at it filled pro-rata, one below it refunded in full; the pool was seeded and locked ([seed and lock](https://monadscan.com/tx/0x0247359b40ea5aefe57104987bbc1a89abaa0fd496c6c73b66477851ccc01a82)), and afterwards the engine held no MON and owed nothing. The bidders are scripted, not independent users.
 
 To redeploy (for example to a fork or another chain), from `contracts/`, with a funded deployer imported once as a Foundry keystore (`cast wallet import deployer --interactive`), so no key sits in the shell:
 
