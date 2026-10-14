@@ -5,7 +5,7 @@
 **Nobody gets a head start.** Even launches a token through a sealed-bid auction: everyone bids blind, every winner pays the same clearing price, and the Uniswap pool opens at that price with its liquidity locked. A sniper bot can still take part; it just pays what everyone pays.
 
 - **Live app:** https://even-monad.vercel.app
-- **Demo video:** TODO: link once recorded (3 minutes max)
+- **Demo video:** https://youtu.be/n3YV_P4wuL4 (a live round on mainnet, 1:16) · **Pitch:** https://youtu.be/RS0wQFwEgvY (2:00) · **Launch film:** https://youtu.be/l4PTCp8Gy6I (0:30)
 - **Contracts on Monad mainnet:** `AuctionEngine` v2 [`0x4Fd7…8ae4`](https://monadscan.com/address/0x4Fd754Fa8EaE4E93349e5920B994ace64eaA8ae4) (v1 [`0x0Fa0…2120`](https://monadscan.com/address/0x0Fa0E7Db5b2c2146D77E41579030A842492E2120) holds round 1), `TokenFactory` [`0x41F9…5DbF`](https://monadscan.com/address/0x41F968CcA0a95d4289D356c24668b1c72e645DbF), `UniswapV3Adapter` [`0x71da…72Ba`](https://monadscan.com/address/0x71da6a936f1196881C236c62a084ddEB448772Ba) ([details](SUBMISSION.md#deployment))
 - **How it differs from Zama, Uniswap CCA and bonding curves:** [COMPARISON.md](COMPARISON.md)
 - **Write-up for judges:** [SUBMISSION.md](SUBMISSION.md) · every PRD promise checked against code and tests: [PRD-CONFORMANCE.md](PRD-CONFORMANCE.md)
@@ -31,7 +31,7 @@ Creators launch in three steps (token, sale, pool) and one button; bidders choos
 - **Fast, cheap blocks make a two-step auction practical.** A full bid (commit, reveal, claim) costs about a tenth of a cent on Monad mainnet (worst case $0.0014, [measured](SUBMISSION.md#measured-cost)), and rounds can run for minutes instead of days.
 - **Monad's local mempool narrows who can see a bid in flight** to the current and next few leaders; commit-reveal keeps the bid itself sealed ([threat model](03-architecture.md)).
 - **Monad-native infrastructure:** pools are seeded on Uniswap v3 on Monad and locked with the GoPlus `UniV3LPLocker` on Monad, both verified on-chain and tested against a Monad mainnet fork (19 tests). Passkey accounts use Mera from Category Labs.
-- **Deployment:** Monad mainnet (chain 143); addresses above once deployed.
+- **Deployment:** Monad mainnet (chain 143). Two full rounds have run on mainnet end to end: [round 1](https://even-monad.vercel.app/web/#/round/1) and [round 2](https://even-monad.vercel.app/web/#/round/2), each cleared at one price with the pool seeded and locked ([details](SUBMISSION.md#deployment)). The bidders were our own scripted test wallets.
 
 ## Run it locally
 
@@ -61,7 +61,7 @@ Replays: `demo/run.sh` (bot vs crowd on a bonding curve and on Even), `demo/exit
 cd contracts && forge test
 ```
 
-102 contract tests (unit, fuzz at 512 runs; `FOUNDRY_PROFILE=deep` for 10,000), plus 19 against a Monad mainnet fork (`forge test --match-path "test/fork/*" --fork-url https://rpc1.monad.xyz`). Web: `node web/selftest.mjs`, `node web/e2e.mjs` (starts its own anvil), `node web/tools/simple.test.mjs`, `node web/tools/reminder.test.mjs`. Indexer: `cd indexer && npm test`. Demo: `cd demo && forge test`.
+154 contract tests (unit, fuzz at 512 runs, invariants; `FOUNDRY_PROFILE=deep` for 10,000), plus 19 against a Monad mainnet fork (`forge test --match-path "test/fork/*" --fork-url https://rpc1.monad.xyz`). Web: `node web/selftest.mjs`, `node web/e2e.mjs` (starts its own anvil), `node web/tools/simple.test.mjs`, `node web/tools/reminder.test.mjs`. Indexer: `cd indexer && npm test`. Demo: `cd demo && forge test`.
 
 ## Deploy to Monad
 
@@ -83,7 +83,7 @@ Solidity 0.8.28 with Foundry; plain JavaScript (ES modules) and CSS for the web 
 
 ## Security
 
-[SECURITY.md](SECURITY.md) has the threat model (the PRD's eight money-path bug classes) and every result with numbers: two internal reviews with a proof-of-concept test per finding ([AUDIT.md](AUDIT.md)) and an independent review of v2; 151 unit, fuzz and invariant tests, also under Monad's execution rules, with the invariants run at 128,000 random calls; a 1,000-bidder scale test; mainnet-fork tests against Uniswap v3 and the GoPlus locker; mutation testing of the money path (90.3% of 1,581 mutants killed, every survivor classified as equivalent or unreachable); symbolic proofs of the clearing and payment propositions within stated bounds ([contracts/PROPERTIES.md](contracts/PROPERTIES.md)); Slither, Aderyn, `forge lint` and AgentGuard, triaged in [contracts/STATIC-ANALYSIS.md](contracts/STATIC-ANALYSIS.md) and [SUBMISSION.md](SUBMISSION.md#security-scan-agentguard). The contracts have not had an external audit.
+[SECURITY.md](SECURITY.md) has the threat model (the PRD's eight money-path bug classes) and every result with numbers: two internal reviews with a proof-of-concept test per finding ([AUDIT.md](AUDIT.md)) and an independent review of v2; 154 unit, fuzz and invariant tests, also under Monad's execution rules, with the invariants run at 128,000 random calls; a 1,000-bidder scale test; mainnet-fork tests against Uniswap v3 and the GoPlus locker; mutation testing of the money path (90.3% of 1,581 mutants killed, every survivor classified as equivalent or unreachable); symbolic proofs of the clearing and payment propositions within stated bounds ([contracts/PROPERTIES.md](contracts/PROPERTIES.md)); Slither, Aderyn, `forge lint` and AgentGuard, triaged in [contracts/STATIC-ANALYSIS.md](contracts/STATIC-ANALYSIS.md) and [SUBMISSION.md](SUBMISSION.md#security-scan-agentguard). The contracts have not had an external audit.
 
 ## Built during the hackathon, AI disclosure and attribution
 
