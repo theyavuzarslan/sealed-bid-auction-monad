@@ -167,6 +167,8 @@ The engine uses the existing Monad deployments of Uniswap v3 (factory `0x204FAca
 
 **First v2 round (9 Oct 2026), a scripted test round:** [round 1 on v2](https://even-monad.vercel.app/web/#/round/1), run with `SHOWCASE=1 contracts/script/live-round.sh`: eight burner wallets of ours bid sealed for 560,000 [`EVTRY`](https://monadscan.com/address/0xf469ae9434111b393426f93817c25c59fffc9379) against 500,000 for sale. It cleared oversubscribed at 0.0000013 MON per token: six bidders above the price filled in full, one at it filled pro-rata, one below it refunded in full; the pool was seeded and locked ([seed and lock](https://monadscan.com/tx/0x0247359b40ea5aefe57104987bbc1a89abaa0fd496c6c73b66477851ccc01a82)), and afterwards the engine held no MON and owed nothing. The bidders are scripted, not independent users.
 
+**Second v2 round (14 Oct 2026), recorded for the demo video:** [round 2](https://even-monad.vercel.app/web/#/round/2), run with `contracts/script/live-round.sh`: three burner wallets of ours bid sealed for a fresh `EVTEST` token ([`0x4347…cc9f`](https://monadscan.com/address/0x4347cd80b41cba81d75aa01c0af09553c2f1cc9f)), 500,000 for sale. It sold out at one clearing price, 0.0000012 MON per token; the pool was seeded on Uniswap v3 and its position NFT locked in GoPlus in one transaction ([seed and lock](https://monadscan.com/tx/0xecf9a9aa4ff61ee34e729ce183cca9c46ab460dd99d331cd5a17054cf3e6e9b6)); every bidder claimed tokens and refunds. Scripted bidders, not independent users.
+
 To redeploy (for example to a fork or another chain), from `contracts/`, with a funded deployer imported once as a Foundry keystore (`cast wallet import deployer --interactive`), so no key sits in the shell:
 
 ```bash
